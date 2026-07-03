@@ -360,6 +360,47 @@ body {
   margin-top: 1px;
 }
 
+/* modelli */
+.models {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.model-card {
+  appearance: none;
+  border: 1px solid var(--hairline);
+  background: #fff;
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--sans);
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.model-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(43, 33, 26, 0.08); }
+
+.model-card.is-active {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 1px var(--brass);
+}
+
+.model-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--espresso);
+}
+
+.model-sub {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 300;
+  color: var(--taupe);
+  margin-top: 3px;
+}
+
 /* pills */
 .pills {
   display: grid;

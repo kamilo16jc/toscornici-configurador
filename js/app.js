@@ -4,41 +4,109 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ============================================================
-   LISTINO — California 100 (da listino 2026)
-   Colonne reali: Rovere / Pino. Superbianco: laccato, solo
-   verniciata (prezzi stimati per il test).
+   CATALOGO — modelli, essenze e listino 2026
+   Colonne listino: sbiancato → Rovere, pino → Pino,
+   toulipier → Toulipier.
    ============================================================ */
 
-const LISTINO = {
-  sbiancato: {
-    label: 'Pino Sbiancato',
-    tonoChiaro: true,
-    grezza:     { pannello: 735, montanti: 220, coprifili: 87, serratura: 20 },
-    verniciata: { pannello: 998, montanti: 238, coprifili: 99, serratura: 20 },
+const ESSENZE = {
+  sbiancato: { label: 'Pino Sbiancato', tonoChiaro: true },
+  pino:      { label: 'Pino Spazzolato', tonoChiaro: true },
+  toulipier: { label: 'Toulipier', tonoChiaro: true },
+};
+
+const MODELLI = {
+  california: {
+    label: 'California 100',
+    sub: 'Collezione America',
+    descIt: 'Porta interna classica con bugne',
+    descEn: 'Classic interior panelled door',
+    file: 'assets/PUERTA1_CALIFORNIA.glb',
+    nodi: {
+      pannello: ['Puerta1', 'Puerta1_cristales'],
+      montanti: ['Puerta1_marco'],
+      serratura: ['Puerta1_cerradura'],
+      coprifili: [],
+    },
+    leafNodes: ['Puerta1', 'Puerta1_cristales', 'Puerta1_cerradura'],
+    lockNode: 'Puerta1_cerradura',
+    componenti: [
+      { id: 'pannello', it: 'Pannello porta', en: 'Door panel', desc: 'Montanti sp. mm 45 + bugne sp. mm 22' },
+      { id: 'montanti', it: 'Montanti per telaio', en: 'Jambs for frame', desc: 'Spessore mm 44' },
+      { id: 'coprifili', it: 'Coprifili', en: 'Architraves', desc: 'Set completo per lato' },
+      { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
+    ],
+    listino: {
+      sbiancato: {
+        grezza:     { pannello: 735, montanti: 220, coprifili: 87, serratura: 20 },
+        verniciata: { pannello: 998, montanti: 238, coprifili: 99, serratura: 20 },
+      },
+      pino: {
+        grezza:     { pannello: 524, montanti: 115, coprifili: 32, serratura: 20 },
+        verniciata: { pannello: 764, montanti: 144, coprifili: 49, serratura: 20 },
+      },
+      toulipier: {
+        grezza:     { pannello: 528, montanti: 124, coprifili: 59, serratura: 20 },
+        verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
+      },
+    },
   },
-  pino: {
-    label: 'Pino Spazzolato',
-    tonoChiaro: true,
-    grezza:     { pannello: 524, montanti: 115, coprifili: 32, serratura: 20 },
-    verniciata: { pannello: 764, montanti: 144, coprifili: 49, serratura: 20 },
-  },
-  toulipier: {
-    label: 'Toulipier',
-    tonoChiaro: true,
-    grezza:     { pannello: 528, montanti: 124, coprifili: 59, serratura: 20 },
-    verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
+  nebraska: {
+    label: 'Nebraska 400',
+    sub: 'Serie 400-5V',
+    descIt: 'Porta vetrata con grigliato all’inglese',
+    descEn: 'Glazed door with English grille',
+    file: 'assets/PUERTA11_NEBRASKA.glb',
+    nodi: {
+      pannello: ['Puerta11_NEBRASKA', 'CRISTAL_GRANDE'],
+      montanti: ['Puerta11_Marco'],
+      serratura: ['Puerta11_Cerradura'],
+      coprifili: [],
+      grigliato: [],   // integrato nella geometria del pannello
+      fermavetro: [],
+    },
+    leafNodes: ['Puerta11_NEBRASKA', 'CRISTAL_GRANDE', 'Puerta11_Cerradura'],
+    lockNode: 'Puerta11_Cerradura',
+    componenti: [
+      { id: 'pannello', it: 'Pannello porta', en: 'Door panel', desc: 'Montanti sp. mm 45 + vano vetro intero' },
+      { id: 'montanti', it: 'Montanti per telaio', en: 'Jambs for frame', desc: 'Spessore mm 44' },
+      { id: 'coprifili', it: 'Coprifili', en: 'Architraves', desc: 'Set completo per lato' },
+      { id: 'grigliato', it: 'Grigliato all’inglese', en: 'English grille', desc: 'Suddivisione del vetro' },
+      { id: 'fermavetro', it: 'Montaggio cornici fermavetro', en: 'Mounting beadings', desc: 'Posa in opera' },
+      { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
+    ],
+    listino: {
+      sbiancato: {
+        grezza:     { pannello: 448, montanti: 220, coprifili: 87, serratura: 20, grigliato: 185, fermavetro: 31 },
+        verniciata: { pannello: 710, montanti: 238, coprifili: 99, serratura: 20, grigliato: 326, fermavetro: 31 },
+      },
+      pino: {
+        grezza:     { pannello: 364, montanti: 115, coprifili: 32, serratura: 20, grigliato: 145, fermavetro: 31 },
+        verniciata: { pannello: 601, montanti: 144, coprifili: 49, serratura: 20, grigliato: 272, fermavetro: 31 },
+      },
+      toulipier: {
+        grezza:     { pannello: 356, montanti: 124, coprifili: 59, serratura: 20, grigliato: 160, fermavetro: 31 },
+        verniciata: { pannello: 598, montanti: 142, coprifili: 73, serratura: 20, grigliato: 288, fermavetro: 31 },
+      },
+    },
   },
 };
 
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
 const state = {
+  modello: 'california',
   essenza: 'sbiancato',
   finitura: 'verniciata',
   ambiente: 'galleria',
   maniglia: 'ottone',
-  comps: { pannello: true, montanti: true, coprifili: true, serratura: true },
+  comps: {},
 };
+
+function defaultComps(modelKey) {
+  return Object.fromEntries(MODELLI[modelKey].componenti.map((c) => [c.id, true]));
+}
+state.comps = defaultComps(state.modello);
 
 const MANIGLIE = {
   ottone: { label: 'Ottone',     en: 'Brass',       color: 0xc9a227, metalness: 1,   roughness: 0.35 },
@@ -47,12 +115,6 @@ const MANIGLIE = {
 };
 
 const AMBIENTI_LABEL = { galleria: 'Galleria', ingresso: 'Ingresso', soggiorno: 'Soggiorno', studio: 'Studio' };
-const COMP_LABEL = {
-  pannello: 'Pannello porta / Door panel',
-  montanti: 'Montanti per telaio / Jambs for frame',
-  coprifili: 'Coprifili / Architraves',
-  serratura: 'Anube e serratura / Hinge and lock',
-};
 
 const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
 
@@ -94,7 +156,7 @@ renderer.domElement.addEventListener('pointerdown', () => {
   controls.autoRotate = false;
 }, { once: true });
 
-// luce chiave calda + ombra morbida
+// luce chiave + ombra morbida
 const key = new THREE.DirectionalLight(0xffffff, 1.5);
 key.position.set(2.5, 4, 3);
 key.castShadow = true;
@@ -137,15 +199,13 @@ function loadSet(essenza) {
   return texCache[essenza];
 }
 
-// materiale legno condiviso da pannello + marco
+// materiale legno condiviso da pannello + marco (tutti i modelli)
 const woodMat = new THREE.MeshStandardMaterial({
   roughness: 1,
   metalness: 0,
   normalScale: new THREE.Vector2(0.8, 0.8),
 });
 
-// regolazioni per essenza (es. finiture laccate: meno rugose,
-// normal e AO accentuati, albedo attenuato per non bruciare i bianchi)
 const MATERIAL_TWEAKS = {
   default: { color: 0xffffff, roughness: 1, normalScale: 0.8, aoMapIntensity: 1, envMapIntensity: 1 },
 };
@@ -165,13 +225,13 @@ function setManiglia(k) {
 }
 
 // aspetto del materiale = essenza + finitura.
-// grezza: legno crudo — opaco, asciutto, poro accentuato, niente riflessi.
+// grezza: legno crudo — opaco, asciutto, poro accentuato.
 // verniciata: leggera lucentezza e colore pieno.
 function applyMaterialLook() {
   const tw = MATERIAL_TWEAKS[state.essenza] || MATERIAL_TWEAKS.default;
-  const raw = state.finitura === 'grezza' && LISTINO[state.essenza][state.finitura];
+  const raw = state.finitura === 'grezza';
   const c = new THREE.Color(tw.color);
-  if (raw) c.multiplyScalar(0.88); // legno spento, non trattato
+  if (raw) c.multiplyScalar(0.88);
   woodMat.color.copy(c);
   woodMat.roughness = raw ? 1 : Math.min(tw.roughness, 0.78);
   woodMat.envMapIntensity = raw ? 0.45 : tw.envMapIntensity * 1.12;
@@ -190,28 +250,22 @@ function applyEssenza(essenza) {
   woodMat.needsUpdate = true;
 
   // essenze chiare → sfondo scuro per contrasto
-  viewerEl.classList.toggle('is-dark', !!LISTINO[essenza].tonoChiaro);
+  viewerEl.classList.toggle('is-dark', !!ESSENZE[essenza].tonoChiaro);
 }
 
 /* ============================================================
-   MODELLO
+   MODELLO — caricamento GLB, perno di apertura, dimensioni
    ============================================================ */
-
-// nodi del GLB → componenti del listino
-const NODE_BY_COMP = {
-  pannello: ['Puerta1', 'Puerta1_cristales'],
-  montanti: ['Puerta1_marco'],
-  serratura: ['Puerta1_cerradura'],
-  coprifili: [], // non modellati nel GLB
-};
 
 const nodes = {};
 let model = null;
+let shadowPlane = null;
+let currentModelKey = null;
 
 // apertura della porta: perno sulle cerniere
 let doorPivot = null;
 let doorTargetAngle = 0;
-let doorOpenAngle = 0; // segno calcolato dal lato cerniere
+let doorOpenAngle = 0;
 let leafParts = [];
 const doorBtn = document.getElementById('doorBtn');
 
@@ -223,115 +277,140 @@ function toggleDoor() {
 }
 
 const gltfLoader = new GLTFLoader();
-gltfLoader.load(
-  'assets/PUERTA1_CALIFORNIA.glb',
-  (gltf) => {
-    model = gltf.scene;
 
-    // il GLB è in millimetri → normalizza a metri
-    const rawBox = new THREE.Box3().setFromObject(model);
-    const rawH = rawBox.getSize(new THREE.Vector3()).y;
-    if (rawH > 100) model.scale.setScalar(1 / 1000);
-
-    model.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-        if (o.material && o.material.name === 'Mat_puerta') o.material = woodMat;
-      }
-    });
-
-    for (const names of Object.values(NODE_BY_COMP)) {
-      for (const n of names) {
-        const obj = model.getObjectByName(n);
-        if (obj) nodes[n] = obj;
-      }
-    }
-
-    // centra il modello e inquadra
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center);
-    scene.add(model);
-
-    const dist = size.y * 1.55;
-    camera.position.set(dist * 0.65, size.y * 0.12, dist);
-    controls.target.set(0, 0, 0);
-    controls.minDistance = dist * 0.5;
-    controls.maxDistance = dist * 2.2;
-    controls.update();
-
-    // piano d'ombra
-    const shadowPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(size.y * 4, size.y * 4),
-      new THREE.ShadowMaterial({ opacity: 0.22 })
-    );
-    shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.position.y = -size.y / 2 - 0.001;
-    shadowPlane.receiveShadow = true;
-    scene.add(shadowPlane);
-
-    // maniglia con materiale configurabile
-    if (nodes['Puerta1_cerradura']) {
-      nodes['Puerta1_cerradura'].traverse((o) => { if (o.isMesh) o.material = handleMat; });
-    }
-
-    // perno di apertura sul lato cerniere (opposto alla maniglia)
-    scene.updateMatrixWorld(true);
-    leafParts = ['Puerta1', 'Puerta1_cristales', 'Puerta1_cerradura']
-      .map((n) => nodes[n]).filter(Boolean);
-    const leafBox = new THREE.Box3();
-    leafParts.forEach((p) => leafBox.expandByObject(p));
-    const lockBox = new THREE.Box3().setFromObject(nodes['Puerta1_cerradura'] || leafParts[0]);
-    const lockX = (lockBox.min.x + lockBox.max.x) / 2;
-    const leafCX = (leafBox.min.x + leafBox.max.x) / 2;
-    const hingeRight = lockX < leafCX; // maniglia a sinistra → cerniere a destra
-    doorPivot = new THREE.Group();
-    doorPivot.position.set(
-      hingeRight ? leafBox.max.x : leafBox.min.x,
-      0,
-      (leafBox.min.z + leafBox.max.z) / 2
-    );
-    scene.add(doorPivot);
-    leafParts.forEach((p) => doorPivot.attach(p));
-    // apre verso l'osservatore (+z)
-    doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(96);
-    doorBtn.hidden = false;
-
-    applyEssenza(state.essenza);
-    applyVisibility();
-    doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
-    if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
-    loaderEl.classList.add('is-hidden');
-    window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor };
-  },
-  (ev) => {
-    if (ev.total) loaderFill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
-  },
-  (err) => {
-    loaderEl.querySelector('p').textContent = 'Errore nel caricamento del modello';
-    console.error(err);
+function clearModel() {
+  if (doorPivot) { scene.remove(doorPivot); doorPivot = null; }
+  if (model) { scene.remove(model); model = null; }
+  for (const k of Object.keys(nodes)) delete nodes[k];
+  leafParts = [];
+  doorTargetAngle = 0;
+  doorBtn.hidden = true;
+  doorBtn.textContent = 'Apri la porta';
+  // gli ambienti sono tagliati sulle misure della porta → si ricostruiscono
+  for (const [k, g] of Object.entries(ambienti)) {
+    scene.remove(g);
+    delete ambienti[k];
   }
-);
+}
+
+function loadModel(key) {
+  currentModelKey = key;
+  const def = MODELLI[key];
+  clearModel();
+  loaderEl.classList.remove('is-hidden');
+  loaderFill.style.width = '0%';
+
+  gltfLoader.load(
+    def.file,
+    (gltf) => {
+      if (currentModelKey !== key) return; // il modello è cambiato nel frattempo
+      model = gltf.scene;
+
+      // i GLB sono in millimetri → normalizza a metri
+      const rawBox = new THREE.Box3().setFromObject(model);
+      const rawH = rawBox.getSize(new THREE.Vector3()).y;
+      if (rawH > 100) model.scale.setScalar(1 / 1000);
+
+      model.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if (o.material && o.material.name.startsWith('Mat_puerta')) o.material = woodMat;
+        }
+      });
+
+      for (const names of Object.values(def.nodi)) {
+        for (const n of names) {
+          const obj = model.getObjectByName(n);
+          if (obj) nodes[n] = obj;
+        }
+      }
+
+      // centra il modello e inquadra
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.sub(center);
+      scene.add(model);
+
+      const dist = size.y * 1.55;
+      camera.position.set(dist * 0.65, size.y * 0.12, dist);
+      controls.target.set(0, 0, 0);
+      controls.minDistance = dist * 0.5;
+      controls.maxDistance = dist * 2.2;
+      controls.update();
+
+      // piano d'ombra (uno solo, riposizionato per modello)
+      if (!shadowPlane) {
+        shadowPlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(8, 8),
+          new THREE.ShadowMaterial({ opacity: 0.22 })
+        );
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.receiveShadow = true;
+        scene.add(shadowPlane);
+      }
+      shadowPlane.position.y = -size.y / 2 - 0.001;
+
+      // maniglia con materiale configurabile
+      const lockNode = nodes[def.lockNode];
+      if (lockNode) lockNode.traverse((o) => { if (o.isMesh) o.material = handleMat; });
+
+      // perno di apertura sul lato cerniere (opposto alla maniglia)
+      scene.updateMatrixWorld(true);
+      leafParts = def.leafNodes.map((n) => nodes[n]).filter(Boolean);
+      const leafBox = new THREE.Box3();
+      leafParts.forEach((p) => leafBox.expandByObject(p));
+      const lockBox = new THREE.Box3().setFromObject(lockNode || leafParts[0]);
+      const lockX = (lockBox.min.x + lockBox.max.x) / 2;
+      const leafCX = (leafBox.min.x + leafBox.max.x) / 2;
+      const hingeRight = lockX < leafCX;
+      doorPivot = new THREE.Group();
+      doorPivot.position.set(
+        hingeRight ? leafBox.max.x : leafBox.min.x,
+        0,
+        (leafBox.min.z + leafBox.max.z) / 2
+      );
+      scene.add(doorPivot);
+      leafParts.forEach((p) => doorPivot.attach(p));
+      doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(96);
+      doorBtn.hidden = false;
+
+      applyEssenza(state.essenza);
+      applyVisibility();
+      doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
+      if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
+      loaderEl.classList.add('is-hidden');
+      refreshUI();
+      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello };
+    },
+    (ev) => {
+      if (ev.total) loaderFill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
+    },
+    (err) => {
+      loaderEl.querySelector('p').textContent = 'Errore nel caricamento del modello';
+      console.error(err);
+    }
+  );
+}
 
 function applyVisibility() {
-  for (const [comp, names] of Object.entries(NODE_BY_COMP)) {
+  const def = MODELLI[state.modello];
+  for (const [comp, names] of Object.entries(def.nodi)) {
     for (const n of names) {
-      if (nodes[n]) nodes[n].visible = state.comps[comp];
+      if (nodes[n]) nodes[n].visible = state.comps[comp] !== false;
     }
   }
 }
 
 /* ============================================================
    AMBIENTI — scenografie 3D opzionali attorno alla porta.
-   'galleria' = vista pulita attuale (nessuna scena).
+   'galleria' = vista pulita (nessuna scena).
    ============================================================ */
 
 const ambienti = {};   // nome -> THREE.Group (costruiti pigramente)
 let doorDims = null;   // { w, h, floorY } noto dopo il caricamento del GLB
 
-// la porta (spessore ±0.0425) deve restare a filo del muro:
 // faccia frontale del muro appena dietro il filo della porta
 const WALL_FACE = 0.03;
 
@@ -346,8 +425,7 @@ function box(group, w, h, d, material, x, y, z, ry = 0) {
   return m;
 }
 
-// parete con il vano della porta (leggermente più piccolo del marco,
-// così i bordi restano coperti come in una posa reale)
+// parete con il vano della porta (leggermente più piccolo del marco)
 function makeWall(group, color) {
   const W = 7.5, H = 3.2, D = 0.14;
   const { w: dw, h: dh, floorY } = doorDims;
@@ -369,7 +447,7 @@ function makeWall(group, color) {
     new THREE.ExtrudeGeometry(shape, { depth: D, bevelEnabled: false }),
     mat(color, 0.95)
   );
-  wall.position.set(0, floorY, WALL_FACE - D); // faccia frontale a filo porta
+  wall.position.set(0, floorY, WALL_FACE - D);
   wall.receiveShadow = true;
   group.add(wall);
 }
@@ -412,7 +490,6 @@ function buildIngresso() {
   makeFloor(g, mat(0xa9a08c, 0.95));
   makeZoccolino(g, 0x8f8168);
   for (const sx of [-1, 1]) {
-    // cipressi in vaso ai lati
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.34, 24), mat(0x8a4f34, 0.85));
     pot.position.set(sx * 0.95, floorY + 0.17, 0.34);
     pot.castShadow = pot.receiveShadow = true;
@@ -421,13 +498,11 @@ function buildIngresso() {
     cip.position.set(sx * 0.95, floorY + 0.86, 0.34);
     cip.castShadow = true;
     g.add(cip);
-    // lanterne a muro
     box(g, 0.09, 0.2, 0.09, mat(0x241c14, 0.6), sx * 0.62, floorY + 2.12, WALL_FACE + 0.045);
     const pl = new THREE.PointLight(0xffd9a8, 2.5, 4, 2);
     pl.position.set(sx * 0.62, floorY + 2.0, 0.4);
     g.add(pl);
   }
-  // zerbino
   box(g, 0.85, 0.015, 0.5, mat(0x4a3c30, 1), 0, floorY + 0.008, 0.45);
   return g;
 }
@@ -438,16 +513,13 @@ function buildSoggiorno() {
   makeWall(g, 0xe6ddcb);
   makeFloor(g, woodFloorMat(0xcfa87f));
   makeZoccolino(g, 0xf0e9da);
-  // tappeto
   const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.012, 48), mat(0xa96f4d, 1));
   rug.position.set(-0.2, floorY + 0.004, 1.35);
   rug.receiveShadow = true;
   g.add(rug);
-  // credenza con quadri
   box(g, 1.15, 0.52, 0.34, mat(0x3a2d22, 0.6), 1.65, floorY + 0.26, 0.26);
   box(g, 0.34, 0.44, 0.025, mat(0x241c14, 0.7), 1.45, floorY + 1.55, WALL_FACE + 0.015);
   box(g, 0.28, 0.36, 0.025, mat(0x241c14, 0.7), 1.92, floorY + 1.48, WALL_FACE + 0.015);
-  // lampada da terra
   const palo = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.35, 12), mat(0x241c14, 0.5));
   palo.position.set(-1.7, floorY + 0.675, 0.55);
   palo.castShadow = true;
@@ -468,7 +540,6 @@ function buildStudio() {
   makeWall(g, 0x46523f);
   makeFloor(g, woodFloorMat(0x9a7350));
   makeZoccolino(g, 0x2f3a2c);
-  // scrivania con libri
   const legno = mat(0x4a3626, 0.55);
   const desk = new THREE.Group();
   box(desk, 1.1, 0.045, 0.52, legno, 0, 0.74, 0);
@@ -479,7 +550,6 @@ function buildStudio() {
   desk.position.set(1.6, floorY, 0.65);
   desk.rotation.y = -0.14;
   g.add(desk);
-  // mensole con libri
   for (const [my, n, off] of [[1.35, 6, 0], [1.72, 4, 0.1]]) {
     box(g, 0.85, 0.035, 0.2, mat(0x3a2d22, 0.6), -1.5, floorY + my, 0.17);
     for (let i = 0; i < n; i++)
@@ -487,7 +557,6 @@ function buildStudio() {
         mat([0x6e4a3a, 0x44554e, 0xb3a284, 0x2b2b33][i % 4], 0.85),
         -1.86 + off + i * 0.09, floorY + my + 0.11, 0.16);
   }
-  // luce da lettura calda
   const pl = new THREE.PointLight(0xffe6c0, 2, 4, 2);
   pl.position.set(1.45, floorY + 1.5, 0.95);
   g.add(pl);
@@ -503,7 +572,6 @@ function setAmbiente(nome) {
     scene.add(ambienti[nome]);
   }
   for (const [k, grp] of Object.entries(ambienti)) grp.visible = (k === nome);
-  // in un ambiente la camera resta davanti alla parete
   const room = nome !== 'galleria';
   controls.autoRotate = !room && !userMoved;
   controls.minAzimuthAngle = room ? -0.9 : -Infinity;
@@ -558,48 +626,67 @@ const totalEl = document.getElementById('totalValue');
 const summaryLabelEl = document.getElementById('summaryLabel');
 const summaryConfigEl = document.getElementById('summaryConfig');
 const pillNoteEl = document.getElementById('pillNote');
+const componentsEl = document.getElementById('components');
+const panelTitleEl = document.getElementById('panelTitle');
+const panelSubEl = document.getElementById('panelSub');
+const captionModelEl = document.getElementById('captionModel');
+const captionLineEl = document.getElementById('captionLine');
 
 function currentPrices() {
-  const ess = LISTINO[state.essenza];
-  return ess[state.finitura] || ess.verniciata;
+  return MODELLI[state.modello].listino[state.essenza][state.finitura];
 }
 
 function computeTotale() {
   const prices = currentPrices();
   return Object.entries(state.comps)
     .filter(([, on]) => on)
-    .reduce((sum, [comp]) => sum + prices[comp], 0);
+    .reduce((sum, [comp]) => sum + (prices[comp] || 0), 0);
+}
+
+// lista componenti generata dal modello attivo
+function renderComponents() {
+  const def = MODELLI[state.modello];
+  componentsEl.innerHTML = def.componenti.map((c) => `
+    <li>
+      <label class="comp">
+        <input type="checkbox" data-comp="${c.id}" ${state.comps[c.id] ? 'checked' : ''}>
+        <span class="comp-check"></span>
+        <span class="comp-body">
+          <span class="comp-name">${c.it} <span class="en">${c.en}</span></span>
+          <span class="comp-desc">${c.desc}</span>
+        </span>
+        <span class="comp-price" data-price="${c.id}">—</span>
+      </label>
+    </li>`).join('');
+  componentsEl.querySelectorAll('[data-comp]').forEach((input) => {
+    input.addEventListener('change', () => {
+      state.comps[input.dataset.comp] = input.checked;
+      applyVisibility();
+      refreshUI();
+    });
+  });
 }
 
 function refreshUI() {
-  const ess = LISTINO[state.essenza];
   const prices = currentPrices();
 
-  // prezzi per componente
   document.querySelectorAll('[data-price]').forEach((el) => {
-    el.textContent = eur.format(prices[el.dataset.price]);
+    el.textContent = eur.format(prices[el.dataset.price] || 0);
   });
 
-  // totale
   totalEl.textContent = eur.format(computeTotale());
   totalEl.classList.remove('bump');
   void totalEl.offsetWidth;
   totalEl.classList.add('bump');
 
-  // riepilogo
   const allOn = Object.values(state.comps).every(Boolean);
   summaryLabelEl.innerHTML = allOn
     ? 'Porta completa · <span class="en">Complete door</span>'
     : 'Configurazione parziale · <span class="en">Partial configuration</span>';
   summaryConfigEl.textContent =
-    `${ess.label} — ${FINITURA_LABEL[state.finitura]} · ${MANIGLIE[state.maniglia].label}`;
+    `${MODELLI[state.modello].label} · ${ESSENZE[state.essenza].label} — ${FINITURA_LABEL[state.finitura]} · ${MANIGLIE[state.maniglia].label}`;
 
-  // finitura disponibile
-  const grezzaBtn = document.querySelector('[data-finitura="grezza"]');
-  grezzaBtn.disabled = !!ess.verniciataOnly;
-  pillNoteEl.textContent = ess.verniciataOnly
-    ? 'Il Superbianco è disponibile solo laccato.'
-    : '';
+  pillNoteEl.textContent = '';
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
@@ -607,11 +694,33 @@ function refreshUI() {
     b.classList.toggle('is-active', b.dataset.essenza === state.essenza));
 }
 
+function setModello(key) {
+  if (state.modello === key && model) return;
+  state.modello = key;
+  state.comps = defaultComps(key);
+  const def = MODELLI[key];
+  // intestazioni pannello e viewer
+  const [nome, ...resto] = def.label.split(' ');
+  captionModelEl.innerHTML = `${nome} <span>${resto.join(' ')}</span>`;
+  captionLineEl.textContent = `${def.sub} · Porte in legno massello`;
+  panelTitleEl.textContent = def.label;
+  panelSubEl.innerHTML = `${def.descIt} — <span class="en">${def.descEn}</span>`;
+  document.querySelectorAll('[data-modello]').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.modello === key));
+  renderComponents();
+  refreshUI();
+  loadModel(key);
+}
+
+// modello
+document.querySelectorAll('[data-modello]').forEach((btn) => {
+  btn.addEventListener('click', () => setModello(btn.dataset.modello));
+});
+
 // essenza
 document.querySelectorAll('.swatch').forEach((btn) => {
   btn.addEventListener('click', () => {
     state.essenza = btn.dataset.essenza;
-    if (LISTINO[state.essenza].verniciataOnly) state.finitura = 'verniciata';
     applyEssenza(state.essenza);
     refreshUI();
   });
@@ -623,15 +732,6 @@ document.querySelectorAll('#pills .pill').forEach((btn) => {
     if (btn.disabled) return;
     state.finitura = btn.dataset.finitura;
     applyMaterialLook();
-    refreshUI();
-  });
-});
-
-// componenti
-document.querySelectorAll('[data-comp]').forEach((input) => {
-  input.addEventListener('change', () => {
-    state.comps[input.dataset.comp] = input.checked;
-    applyVisibility();
     refreshUI();
   });
 });
@@ -657,8 +757,8 @@ const quoteDoneView = document.getElementById('quoteDoneView');
 
 const pdfMoney = (v) => eur.format(v).replace('€', 'EUR').trim();
 
-// scatto dedicato per il PDF: solo la porta su bianco, inquadratura
-// verticale ravvicinata (l'ambiente viene nascosto per lo scatto)
+// scatto dedicato per il PDF: solo la porta su bianco,
+// inquadratura frontale con margine calcolato
 function captureRender() {
   const hiddenGroups = [];
   for (const g of Object.values(ambienti)) {
@@ -670,8 +770,6 @@ function captureRender() {
   const cw = 900, ch = 1200;
   renderer.setSize(cw, ch, false);
 
-  // vista frontale: distanza calcolata perché la porta entri
-  // per intero nel fotogramma con un margine del 18 %
   const h = doorDims ? doorDims.h : 2;
   const fov = 35;
   const cam = new THREE.PerspectiveCamera(fov, cw / ch, 0.05, 60);
@@ -689,7 +787,6 @@ function captureRender() {
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(src, 0, 0);
 
-  // ripristina viewport e ambiente
   renderer.setSize(prevSize.x, prevSize.y, false);
   hiddenGroups.forEach((g) => { g.visible = true; });
   renderer.render(scene, camera);
@@ -701,7 +798,7 @@ function buildPDF(cliente, rif) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = 595, M = 48;
-  const ess = LISTINO[state.essenza];
+  const mod = MODELLI[state.modello];
   const prices = currentPrices();
   const qty = Math.max(1, parseInt(cliente.quantita, 10) || 1);
   const unitTotal = computeTotale();
@@ -777,8 +874,8 @@ function buildPDF(cliente, rif) {
   y = Math.max(y + 82, y - 6 + imgH + 24);
   section('CONFIGURAZIONE / CONFIGURATION', y);
   y += 20;
-  row('Modello', 'California 100 — Collezione America', y);
-  row('Essenza', `${ess.label}`, y + 14);
+  row('Modello', `${mod.label} — ${mod.sub}`, y);
+  row('Essenza', ESSENZE[state.essenza].label, y + 14);
   row('Finitura', `${FINITURA_LABEL[state.finitura]} / ${state.finitura === 'grezza' ? 'raw' : 'painted'}`, y + 28);
   row('Maniglia', `${MANIGLIE[state.maniglia].label} / ${MANIGLIE[state.maniglia].en}`, y + 42);
   row('Ambiente', `${AMBIENTI_LABEL[state.ambiente]} (visualizzazione)`, y + 56);
@@ -788,12 +885,13 @@ function buildPDF(cliente, rif) {
   y += 96;
   section('COMPONENTI E PREZZI / COMPONENTS AND PRICES', y);
   y += 20;
-  for (const [comp, on] of Object.entries(state.comps)) {
+  for (const c of mod.componenti) {
+    const on = state.comps[c.id];
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(on ? 43 : 180, on ? 33 : 170, on ? 26 : 155);
-    doc.text(`${on ? '' : '(escluso) '}${COMP_LABEL[comp]}`, M, y);
-    doc.text(on ? pdfMoney(prices[comp]) : '—', W - M, y, { align: 'right' });
+    doc.text(`${on ? '' : '(escluso) '}${c.it} / ${c.en}`, M, y);
+    doc.text(on ? pdfMoney(prices[c.id] || 0) : '—', W - M, y, { align: 'right' });
     y += 15;
   }
   doc.setDrawColor(43, 33, 26);
@@ -803,7 +901,7 @@ function buildPDF(cliente, rif) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(43, 33, 26);
-  doc.text(`Totale unitario / Unit total`, M, y);
+  doc.text('Totale unitario / Unit total', M, y);
   doc.text(pdfMoney(unitTotal), W - M, y, { align: 'right' });
   if (qty > 1) {
     y += 18;
@@ -816,7 +914,7 @@ function buildPDF(cliente, rif) {
   doc.setTextColor(141, 125, 106);
   doc.text('IVA esclusa · Prezzi di listino 2026 / VAT excluded · 2026 list prices', M, y);
 
-  // — note del cliente (larghezza piena, senza collisioni con l'immagine)
+  // — note del cliente (larghezza piena)
   if (cliente.note) {
     y += 26;
     section('NOTE DEL CLIENTE / CUSTOMER NOTES', y);
@@ -865,5 +963,11 @@ quoteForm.addEventListener('submit', (e) => {
 
 window.__pdf = { buildPDF }; // hook di verifica
 
+/* ============================================================
+   AVVIO
+   ============================================================ */
+
+renderComponents();
 setManiglia(state.maniglia);
 refreshUI();
+loadModel(state.modello);

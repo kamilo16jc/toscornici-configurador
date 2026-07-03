@@ -1,6 +1,6 @@
-# Toscornici — Configuratore 3D · California 100
+# Toscornici — Configuratore 3D
 
-Configurador 3D web de la puerta **California 100** con precios del listino y visualización en tiempo real (Three.js).
+Configurador 3D web multi-modelo — **California 100** y **Nebraska 400** — con precios del listino y visualización en tiempo real (Three.js).
 
 ## Cómo ejecutarlo
 
@@ -14,6 +14,8 @@ python -m http.server 8137
 Luego abrir <http://localhost:8137>. Requiere internet (Three.js y las fuentes cargan desde CDN).
 
 ## Qué hace
+
+- **Modello:** selector de puerta — California 100 (bugne clásicas, 4 componentes) y Nebraska 400 (vetrata 400-5V con grigliato all'inglese, 6 componentes). Cada modelo tiene su GLB, sus nodos 3D, su lista de componentes y su columna de precios; los ambientes se reconstruyen con las medidas de la puerta activa. El grigliato y las cornici fermavetro del Nebraska son solo ítems de precio (están integrados en la geometría del panel del GLB).
 
 - **Essenza:** 3 acabados con texturas PBR (albedo + normal + roughness + AO) — Pino Sbiancato, Pino Spazzolato, Toulipier. El cambio de textura es instantáneo sobre el modelo. El *Pino Sbiancato* es un albedo derivado del pino (desaturado + aclarado hacia blanco por código), compartiendo sus mapas de relieve; usa la columna de precios del Rovere.
 - **Finitura:** Grezza / Verniciata, con los precios del listino 2026.

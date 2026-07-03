@@ -29,8 +29,8 @@
     </div>
 
     <div class="viewer-caption">
-      <p class="caption-model">California <span>100</span></p>
-      <p class="caption-line">Collezione America · Porte in legno massello</p>
+      <p class="caption-model" id="captionModel">California <span>100</span></p>
+      <p class="caption-line" id="captionLine">Collezione America · Porte in legno massello</p>
     </div>
 
     <div class="viewer-hint">Trascina per ruotare · <span class="en">Drag to rotate</span></div>
@@ -48,13 +48,28 @@
   <aside class="panel">
     <header class="panel-header">
       <p class="panel-kicker">Configuratore · <span class="en">Configurator</span></p>
-      <h1>California&nbsp;100</h1>
-      <p class="panel-sub">Porta interna classica con bugne — <span class="en">Classic interior panelled door</span></p>
+      <h1 id="panelTitle">California&nbsp;100</h1>
+      <p class="panel-sub" id="panelSub">Porta interna classica con bugne — <span class="en">Classic interior panelled door</span></p>
     </header>
+
+    <!-- Modello -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">01</span> Modello <span class="en">/ Model</span></h2>
+      <div class="models" id="modelli">
+        <button class="model-card is-active" data-modello="california">
+          <span class="model-name">California 100</span>
+          <span class="model-sub">Collezione America · Bugne classiche</span>
+        </button>
+        <button class="model-card" data-modello="nebraska">
+          <span class="model-name">Nebraska 400</span>
+          <span class="model-sub">Serie 400-5V · Grigliato all’inglese</span>
+        </button>
+      </div>
+    </section>
 
     <!-- Essenza -->
     <section class="section">
-      <h2 class="section-title"><span class="num">01</span> Essenza <span class="en">/ Wood finish</span></h2>
+      <h2 class="section-title"><span class="num">02</span> Essenza <span class="en">/ Wood finish</span></h2>
       <div class="swatches" id="swatches">
         <button class="swatch is-active" data-essenza="sbiancato">
           <span class="swatch-chip" style="background-image:url('assets/textures/sbiancato/albedo.jpg')"></span>
@@ -76,7 +91,7 @@
 
     <!-- Finitura -->
     <section class="section">
-      <h2 class="section-title"><span class="num">02</span> Finitura <span class="en">/ Finish</span></h2>
+      <h2 class="section-title"><span class="num">03</span> Finitura <span class="en">/ Finish</span></h2>
       <div class="pills" id="pills">
         <button class="pill" data-finitura="grezza">Grezza <span class="en">Raw</span></button>
         <button class="pill is-active" data-finitura="verniciata">Verniciata <span class="en">Painted</span></button>
@@ -86,58 +101,13 @@
 
     <!-- Componenti -->
     <section class="section">
-      <h2 class="section-title"><span class="num">03</span> Componenti <span class="en">/ Components</span></h2>
-      <ul class="components" id="components">
-        <li>
-          <label class="comp">
-            <input type="checkbox" data-comp="pannello" checked>
-            <span class="comp-check"></span>
-            <span class="comp-body">
-              <span class="comp-name">Pannello porta <span class="en">Door panel</span></span>
-              <span class="comp-desc">Montanti sp. mm 45 + bugne sp. mm 22</span>
-            </span>
-            <span class="comp-price" data-price="pannello">—</span>
-          </label>
-        </li>
-        <li>
-          <label class="comp">
-            <input type="checkbox" data-comp="montanti" checked>
-            <span class="comp-check"></span>
-            <span class="comp-body">
-              <span class="comp-name">Montanti per telaio <span class="en">Jambs for frame</span></span>
-              <span class="comp-desc">Spessore mm 44</span>
-            </span>
-            <span class="comp-price" data-price="montanti">—</span>
-          </label>
-        </li>
-        <li>
-          <label class="comp">
-            <input type="checkbox" data-comp="coprifili" checked>
-            <span class="comp-check"></span>
-            <span class="comp-body">
-              <span class="comp-name">Coprifili <span class="en">Architraves</span></span>
-              <span class="comp-desc">Set completo per lato</span>
-            </span>
-            <span class="comp-price" data-price="coprifili">—</span>
-          </label>
-        </li>
-        <li>
-          <label class="comp">
-            <input type="checkbox" data-comp="serratura" checked>
-            <span class="comp-check"></span>
-            <span class="comp-body">
-              <span class="comp-name">Anube e serratura <span class="en">Hinge and lock</span></span>
-              <span class="comp-desc">Ottone brunito</span>
-            </span>
-            <span class="comp-price" data-price="serratura">—</span>
-          </label>
-        </li>
-      </ul>
+      <h2 class="section-title"><span class="num">04</span> Componenti <span class="en">/ Components</span></h2>
+      <ul class="components" id="components"><!-- generato dal modello attivo --></ul>
     </section>
 
     <!-- Maniglia -->
     <section class="section">
-      <h2 class="section-title"><span class="num">04</span> Maniglia <span class="en">/ Hardware</span></h2>
+      <h2 class="section-title"><span class="num">05</span> Maniglia <span class="en">/ Hardware</span></h2>
       <div class="metals" id="maniglie">
         <button class="metal is-active" data-maniglia="ottone">
           <span class="metal-chip chip-ottone"></span>
@@ -156,7 +126,7 @@
 
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> Ambiente <span class="en">/ Setting</span></h2>
+      <h2 class="section-title"><span class="num">06</span> Ambiente <span class="en">/ Setting</span></h2>
       <div class="pills pills-grid" id="ambienti">
         <button class="pill is-active" data-ambiente="galleria">Galleria <span class="en">Showroom</span></button>
         <button class="pill" data-ambiente="ingresso">Ingresso <span class="en">Entrance</span></button>
