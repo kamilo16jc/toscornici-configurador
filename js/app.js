@@ -10,10 +10,29 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
    ============================================================ */
 
 const ESSENZE = {
-  sbiancato: { label: 'Pino Sbiancato', tonoChiaro: true },
-  pino:      { label: 'Pino Spazzolato', tonoChiaro: true },
-  toulipier: { label: 'Toulipier', tonoChiaro: true },
+  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false },
+  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false },
+  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true },
+  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true },
 };
+
+// laccati: texture 'universal' (albedo neutro) + tinta RAL.
+// Prezzi: colonna Toulipier verniciata, la base tipica dei laccati.
+const LACCATI = {
+  bianco:  { label: 'Bianco',         color: 0xf2efe6 },
+  avorio:  { label: 'Avorio',         color: 0xe7d9b8 },
+  tortora: { label: 'Grigio Tortora', color: 0xb3a894 },
+  salvia:  { label: 'Verde Salvia',   color: 0x8b9c85 },
+  notte:   { label: 'Blu Notte',      color: 0x39465a },
+};
+
+const isLaccato = () => state.essenza === 'laccato';
+
+function essenzaLabel() {
+  return isLaccato()
+    ? `Laccato ${LACCATI[state.colore].label}`
+    : ESSENZE[state.essenza].label;
+}
 
 const MODELLI = {
   california: {
@@ -37,16 +56,23 @@ const MODELLI = {
       { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
     ],
     listino: {
-      sbiancato: {
+      rovere: {
         grezza:     { pannello: 735, montanti: 220, coprifili: 87, serratura: 20 },
         verniciata: { pannello: 998, montanti: 238, coprifili: 99, serratura: 20 },
+      },
+      castagno: {
+        grezza:     { pannello: 678, montanti: 203, coprifili: 80, serratura: 20 },
+        verniciata: { pannello: 922, montanti: 220, coprifili: 91, serratura: 20 },
+      },
+      toulipier: {
+        grezza:     { pannello: 528, montanti: 124, coprifili: 59, serratura: 20 },
+        verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
       },
       pino: {
         grezza:     { pannello: 524, montanti: 115, coprifili: 32, serratura: 20 },
         verniciata: { pannello: 764, montanti: 144, coprifili: 49, serratura: 20 },
       },
-      toulipier: {
-        grezza:     { pannello: 528, montanti: 124, coprifili: 59, serratura: 20 },
+      laccato: {
         verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
       },
     },
@@ -76,16 +102,23 @@ const MODELLI = {
       { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
     ],
     listino: {
-      sbiancato: {
+      rovere: {
         grezza:     { pannello: 448, montanti: 220, coprifili: 87, serratura: 20, grigliato: 185, fermavetro: 31 },
         verniciata: { pannello: 710, montanti: 238, coprifili: 99, serratura: 20, grigliato: 326, fermavetro: 31 },
+      },
+      castagno: {
+        grezza:     { pannello: 414, montanti: 203, coprifili: 80, serratura: 20, grigliato: 170, fermavetro: 31 },
+        verniciata: { pannello: 655, montanti: 220, coprifili: 91, serratura: 20, grigliato: 301, fermavetro: 31 },
+      },
+      toulipier: {
+        grezza:     { pannello: 356, montanti: 124, coprifili: 59, serratura: 20, grigliato: 160, fermavetro: 31 },
+        verniciata: { pannello: 598, montanti: 142, coprifili: 73, serratura: 20, grigliato: 288, fermavetro: 31 },
       },
       pino: {
         grezza:     { pannello: 364, montanti: 115, coprifili: 32, serratura: 20, grigliato: 145, fermavetro: 31 },
         verniciata: { pannello: 601, montanti: 144, coprifili: 49, serratura: 20, grigliato: 272, fermavetro: 31 },
       },
-      toulipier: {
-        grezza:     { pannello: 356, montanti: 124, coprifili: 59, serratura: 20, grigliato: 160, fermavetro: 31 },
+      laccato: {
         verniciata: { pannello: 598, montanti: 142, coprifili: 73, serratura: 20, grigliato: 288, fermavetro: 31 },
       },
     },
@@ -96,7 +129,8 @@ const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
 const state = {
   modello: 'california',
-  essenza: 'sbiancato',
+  essenza: 'rovere',
+  colore: 'bianco',
   finitura: 'verniciata',
   ambiente: 'galleria',
   maniglia: 'ottone',
@@ -206,9 +240,8 @@ const woodMat = new THREE.MeshStandardMaterial({
   normalScale: new THREE.Vector2(0.8, 0.8),
 });
 
-const MATERIAL_TWEAKS = {
-  default: { color: 0xffffff, roughness: 1, normalScale: 0.8, aoMapIntensity: 1, envMapIntensity: 1 },
-};
+const hexLum = (hex) =>
+  (0.2126 * ((hex >> 16) & 255) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255)) / 255;
 
 // materiale della maniglia/cerniere
 const handleMat = new THREE.MeshStandardMaterial();
@@ -227,21 +260,22 @@ function setManiglia(k) {
 // aspetto del materiale = essenza + finitura.
 // grezza: legno crudo — opaco, asciutto, poro accentuato.
 // verniciata: leggera lucentezza e colore pieno.
+// laccato: tinta piena sulla texture universal + lucentezza da laccatura.
 function applyMaterialLook() {
-  const tw = MATERIAL_TWEAKS[state.essenza] || MATERIAL_TWEAKS.default;
-  const raw = state.finitura === 'grezza';
-  const c = new THREE.Color(tw.color);
-  if (raw) c.multiplyScalar(0.88);
-  woodMat.color.copy(c);
-  woodMat.roughness = raw ? 1 : Math.min(tw.roughness, 0.78);
-  woodMat.envMapIntensity = raw ? 0.45 : tw.envMapIntensity * 1.12;
-  const ns = tw.normalScale * (raw ? 1.3 : 1);
+  const lacc = isLaccato();
+  const raw = !lacc && state.finitura === 'grezza';
+  const base = new THREE.Color(lacc ? LACCATI[state.colore].color : 0xffffff);
+  if (raw) base.multiplyScalar(0.88);
+  woodMat.color.copy(base);
+  woodMat.roughness = lacc ? 0.42 : (raw ? 1 : 0.78);
+  woodMat.envMapIntensity = lacc ? 1.2 : (raw ? 0.45 : 1.12);
+  const ns = lacc ? 1.15 : (raw ? 1.04 : 0.8);
   woodMat.normalScale.set(ns, ns);
-  woodMat.aoMapIntensity = tw.aoMapIntensity * (raw ? 1.2 : 1);
+  woodMat.aoMapIntensity = raw ? 1.2 : 1;
 }
 
-function applyEssenza(essenza) {
-  const set = loadSet(essenza);
+function applyEssenza() {
+  const set = loadSet(isLaccato() ? 'universal' : state.essenza);
   woodMat.map = set.map;
   woodMat.normalMap = set.normalMap;
   woodMat.roughnessMap = set.roughnessMap;
@@ -249,8 +283,11 @@ function applyEssenza(essenza) {
   applyMaterialLook();
   woodMat.needsUpdate = true;
 
-  // essenze chiare → sfondo scuro per contrasto
-  viewerEl.classList.toggle('is-dark', !!ESSENZE[essenza].tonoChiaro);
+  // porta chiara → sfondo scuro per contrasto
+  const chiaro = isLaccato()
+    ? hexLum(LACCATI[state.colore].color) > 0.35
+    : ESSENZE[state.essenza].tonoChiaro;
+  viewerEl.classList.toggle('is-dark', chiaro);
 }
 
 /* ============================================================
@@ -376,7 +413,7 @@ function loadModel(key) {
       doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(96);
       doorBtn.hidden = false;
 
-      applyEssenza(state.essenza);
+      applyEssenza();
       applyVisibility();
       doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
       if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
@@ -643,6 +680,40 @@ function computeTotale() {
     .reduce((sum, [comp]) => sum + (prices[comp] || 0), 0);
 }
 
+// menu essenze: legni raw + laccati su base universal
+const swatchesEl = document.getElementById('swatches');
+const laccatiEl = document.getElementById('laccati');
+
+function renderEssenze() {
+  swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
+    <button class="swatch" data-essenza="${k}">
+      <span class="swatch-chip" style="background-image:url('assets/textures/${k}/albedo.jpg')"></span>
+      <span class="swatch-label">${e.label}</span>
+      <span class="swatch-en">${e.en}</span>
+    </button>`).join('');
+  laccatiEl.innerHTML = Object.entries(LACCATI).map(([k, l]) => `
+    <button class="lacc" data-colore="${k}">
+      <span class="lacc-chip" style="background:#${l.color.toString(16).padStart(6, '0')}"></span>
+      <span class="lacc-label">${l.label}</span>
+    </button>`).join('');
+  swatchesEl.querySelectorAll('.swatch').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.essenza = btn.dataset.essenza;
+      applyEssenza();
+      refreshUI();
+    });
+  });
+  laccatiEl.querySelectorAll('.lacc').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.essenza = 'laccato';
+      state.colore = btn.dataset.colore;
+      state.finitura = 'verniciata'; // i laccati sono solo verniciati
+      applyEssenza();
+      refreshUI();
+    });
+  });
+}
+
 // lista componenti generata dal modello attivo
 function renderComponents() {
   const def = MODELLI[state.modello];
@@ -684,14 +755,19 @@ function refreshUI() {
     ? 'Porta completa · <span class="en">Complete door</span>'
     : 'Configurazione parziale · <span class="en">Partial configuration</span>';
   summaryConfigEl.textContent =
-    `${MODELLI[state.modello].label} · ${ESSENZE[state.essenza].label} — ${FINITURA_LABEL[state.finitura]} · ${MANIGLIE[state.maniglia].label}`;
+    `${MODELLI[state.modello].label} · ${essenzaLabel()} — ${FINITURA_LABEL[state.finitura]} · ${MANIGLIE[state.maniglia].label}`;
 
-  pillNoteEl.textContent = '';
+  // i laccati sono disponibili solo verniciati
+  const grezzaBtn = document.querySelector('[data-finitura="grezza"]');
+  grezzaBtn.disabled = isLaccato();
+  pillNoteEl.textContent = isLaccato() ? 'I laccati sono disponibili solo verniciati.' : '';
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
   document.querySelectorAll('.swatch').forEach((b) =>
-    b.classList.toggle('is-active', b.dataset.essenza === state.essenza));
+    b.classList.toggle('is-active', !isLaccato() && b.dataset.essenza === state.essenza));
+  document.querySelectorAll('.lacc').forEach((b) =>
+    b.classList.toggle('is-active', isLaccato() && b.dataset.colore === state.colore));
 }
 
 function setModello(key) {
@@ -715,15 +791,6 @@ function setModello(key) {
 // modello
 document.querySelectorAll('[data-modello]').forEach((btn) => {
   btn.addEventListener('click', () => setModello(btn.dataset.modello));
-});
-
-// essenza
-document.querySelectorAll('.swatch').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    state.essenza = btn.dataset.essenza;
-    applyEssenza(state.essenza);
-    refreshUI();
-  });
 });
 
 // finitura (solo le pill della sezione finitura, non quelle ambiente)
@@ -875,7 +942,7 @@ function buildPDF(cliente, rif) {
   section('CONFIGURAZIONE / CONFIGURATION', y);
   y += 20;
   row('Modello', `${mod.label} — ${mod.sub}`, y);
-  row('Essenza', ESSENZE[state.essenza].label, y + 14);
+  row('Essenza', essenzaLabel(), y + 14);
   row('Finitura', `${FINITURA_LABEL[state.finitura]} / ${state.finitura === 'grezza' ? 'raw' : 'painted'}`, y + 28);
   row('Maniglia', `${MANIGLIE[state.maniglia].label} / ${MANIGLIE[state.maniglia].en}`, y + 42);
   row('Ambiente', `${AMBIENTI_LABEL[state.ambiente]} (visualizzazione)`, y + 56);
@@ -967,6 +1034,7 @@ window.__pdf = { buildPDF }; // hook di verifica
    AVVIO
    ============================================================ */
 
+renderEssenze();
 renderComponents();
 setManiglia(state.maniglia);
 refreshUI();
