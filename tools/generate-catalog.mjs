@@ -3,6 +3,7 @@
 // Uso:  node tools/generate-catalog.mjs
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -198,6 +199,8 @@ for (const glb of glbs.sort()) {
   const key = slug.replace(/-/g, '');
   const outFile = glb.replace(/\s+/g, '_');
   fs.copyFileSync(full, path.join(OUT_ASSETS, outFile));
+  // hash del contenuto nella URL: il browser riscarica solo se il GLB cambia
+  const hash = crypto.createHash('md5').update(fs.readFileSync(full)).digest('hex').slice(0, 8);
 
   const lineaTag = info.linea === 'BASE' ? 'Base' : info.linea;
   modelli[key] = {
@@ -206,7 +209,7 @@ for (const glb of glbs.sort()) {
     linea: lineaTag,
     sub: `Linea ${lineaTag} · ID ${info.id}`,
     descIt, descEn,
-    file: `assets/${outFile}`,
+    file: `assets/${outFile}?v=${hash}`,
     nodi,
     leafNodes: [...cls.leaf, ...cls.glass, ...(cls.lock ? [cls.lock] : [])],
     lockNode: cls.lock,

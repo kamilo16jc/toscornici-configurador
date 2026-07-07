@@ -9,7 +9,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3500",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA10_FLORIDA.glb",
+    "file": "assets/PUERTA10_FLORIDA.glb?v=948ee1c5",
     "nodi": {
       "pannello": [
         "Puerta10_FLORIDA",
@@ -161,7 +161,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3400",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA11_NEBRASKA.glb",
+    "file": "assets/PUERTA11_NEBRASKA.glb?v=62ff0f67",
     "nodi": {
       "pannello": [
         "Puerta11_NEBRASKA",
@@ -313,7 +313,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3300",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA12_INDIANA.glb",
+    "file": "assets/PUERTA12_INDIANA.glb?v=647e0d43",
     "nodi": {
       "pannello": [
         "PUERTA12_INDIANA"
@@ -431,7 +431,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3200",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA13_ARIZONA.glb",
+    "file": "assets/PUERTA13_ARIZONA.glb?v=b16156d4",
     "nodi": {
       "pannello": [
         "PUERTA13_ARIZONA"
@@ -549,7 +549,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 2100",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA14_GENOVA.glb",
+    "file": "assets/PUERTA14_GENOVA.glb?v=07f0676b",
     "nodi": {
       "pannello": [
         "Puerta14_GENOVA",
@@ -701,7 +701,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 2000",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/PUERTA15_CARRARA.glb",
+    "file": "assets/PUERTA15_CARRARA.glb?v=bf548286",
     "nodi": {
       "pannello": [
         "Puerta15_CARRARA",
@@ -821,7 +821,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 2200",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA16_CORTINA.glb",
+    "file": "assets/PUERTA16_CORTINA.glb?v=c1755d79",
     "nodi": {
       "pannello": [
         "Puerta16_CORTINA",
@@ -973,7 +973,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1800",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA17_IMPERIA.glb",
+    "file": "assets/PUERTA17_IMPERIA.glb?v=1fc807c9",
     "nodi": {
       "pannello": [
         "Puerta17_IMPERIA",
@@ -1125,7 +1125,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1200",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/PUERTA18_CATANIA.glb",
+    "file": "assets/PUERTA18_CATANIA.glb?v=cb1e5490",
     "nodi": {
       "pannello": [
         "Puerta18_CATANIA",
@@ -1245,7 +1245,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1100",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA19_BARLETTA.glb",
+    "file": "assets/PUERTA19_BARLETTA.glb?v=8fac4d0d",
     "nodi": {
       "pannello": [
         "Puerta19_BARLETTA",
@@ -1397,7 +1397,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3600",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA1_CALIFORNIA.glb",
+    "file": "assets/PUERTA1_CALIFORNIA.glb?v=2299a070",
     "nodi": {
       "pannello": [
         "Puerta1_CALIFORNIA",
@@ -1549,7 +1549,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1300",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA20_TAORMINA.glb",
+    "file": "assets/PUERTA20_TAORMINA.glb?v=558d3adf",
     "nodi": {
       "pannello": [
         "Puerta20_TAORMINA",
@@ -1700,7 +1700,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1400",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA21_PAUSANIA.glb",
+    "file": "assets/PUERTA21_PAUSANIA.glb?v=83c0859b",
     "nodi": {
       "pannello": [
         "Puerta20_TAORMINA",
@@ -1851,7 +1851,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1900",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA22_SAVONA.glb",
+    "file": "assets/PUERTA22_SAVONA.glb?v=7cb06cdc",
     "nodi": {
       "pannello": [
         "Puerta22_SANOVA",
@@ -2003,7 +2003,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 900",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA23_PIACENZA.glb",
+    "file": "assets/PUERTA23_PIACENZA.glb?v=d9dc93b8",
     "nodi": {
       "pannello": [
         "Puerta23_PIACENZA"
@@ -2121,7 +2121,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1000",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA24_PIENZA.glb",
+    "file": "assets/PUERTA24_PIENZA.glb?v=4534f972",
     "nodi": {
       "pannello": [
         "Puerta24_PIENZA"
@@ -2239,7 +2239,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 100",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA25_SIENA.glb",
+    "file": "assets/PUERTA25_SIENA.glb?v=541cf249",
     "nodi": {
       "pannello": [
         "Puerta25_SIENA"
@@ -2357,7 +2357,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1500",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA27_VENEZIA.glb",
+    "file": "assets/PUERTA27_VENEZIA.glb?v=148e17fc",
     "nodi": {
       "pannello": [
         "Puerta27_VENEZIA",
@@ -2509,7 +2509,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3700",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA2_GEORGIA.glb",
+    "file": "assets/PUERTA2_GEORGIA.glb?v=b88e9336",
     "nodi": {
       "pannello": [
         "Puerta2_GEORGIA",
@@ -2661,7 +2661,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 750",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA30_PISA.glb",
+    "file": "assets/PUERTA30_PISA.glb?v=5422deef",
     "nodi": {
       "pannello": [
         "Puerta30_PISA"
@@ -2779,7 +2779,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3800",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/PUERTA3_PHILADELPHIA.glb",
+    "file": "assets/PUERTA3_PHILADELPHIA.glb?v=e7fa9aba",
     "nodi": {
       "pannello": [
         "Puerta3_PHILADEPHIA",
@@ -2901,7 +2901,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3900",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA4_NEW_JERSEY.glb",
+    "file": "assets/PUERTA4_NEW_JERSEY.glb?v=a5eaefa3",
     "nodi": {
       "pannello": [
         "Puerta4_NEW JERSEY",
@@ -3053,7 +3053,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 4000",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/PUERTA5_MONTANA.glb",
+    "file": "assets/PUERTA5_MONTANA.glb?v=0e41195a",
     "nodi": {
       "pannello": [
         "Puerta5_MONTANA",
@@ -3173,7 +3173,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3000",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA6_AMERICA.glb",
+    "file": "assets/PUERTA6_AMERICA.glb?v=34a9a6b8",
     "nodi": {
       "pannello": [
         "Puerta6_AMERICA"
@@ -3291,7 +3291,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 3100",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA7_VIRGINIA.glb",
+    "file": "assets/PUERTA7_VIRGINIA.glb?v=34f3475c",
     "nodi": {
       "pannello": [
         "Puerta7_VIRGINIA"
@@ -3409,7 +3409,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 4200",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA8_NEW_YORK.glb",
+    "file": "assets/PUERTA8_NEW_YORK.glb?v=3ab517ed",
     "nodi": {
       "pannello": [
         "Puerta8_New York",
@@ -3561,7 +3561,7 @@ export const MODELLI = {
     "sub": "Linea 100 · ID 4100",
     "descIt": "Porta vetrata con grigliato all’inglese",
     "descEn": "Glazed door with English grille",
-    "file": "assets/PUERTA9_LUISIANA.glb",
+    "file": "assets/PUERTA9_LUISIANA.glb?v=ab9ccf14",
     "nodi": {
       "pannello": [
         "Puerta9_LUISIANA",
