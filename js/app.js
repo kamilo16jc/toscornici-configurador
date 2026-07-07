@@ -10,12 +10,13 @@ import { MODELLI } from './catalogo.js';
    toulipier → Toulipier.
    ============================================================ */
 
-// repeat opzionale per essenza — più alto = vena più fine (default: REPEAT)
+// Tutte le essenze usano la texture 'universal' (venatura sottile +
+// rilievo) tinta con il colore medio misurato dagli scan raw originali.
 const ESSENZE = {
-  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false },
-  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false },
-  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true },
-  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true },
+  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xa86948 },
+  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xa2805a },
+  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  color: 0xcdaf7b },
+  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  color: 0xe8a05c },
 };
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
@@ -101,19 +102,21 @@ renderer.domElement.addEventListener('pointerdown', () => {
   controls.autoRotate = false;
 }, { once: true });
 
-// luce chiave + ombra morbida
-const key = new THREE.DirectionalLight(0xffffff, 1.5);
-key.position.set(2.5, 4, 3);
+// luce chiave radente dall'alto-sinistra: fa emergere bugne e modanature
+// con ombre proprie; il riempimento resta basso per non appiattire.
+const key = new THREE.DirectionalLight(0xffffff, 2.1);
+key.position.set(-3.2, 3.6, 1.6);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.bias = -0.0004;
-key.shadow.radius = 6;
+key.shadow.mapSize.set(4096, 4096);
+key.shadow.bias = -0.0003;
+key.shadow.normalBias = 0.008;
+key.shadow.radius = 3;
 key.shadow.camera.left = key.shadow.camera.bottom = -4.5;
 key.shadow.camera.right = key.shadow.camera.top = 4.5;
 scene.add(key);
 
-const fill = new THREE.DirectionalLight(0xffffff, 0.45);
-fill.position.set(-3, 2, -2);
+const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+fill.position.set(3, 2, 2.5);
 scene.add(fill);
 
 /* ============================================================
@@ -171,24 +174,25 @@ function setManiglia(k) {
 }
 
 // aspetto del materiale = essenza + finitura.
-// grezza: legno crudo — opaco, asciutto, poro accentuato.
-// verniciata: leggera lucentezza e colore pieno.
-// laccato: tinta piena sulla texture universal + lucentezza da laccatura.
+// grezza: legno crudo — opaco, asciutto, rilievo accentuato.
+// verniciata: satinato con colore pieno.
+// laccato: tinta piena + lucentezza da laccatura.
+// L'ambiente riflesso resta basso per non lavare i rilievi 3D.
 function applyMaterialLook() {
   const lacc = isLaccato();
   const raw = !lacc && state.finitura === 'grezza';
-  const base = new THREE.Color(lacc ? LACCATI[state.colore].color : 0xffffff);
+  const base = new THREE.Color(lacc ? LACCATI[state.colore].color : ESSENZE[state.essenza].color);
   if (raw) base.multiplyScalar(0.88);
   woodMat.color.copy(base);
-  woodMat.roughness = lacc ? 0.42 : (raw ? 1 : 0.78);
-  woodMat.envMapIntensity = lacc ? 1.2 : (raw ? 0.45 : 1.12);
-  const ns = lacc ? 1.15 : (raw ? 1.04 : 0.8);
+  woodMat.roughness = lacc ? 0.42 : (raw ? 1 : 0.62);
+  woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.3 : 0.55);
+  const ns = lacc ? 1.15 : (raw ? 1.25 : 1.05);
   woodMat.normalScale.set(ns, ns);
-  woodMat.aoMapIntensity = raw ? 1.2 : 1;
+  woodMat.aoMapIntensity = raw ? 1.5 : 1.35;
 }
 
 function applyEssenza() {
-  const set = loadSet(isLaccato() ? 'universal' : state.essenza);
+  const set = loadSet('universal');
   woodMat.map = set.map;
   woodMat.normalMap = set.normalMap;
   woodMat.roughnessMap = set.roughnessMap;
@@ -600,7 +604,7 @@ const laccatiEl = document.getElementById('laccati');
 function renderEssenze() {
   swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
     <button class="swatch" data-essenza="${k}">
-      <span class="swatch-chip" style="background-image:url('assets/textures/${k}/albedo.jpg')"></span>
+      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.jpg');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
