@@ -211,7 +211,8 @@ scene.add(fill);
 
 const texLoader = new THREE.TextureLoader();
 const texCache = {};
-const REPEAT = 1;
+// ripetizione della texture: vena in scala con la porta reale (~2 m)
+const REPEAT = 2.5;
 
 function loadSet(essenza) {
   if (texCache[essenza]) return texCache[essenza];
