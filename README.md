@@ -15,7 +15,8 @@ Luego abrir <http://localhost:8137>. Requiere internet (Three.js y las fuentes c
 
 ## Qué hace
 
-- **Modello:** selector de puerta — California 100 (bugne clásicas, 4 componentes) y Nebraska 400 (vetrata 400-5V con grigliato all'inglese, 6 componentes). Cada modelo tiene su GLB, sus nodos 3D, su lista de componentes y su columna de precios; los ambientes se reconstruyen con las medidas de la puerta activa. El grigliato y las cornici fermavetro del Nebraska son solo ítems de precio (están integrados en la geometría del panel del GLB).
+- **Modello:** 27 puertas en un menú desplegable agrupado por línea (13 de Linea 100, 14 de Linea Base). Cada modelo tiene su GLB, sus nodos 3D, su lista de componentes (4 o 6 según el modelo) y sus precios propios; los ambientes y el pivote de apertura se reconstruyen con las medidas de la puerta activa.
+- **Catálogo generado automáticamente:** `js/catalogo.js` NO se edita a mano — lo produce `node tools/generate-catalog.mjs`, que cruza los GLB de `Assets doors\` (escanea los nombres de nodos reales de cada archivo) con las fichas .md de `manual-configurador\modelos\` (parsea las tablas de precios grezza/verniciata y valida que las filas sumen el total "PUERTA COMPLETA"). Para agregar una puerta nueva: soltar el GLB + su .md y volver a correr el generador.
 
 - **Essenza:** 3 acabados con texturas PBR (albedo + normal + roughness + AO) — Pino Sbiancato, Pino Spazzolato, Toulipier. El cambio de textura es instantáneo sobre el modelo. El *Pino Sbiancato* es un albedo derivado del pino (desaturado + aclarado hacia blanco por código), compartiendo sus mapas de relieve; usa la columna de precios del Rovere.
 - **Finitura:** Grezza / Verniciata, con los precios del listino 2026.

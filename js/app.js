@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { MODELLI } from './catalogo.js';
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -34,97 +35,6 @@ function essenzaLabel() {
     ? `Laccato ${LACCATI[state.colore].label}`
     : ESSENZE[state.essenza].label;
 }
-
-const MODELLI = {
-  california: {
-    label: 'California 100',
-    sub: 'Collezione America',
-    descIt: 'Porta interna classica con bugne',
-    descEn: 'Classic interior panelled door',
-    file: 'assets/PUERTA1_CALIFORNIA.glb',
-    nodi: {
-      pannello: ['Puerta1', 'Puerta1_cristales'],
-      montanti: ['Puerta1_marco'],
-      serratura: ['Puerta1_cerradura'],
-      coprifili: [],
-    },
-    leafNodes: ['Puerta1', 'Puerta1_cristales', 'Puerta1_cerradura'],
-    lockNode: 'Puerta1_cerradura',
-    componenti: [
-      { id: 'pannello', it: 'Pannello porta', en: 'Door panel', desc: 'Montanti sp. mm 45 + bugne sp. mm 22' },
-      { id: 'montanti', it: 'Montanti per telaio', en: 'Jambs for frame', desc: 'Spessore mm 44' },
-      { id: 'coprifili', it: 'Coprifili', en: 'Architraves', desc: 'Set completo per lato' },
-      { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
-    ],
-    listino: {
-      rovere: {
-        grezza:     { pannello: 735, montanti: 220, coprifili: 87, serratura: 20 },
-        verniciata: { pannello: 998, montanti: 238, coprifili: 99, serratura: 20 },
-      },
-      castagno: {
-        grezza:     { pannello: 678, montanti: 203, coprifili: 80, serratura: 20 },
-        verniciata: { pannello: 922, montanti: 220, coprifili: 91, serratura: 20 },
-      },
-      toulipier: {
-        grezza:     { pannello: 528, montanti: 124, coprifili: 59, serratura: 20 },
-        verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
-      },
-      pino: {
-        grezza:     { pannello: 524, montanti: 115, coprifili: 32, serratura: 20 },
-        verniciata: { pannello: 764, montanti: 144, coprifili: 49, serratura: 20 },
-      },
-      laccato: {
-        verniciata: { pannello: 769, montanti: 142, coprifili: 73, serratura: 20 },
-      },
-    },
-  },
-  nebraska: {
-    label: 'Nebraska 400',
-    sub: 'Serie 400-5V',
-    descIt: 'Porta vetrata con grigliato all’inglese',
-    descEn: 'Glazed door with English grille',
-    file: 'assets/PUERTA11_NEBRASKA.glb',
-    nodi: {
-      pannello: ['Puerta11_NEBRASKA', 'CRISTAL_GRANDE'],
-      montanti: ['Puerta11_Marco'],
-      serratura: ['Puerta11_Cerradura'],
-      coprifili: [],
-      grigliato: [],   // integrato nella geometria del pannello
-      fermavetro: [],
-    },
-    leafNodes: ['Puerta11_NEBRASKA', 'CRISTAL_GRANDE', 'Puerta11_Cerradura'],
-    lockNode: 'Puerta11_Cerradura',
-    componenti: [
-      { id: 'pannello', it: 'Pannello porta', en: 'Door panel', desc: 'Montanti sp. mm 45 + vano vetro intero' },
-      { id: 'montanti', it: 'Montanti per telaio', en: 'Jambs for frame', desc: 'Spessore mm 44' },
-      { id: 'coprifili', it: 'Coprifili', en: 'Architraves', desc: 'Set completo per lato' },
-      { id: 'grigliato', it: 'Grigliato all’inglese', en: 'English grille', desc: 'Suddivisione del vetro' },
-      { id: 'fermavetro', it: 'Montaggio cornici fermavetro', en: 'Mounting beadings', desc: 'Posa in opera' },
-      { id: 'serratura', it: 'Anube e serratura', en: 'Hinge and lock', desc: 'Finitura configurabile' },
-    ],
-    listino: {
-      rovere: {
-        grezza:     { pannello: 448, montanti: 220, coprifili: 87, serratura: 20, grigliato: 185, fermavetro: 31 },
-        verniciata: { pannello: 710, montanti: 238, coprifili: 99, serratura: 20, grigliato: 326, fermavetro: 31 },
-      },
-      castagno: {
-        grezza:     { pannello: 414, montanti: 203, coprifili: 80, serratura: 20, grigliato: 170, fermavetro: 31 },
-        verniciata: { pannello: 655, montanti: 220, coprifili: 91, serratura: 20, grigliato: 301, fermavetro: 31 },
-      },
-      toulipier: {
-        grezza:     { pannello: 356, montanti: 124, coprifili: 59, serratura: 20, grigliato: 160, fermavetro: 31 },
-        verniciata: { pannello: 598, montanti: 142, coprifili: 73, serratura: 20, grigliato: 288, fermavetro: 31 },
-      },
-      pino: {
-        grezza:     { pannello: 364, montanti: 115, coprifili: 32, serratura: 20, grigliato: 145, fermavetro: 31 },
-        verniciata: { pannello: 601, montanti: 144, coprifili: 49, serratura: 20, grigliato: 272, fermavetro: 31 },
-      },
-      laccato: {
-        verniciata: { pannello: 598, montanti: 142, coprifili: 73, serratura: 20, grigliato: 288, fermavetro: 31 },
-      },
-    },
-  },
-};
 
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
@@ -779,22 +689,33 @@ function setModello(key) {
   state.comps = defaultComps(key);
   const def = MODELLI[key];
   // intestazioni pannello e viewer
-  const [nome, ...resto] = def.label.split(' ');
-  captionModelEl.innerHTML = `${nome} <span>${resto.join(' ')}</span>`;
+  captionModelEl.innerHTML = def.linea === 'Base'
+    ? def.label
+    : `${def.label} <span>${def.linea}</span>`;
   captionLineEl.textContent = `${def.sub} · Porte in legno massello`;
-  panelTitleEl.textContent = def.label;
+  panelTitleEl.textContent = def.linea === 'Base' ? def.label : `${def.label} ${def.linea}`;
   panelSubEl.innerHTML = `${def.descIt} — <span class="en">${def.descEn}</span>`;
-  document.querySelectorAll('[data-modello]').forEach((b) =>
-    b.classList.toggle('is-active', b.dataset.modello === key));
+  modelloSelect.value = key;
   renderComponents();
   refreshUI();
   loadModel(key);
 }
 
-// modello
-document.querySelectorAll('[data-modello]').forEach((btn) => {
-  btn.addEventListener('click', () => setModello(btn.dataset.modello));
-});
+// modello: menu a tendina raggruppato per linea
+const modelloSelect = document.getElementById('modelloSelect');
+
+function renderModelli() {
+  const groups = { Base: [], 100: [] };
+  for (const [k, m] of Object.entries(MODELLI)) (groups[m.linea] || (groups[m.linea] = [])).push([k, m]);
+  const byId = (a, b) => a[1].id - b[1].id;
+  const opt = ([k, m]) => `<option value="${k}">${m.label} · ID ${m.id}</option>`;
+  modelloSelect.innerHTML = Object.entries(groups)
+    .filter(([, arr]) => arr.length)
+    .map(([linea, arr]) => `<optgroup label="Linea ${linea}">${arr.sort(byId).map(opt).join('')}</optgroup>`)
+    .join('');
+  modelloSelect.value = state.modello;
+  modelloSelect.addEventListener('change', () => setModello(modelloSelect.value));
+}
 
 // finitura (solo le pill della sezione finitura, non quelle ambiente)
 document.querySelectorAll('#pills .pill').forEach((btn) => {
@@ -1037,6 +958,7 @@ window.__pdf = { buildPDF }; // hook di verifica
    AVVIO
    ============================================================ */
 
+renderModelli();
 renderEssenze();
 renderComponents();
 setManiglia(state.maniglia);

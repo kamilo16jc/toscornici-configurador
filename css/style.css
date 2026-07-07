@@ -418,45 +418,37 @@ body {
   margin-top: 1px;
 }
 
-/* modelli */
-.models {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.model-card {
+/* modelli — menu a tendina */
+.model-select {
+  width: 100%;
   appearance: none;
+  -webkit-appearance: none;
   border: 1px solid var(--hairline);
-  background: #fff;
-  padding: 14px 14px 12px;
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--sans);
-  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-}
-
-.model-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(43, 33, 26, 0.08); }
-
-.model-card.is-active {
-  border-color: var(--brass);
-  box-shadow: 0 0 0 1px var(--brass);
-}
-
-.model-name {
-  display: block;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23a8843c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 14px center;
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--espresso);
+  padding: 12px 40px 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.25s;
 }
 
-.model-sub {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 300;
+.model-select:hover,
+.model-select:focus { border-color: var(--brass); outline: none; }
+
+.model-select optgroup {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--taupe);
-  margin-top: 3px;
+}
+
+.model-select option {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--espresso);
 }
 
 /* pills */
