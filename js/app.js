@@ -9,12 +9,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
    toulipier → Toulipier.
    ============================================================ */
 
-// repeat: ripetizione della texture per essenza — più alto = vena più fine
+// repeat opzionale per essenza — più alto = vena più fine (default: REPEAT)
 const ESSENZE = {
-  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, repeat: 4 },
-  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, repeat: 2.5 },
-  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  repeat: 2.5 },
-  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  repeat: 2.5 },
+  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false },
+  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false },
+  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true },
+  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true },
 };
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
@@ -213,7 +213,7 @@ scene.add(fill);
 const texLoader = new THREE.TextureLoader();
 const texCache = {};
 // ripetizione di default: vena in scala con la porta reale (~2 m)
-const REPEAT = 2.5;
+const REPEAT = 6;
 
 function loadSet(essenza) {
   if (texCache[essenza]) return texCache[essenza];
