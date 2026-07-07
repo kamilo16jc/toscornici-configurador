@@ -9,11 +9,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
    toulipier → Toulipier.
    ============================================================ */
 
+// repeat: ripetizione della texture per essenza — più alto = vena più fine
 const ESSENZE = {
-  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false },
-  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false },
-  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true },
-  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true },
+  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, repeat: 4 },
+  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, repeat: 2.5 },
+  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  repeat: 2.5 },
+  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  repeat: 2.5 },
 };
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
@@ -211,17 +212,18 @@ scene.add(fill);
 
 const texLoader = new THREE.TextureLoader();
 const texCache = {};
-// ripetizione della texture: vena in scala con la porta reale (~2 m)
+// ripetizione di default: vena in scala con la porta reale (~2 m)
 const REPEAT = 2.5;
 
 function loadSet(essenza) {
   if (texCache[essenza]) return texCache[essenza];
   const base = `assets/textures/${essenza}/`;
+  const rep = (ESSENZE[essenza] && ESSENZE[essenza].repeat) || REPEAT;
   const load = (file, srgb) => {
     const t = texLoader.load(base + file);
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(REPEAT, REPEAT);
+    t.repeat.set(rep, rep);
     t.anisotropy = renderer.capabilities.getMaxAnisotropy();
     return t;
   };
