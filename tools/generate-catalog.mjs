@@ -134,11 +134,16 @@ function buildComponents(md, warnings) {
   return { componenti, listino };
 }
 
+// three.js (GLTFLoader → PropertyBinding.sanitizeNodeName) rinomina i nodi
+// al caricamento: spazi → '_', e rimuove [ ] . : /
+// Il catalogo deve usare i nomi GIÀ sanitizzati o i nodi non si trovano.
+const sanitizeNodeName = (name) => name.replace(/\s/g, '_').replace(/[\[\].:\/]/g, '');
+
 function parseGlbNodes(file) {
   const buf = fs.readFileSync(file);
   const jsonLen = buf.readUInt32LE(12);
   const json = JSON.parse(buf.toString('utf8', 20, 20 + jsonLen));
-  return (json.nodes || []).map((n) => n.name).filter(Boolean);
+  return (json.nodes || []).map((n) => n.name).filter(Boolean).map(sanitizeNodeName);
 }
 
 function classifyNodes(names, warnings, tag) {

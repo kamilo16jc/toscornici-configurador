@@ -3018,7 +3018,7 @@ export const MODELLI = {
     "file": "assets/PUERTA33_ENNA.glb?v=3772027a",
     "nodi": {
       "pannello": [
-        "Puerta33_ENNA.001"
+        "Puerta33_ENNA001"
       ],
       "montanti": [
         "Puerta33_Marco"
@@ -3029,7 +3029,7 @@ export const MODELLI = {
       "coprifili": []
     },
     "leafNodes": [
-      "Puerta33_ENNA.001",
+      "Puerta33_ENNA001",
       "Puerta33_Cerradura"
     ],
     "lockNode": "Puerta33_Cerradura",
@@ -4802,7 +4802,7 @@ export const MODELLI = {
     "file": "assets/PUERTA47_NEW_ENGLAND.glb?v=d3bdd3d7",
     "nodi": {
       "pannello": [
-        "Puerta47_NEW ENGLAND"
+        "Puerta47_NEW_ENGLAND"
       ],
       "montanti": [
         "Puerta47_Marco"
@@ -4813,7 +4813,7 @@ export const MODELLI = {
       "coprifili": []
     },
     "leafNodes": [
-      "Puerta47_NEW ENGLAND",
+      "Puerta47_NEW_ENGLAND",
       "Puerta47_Cerradura"
     ],
     "lockNode": "Puerta47_Cerradura",
@@ -5153,7 +5153,7 @@ export const MODELLI = {
     "file": "assets/PUERTA4_NEW_JERSEY.glb?v=a5eaefa3",
     "nodi": {
       "pannello": [
-        "Puerta4_NEW JERSEY",
+        "Puerta4_NEW_JERSEY",
         "CRISTAL_GRANDE"
       ],
       "montanti": [
@@ -5167,7 +5167,7 @@ export const MODELLI = {
       "fermavetro": []
     },
     "leafNodes": [
-      "Puerta4_NEW JERSEY",
+      "Puerta4_NEW_JERSEY",
       "CRISTAL_GRANDE",
       "Puerta4_Cerradura"
     ],
@@ -5457,7 +5457,7 @@ export const MODELLI = {
     "file": "assets/PUERTA52_TIME_SQUARE.glb?v=e990b7a4",
     "nodi": {
       "pannello": [
-        "Puerta52_TIME SQUARE",
+        "Puerta52_TIME_SQUARE",
         "CRISTAL_GRANDE"
       ],
       "montanti": [
@@ -5471,7 +5471,7 @@ export const MODELLI = {
       "fermavetro": []
     },
     "leafNodes": [
-      "Puerta52_TIME SQUARE",
+      "Puerta52_TIME_SQUARE",
       "CRISTAL_GRANDE",
       "Puerta52_Cerradura"
     ],
@@ -5609,7 +5609,7 @@ export const MODELLI = {
     "file": "assets/PUERTA53_CAMBRIDGE.glb?v=d0eccca8",
     "nodi": {
       "pannello": [
-        "Puerta53_CAMBRIDGE.002",
+        "Puerta53_CAMBRIDGE002",
         "CRISTAL_GRANDE"
       ],
       "montanti": [
@@ -5623,7 +5623,7 @@ export const MODELLI = {
       "fermavetro": []
     },
     "leafNodes": [
-      "Puerta53_CAMBRIDGE.002",
+      "Puerta53_CAMBRIDGE002",
       "CRISTAL_GRANDE",
       "Puerta53_Cerradura"
     ],
@@ -6412,7 +6412,7 @@ export const MODELLI = {
     "file": "assets/PUERTA59_OLD_CITY.glb?v=c9d323db",
     "nodi": {
       "pannello": [
-        "Puerta59_OLD CITY",
+        "Puerta59_OLD_CITY",
         "CRISTAL_GRANDE"
       ],
       "montanti": [
@@ -6426,7 +6426,7 @@ export const MODELLI = {
       "fermavetro": []
     },
     "leafNodes": [
-      "Puerta59_OLD CITY",
+      "Puerta59_OLD_CITY",
       "CRISTAL_GRANDE",
       "Puerta59_Cerradura"
     ],
@@ -7072,7 +7072,7 @@ export const MODELLI = {
     "file": "assets/PUERTA8_NEW_YORK.glb?v=3ab517ed",
     "nodi": {
       "pannello": [
-        "Puerta8_New York",
+        "Puerta8_New_York",
         "CRISTAL_GRANDE"
       ],
       "montanti": [
@@ -7086,7 +7086,7 @@ export const MODELLI = {
       "fermavetro": []
     },
     "leafNodes": [
-      "Puerta8_New York",
+      "Puerta8_New_York",
       "CRISTAL_GRANDE",
       "Puerta8_Cerradura"
     ],
