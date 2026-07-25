@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
+window.__ver = 'width-test-1';
+
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
    Colonne listino: sbiancato → Rovere, pino → Pino,
@@ -264,6 +266,12 @@ function loadModel(key) {
       const rawBox = new THREE.Box3().setFromObject(model);
       const rawH = rawBox.getSize(new THREE.Vector3()).y;
       if (rawH > 100) model.scale.setScalar(1 / 1000);
+
+      // TEST: allargamento per modello (fattore sull'asse X).
+      // Tutto il resto (muro, perno, inquadratura) si adatta da solo
+      // perché le misure si prendono dopo questa scala.
+      const WIDTH_TEST = { virginia: 1.2 };
+      if (WIDTH_TEST[key]) model.scale.x *= WIDTH_TEST[key];
 
       model.traverse((o) => {
         if (o.isMesh) {
