@@ -270,7 +270,7 @@ function loadModel(key) {
       // TEST: allargamento per modello (fattore sull'asse X).
       // Tutto il resto (muro, perno, inquadratura) si adatta da solo
       // perché le misure si prendono dopo questa scala.
-      const WIDTH_TEST = { virginia: 1.2 };
+      const WIDTH_TEST = { virginia: 1.1 };
       if (WIDTH_TEST[key]) model.scale.x *= WIDTH_TEST[key];
 
       model.traverse((o) => {
