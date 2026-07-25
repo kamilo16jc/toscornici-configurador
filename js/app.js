@@ -88,7 +88,8 @@ const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-const camera = new THREE.PerspectiveCamera(38, viewerEl.clientWidth / viewerEl.clientHeight, 0.05, 60);
+// FOV contenuto (30°): meno distorsione prospettica con la porta aperta
+const camera = new THREE.PerspectiveCamera(30, viewerEl.clientWidth / viewerEl.clientHeight, 0.05, 60);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -295,7 +296,7 @@ function loadModel(key) {
       model.position.sub(center);
       scene.add(model);
 
-      const dist = size.y * 1.55;
+      const dist = size.y * 2.0; // compensa il FOV più stretto
       camera.position.set(dist * 0.65, size.y * 0.12, dist);
       controls.target.set(0, 0, 0);
       controls.minDistance = dist * 0.5;
@@ -335,7 +336,8 @@ function loadModel(key) {
       );
       scene.add(doorPivot);
       leafParts.forEach((p) => doorPivot.attach(p));
-      doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(96);
+      // 82°: ben aperta ma senza che il bordo libero "incomba" sulla camera
+      doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(82);
       doorBtn.hidden = false;
 
       applyEssenza();
