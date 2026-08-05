@@ -334,8 +334,13 @@ body {
 
 .laccati {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+}
+
+/* chip "legno a vista": nessun colore, si vede la venatura */
+.lacc-chip--none {
+  background: linear-gradient(135deg, #d8c4a4 45%, #b08a5e);
 }
 
 .lacc {

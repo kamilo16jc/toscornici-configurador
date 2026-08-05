@@ -32,13 +32,15 @@ const LACCATI = {
   notte:   { label: 'Blu Notte',      color: 0x39465a, extra: RAL_EXTRA },
 };
 
-const isLaccato = () => state.essenza === 'laccato';
+// Il colore laccato è un ACABADO sopra l'essenza scelta, non un'essenza:
+// qualsiasi legno può essere laccato (es. Rovere + Blu Notte). Il prezzo è
+// la colonna verniciata dell'essenza + l'aumento RAL (Bianco Tosco compreso).
+const isLaccato = () => state.colore !== 'nessuno';
 const laccatoExtra = () => (isLaccato() ? LACCATI[state.colore].extra : 0);
 
 function essenzaLabel() {
-  return isLaccato()
-    ? `Laccato ${LACCATI[state.colore].label}`
-    : ESSENZE[state.essenza].label;
+  const legno = ESSENZE[state.essenza].label;
+  return isLaccato() ? `${legno} · Laccato ${LACCATI[state.colore].label}` : legno;
 }
 
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
@@ -46,7 +48,7 @@ const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 const state = {
   modello: 'california',
   essenza: 'rovere',
-  colore: 'bianco',
+  colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
   finitura: 'verniciata',
   ambiente: 'galleria',
   maniglia: 'ottone',
@@ -637,7 +639,12 @@ function renderEssenze() {
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
-  laccatiEl.innerHTML = Object.entries(LACCATI).map(([k, l]) => `
+  laccatiEl.innerHTML = `
+    <button class="lacc" data-colore="nessuno">
+      <span class="lacc-chip lacc-chip--none"></span>
+      <span class="lacc-label">Legno a vista</span>
+      <span class="lacc-extra">naturale</span>
+    </button>` + Object.entries(LACCATI).map(([k, l]) => `
     <button class="lacc" data-colore="${k}">
       <span class="lacc-chip" style="background:#${l.color.toString(16).padStart(6, '0')}"></span>
       <span class="lacc-label">${l.label}</span>
@@ -645,16 +652,15 @@ function renderEssenze() {
     </button>`).join('');
   swatchesEl.querySelectorAll('.swatch').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.essenza = btn.dataset.essenza;
+      state.essenza = btn.dataset.essenza; // il colore laccato resta com'è
       applyEssenza();
       refreshUI();
     });
   });
   laccatiEl.querySelectorAll('.lacc').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.essenza = 'laccato';
       state.colore = btn.dataset.colore;
-      state.finitura = 'verniciata'; // i laccati sono solo verniciati
+      if (isLaccato()) state.finitura = 'verniciata'; // la laccatura è una verniciatura
       applyEssenza();
       refreshUI();
     });
@@ -709,15 +715,15 @@ function refreshUI() {
   grezzaBtn.disabled = isLaccato();
   pillNoteEl.textContent = !isLaccato() ? ''
     : laccatoExtra()
-      ? `I laccati sono disponibili solo verniciati. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50).`
-      : 'I laccati sono disponibili solo verniciati. Bianco Tosco: compreso nel prezzo.';
+      ? `La laccatura è una verniciatura (solo verniciata). Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50).`
+      : 'La laccatura è una verniciatura (solo verniciata). Bianco Tosco: compreso nel prezzo.';
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
   document.querySelectorAll('.swatch').forEach((b) =>
-    b.classList.toggle('is-active', !isLaccato() && b.dataset.essenza === state.essenza));
+    b.classList.toggle('is-active', b.dataset.essenza === state.essenza));
   document.querySelectorAll('.lacc').forEach((b) =>
-    b.classList.toggle('is-active', isLaccato() && b.dataset.colore === state.colore));
+    b.classList.toggle('is-active', b.dataset.colore === state.colore));
 }
 
 function setModello(key) {
