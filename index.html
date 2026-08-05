@@ -134,12 +134,32 @@
       <select class="model-select" id="aperturaSelect" aria-label="Apertura"></select>
       <select class="model-select" id="formaSelect" aria-label="Forma"></select>
       <select class="model-select" id="sopraluceSelect" aria-label="Sopraluce"></select>
+      <div class="pills" id="manoPills">
+        <button class="pill is-active" data-mano="dx">Mano DX <span class="en">spinge a destra</span></button>
+        <button class="pill" data-mano="sx">Mano SX <span class="en">spinge a sinistra</span></button>
+      </div>
       <p class="pill-note" id="aperturaNote"></p>
+    </section>
+
+    <!-- Capitello -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">09</span> Capitello <span class="en">/ Pediment</span></h2>
+      <select class="model-select" id="capitelloSelect" aria-label="Capitello"></select>
+      <div class="pills" id="capLatiPills">
+        <button class="pill is-active" data-lati="1">1 lato</button>
+        <button class="pill" data-lati="2">2 lati <span class="en">×2</span></button>
+      </div>
+      <div class="pills" id="capComplPills">
+        <button class="pill" data-compl="fin">Finali <span class="en">+€20</span></button>
+        <button class="pill" data-compl="dia">Diamanti <span class="en">+€50</span></button>
+        <button class="pill" data-compl="zoc">Zoccoli <span class="en">+€80</span></button>
+      </div>
+      <p class="pill-note" id="capitelloNote">Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato. Solo fino a luce 900×2100.</p>
     </section>
 
     <!-- Ferramenta -->
     <section class="section">
-      <h2 class="section-title"><span class="num">09</span> Ferramenta <span class="en">/ Hardware extras</span></h2>
+      <h2 class="section-title"><span class="num">10</span> Ferramenta <span class="en">/ Hardware extras</span></h2>
       <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
       <div class="pills" id="cernierePills">
         <button class="pill is-active" data-cerniere="anuba">Anuba <span class="en">incluse</span></button>
@@ -150,7 +170,7 @@
 
     <!-- Maniglia -->
     <section class="section">
-      <h2 class="section-title"><span class="num">10</span> Finitura maniglia <span class="en">/ Hardware finish</span></h2>
+      <h2 class="section-title"><span class="num">11</span> Finitura maniglia <span class="en">/ Hardware finish</span></h2>
       <div class="metals" id="maniglie">
         <button class="metal is-active" data-maniglia="ottone">
           <span class="metal-chip chip-ottone"></span>
@@ -169,7 +189,7 @@
 
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">11</span> Ambiente <span class="en">/ Setting</span></h2>
+      <h2 class="section-title"><span class="num">12</span> Ambiente <span class="en">/ Setting</span></h2>
       <div class="pills pills-grid" id="ambienti">
         <button class="pill is-active" data-ambiente="galleria">Galleria <span class="en">Showroom</span></button>
         <button class="pill" data-ambiente="ingresso">Ingresso <span class="en">Entrance</span></button>

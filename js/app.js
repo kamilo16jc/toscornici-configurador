@@ -57,7 +57,8 @@ const state = {
   muro: 108, allargato: 'integrale',
   telaio: 'std',
   copriWood: 'toulipier', copri: 'listellare',
-  apertura: 'battente', forma: 'diritta', sopraluce: 'no',
+  apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
+  capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
 };
 
@@ -173,6 +174,28 @@ const SERRATURE = [
   { id: 'cisa',      label: 'Sicurezza 3 punti CISA',                   extra: 330 },
 ];
 const CERNIERE_EXTRA = { anuba: 0, scomparsa: 50 };
+
+// Capitelli e zoccoli (pagg. 56–58) — prezzi Toulipier, Laccato Bianco
+// Tosco compreso, "solo un lato" (×2 per due lati). SOLO fino a 900×2100.
+const CAPITELLI = [
+  { id: 'no',    label: 'Nessun capitello',                   extra: 0 },
+  { id: 'c900',  label: 'Capitello 900',                      extra: 80 },
+  { id: 'c800',  label: 'Capitello 800',                      extra: 100 },
+  { id: 'c200',  label: 'Capitello 200',                      extra: 150 },
+  { id: 'c300',  label: 'Capitello 300',                      extra: 150 },
+  { id: 'c400',  label: 'Capitello 400',                      extra: 150 },
+  { id: 'c500',  label: 'Capitello 500',                      extra: 200 },
+  { id: 'c700',  label: 'Capitello 700',                      extra: 220 },
+  { id: 'c900c', label: 'Capitello 900 completo (colonne)',   extra: 180 },
+  { id: 'c400c', label: 'Capitello 400 completo (colonne)',   extra: 300 },
+  { id: 'c700c', label: 'Capitello 700 completo (colonne)',   extra: 300 },
+  { id: 'c500c', label: 'Capitello 500 completo (colonne)',   extra: 350 },
+];
+const CAP_COMPL = {
+  fin: { label: 'Finali 78×32 (2 pz)',   extra: 20 },
+  dia: { label: 'Diamanti 85×85 (2 pz)', extra: 50 },
+  zoc: { label: 'Zoccoli 78×325 (2 pz)', extra: 80 },
+};
 
 // Maniglie a listino (pag. 64)
 const MANIGLIE_MOD = [
@@ -799,6 +822,22 @@ function computePreventivo() {
   const sop = SOPRALUCI.find((s) => s.id === state.sopraluce);
   if (sop.extra) righe.push({ k: sop.label, sub: '', v: sop.extra });
 
+  const cap = CAPITELLI.find((c) => c.id === state.capitello);
+  const complAttivi = Object.entries(state.capCompl).filter(([, on]) => on);
+  const capBase = cap.extra + complAttivi.reduce((s, [id]) => s + CAP_COMPL[id].extra, 0);
+  if (capBase > 0) {
+    const capTot = capBase * state.capLati;
+    const complTxt = complAttivi.map(([id]) => CAP_COMPL[id].label.split(' ')[0]).join(' + ');
+    righe.push({
+      k: `${cap.extra ? cap.label : 'Complementi capitello'}${complTxt && cap.extra ? ' + ' + complTxt : complTxt && !cap.extra ? ' ' + complTxt : ''} · ${state.capLati} lato${state.capLati > 1 ? 'i' : ''}`,
+      sub: 'Toulipier · Bianco Tosco compreso (pagg. 56–58)',
+      v: capTot,
+    });
+    if (state.w > 900 || state.h > 2100) {
+      suPreventivo = true; motivo = 'capitelli solo fino a luce 900×2100 — fuori listino';
+    }
+  }
+
   const ser = SERRATURE.find((s) => s.id === state.serratura);
   if (ser.extra) righe.push({ k: `Serratura ${ser.label}`, sub: '', v: ser.extra });
   if (CERNIERE_EXTRA[state.cerniere]) righe.push({ k: 'Cerniere a scomparsa regolazione 3D', sub: 'n. 2 cerniere', v: CERNIERE_EXTRA[state.cerniere] });
@@ -872,6 +911,8 @@ function renderExtras() {
     .addEventListener('change', (e) => { state.forma = e.target.value; refreshUI(); });
   fillSelect('sopraluceSelect', SOPRALUCI, state.sopraluce)
     .addEventListener('change', (e) => { state.sopraluce = e.target.value; refreshUI(); });
+  fillSelect('capitelloSelect', CAPITELLI, state.capitello)
+    .addEventListener('change', (e) => { state.capitello = e.target.value; refreshUI(); });
   fillSelect('serraturaSelect', SERRATURE, state.serratura)
     .addEventListener('change', (e) => { state.serratura = e.target.value; refreshUI(); });
   fillSelect('manigliaModSelect', MANIGLIE_MOD, state.manigliaMod)
@@ -889,6 +930,15 @@ function renderExtras() {
     b.addEventListener('click', () => { state.copriWood = b.dataset.copriwood; refreshCopriSelect(); refreshUI(); }));
   document.querySelectorAll('#cernierePills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.cerniere = b.dataset.cerniere; refreshUI(); }));
+  document.querySelectorAll('#manoPills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.mano = b.dataset.mano; refreshUI(); }));
+  document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.capLati = +b.dataset.lati; refreshUI(); }));
+  document.querySelectorAll('#capComplPills .pill').forEach((b) =>
+    b.addEventListener('click', () => {
+      state.capCompl[b.dataset.compl] = !state.capCompl[b.dataset.compl];
+      refreshUI();
+    }));
 }
 
 // il menu coprifili mostra il prezzo già scalato sui ml della misura attuale
@@ -956,6 +1006,18 @@ function refreshUI() {
     b.classList.toggle('is-active', b.dataset.copriwood === state.copriWood));
   document.querySelectorAll('#cernierePills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
+  document.querySelectorAll('#manoPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.mano === state.mano));
+  document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', +b.dataset.lati === state.capLati));
+  document.querySelectorAll('#capComplPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', !!state.capCompl[b.dataset.compl]));
+  const capNote = document.getElementById('capitelloNote');
+  const capAttivo = state.capitello !== 'no' || Object.values(state.capCompl).some(Boolean);
+  capNote.textContent = capAttivo && (state.w > 900 || state.h > 2100)
+    ? '⚠ I capitelli sono disponibili solo fino a luce 900×2100 — oltre, su preventivo.'
+    : 'Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato. Solo fino a luce 900×2100.';
+  capNote.classList.toggle('warn', capAttivo && (state.w > 900 || state.h > 2100));
 
   // la laccatura è una verniciatura: "grezza" resta cliccabile e,
   // se scelta, toglie il colore e torna al legno a vista
@@ -1163,7 +1225,7 @@ function buildPDF(cliente, rif) {
   row('Modello', `${mod.label} — ${mod.sub}`, y);
   row('Essenza', essenzaLabel(), y + 14);
   row('Finitura', `${FINITURA_LABEL[state.finitura]} / ${state.finitura === 'grezza' ? 'raw' : 'painted'}`, y + 28);
-  row('Misure luce', `${state.w} × ${state.h} mm — ${state.ante === 1 ? '1 anta' : '2 ante'}`, y + 42);
+  row('Misure luce', `${state.w} × ${state.h} mm — ${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`, y + 42);
   row('Muro', `${state.muro} mm`, y + 56);
   row('Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte'} · maniglia fin. ${MANIGLIE[state.maniglia].label}`, y + 70);
 
@@ -1220,6 +1282,142 @@ function buildPDF(cliente, rif) {
   return doc;
 }
 
+/* ============================================================
+   BLOCCO ORDINE TL_2018 — il modulo ufficiale Toscocornici,
+   compilato sopra l'immagine del modulo originale.
+   Coordinate calibrate sulle caselle reali del PDF (pt, A4).
+   ============================================================ */
+
+const BLOCCO_C = {"diserie":[218.7,130.2],"opzionali":[395.5,130.2],"cop_liscio":[100.3,145.8],"cop_s1":[159.5,145.8],"cop_s2":[218.7,145.8],"cop_b":[277.6,145.8],"cop_cs400":[328.9,145.8],"cop_cs1":[395.5,145.8],"cop_cs300":[455.5,145.8],"cop_cs207":[514.3,145.8],"cop_cs206":[573.9,145.8],"larg70_a":[23.2,160.0],"larg90_a":[23.2,175.9],"cop_cs204":[100.3,191.3],"cop_cs3":[159.5,191.3],"cop_cap1":[277.0,191.3],"larg70_b":[23.2,205.4],"larg90_b":[23.2,220.2],"tel_std":[100.2,253.9],"tel_alpha":[159.6,253.9],"tel_alphaco":[218.6,253.9],"tel_design":[277.0,253.9],"tel_spingere":[328.8,253.9],"tel_barocco":[395.5,253.9],"tel_madsag":[514.2,253.9],"tel_madmod":[573.8,253.9],"allarg_imb":[29.2,283.7],"allarg_int":[29.2,310.8],"legno":[94.7,332.2],"nessuna":[203.2,345.6],"cern_anube":[159.6,401.6],"cern_scomp":[159.6,415.0],"serr_mecc":[277.0,401.6],"serr_magn":[277.0,415.0],"ferr_ott":[395.5,401.6],"ferr_cromo":[395.5,415.0],"luce_netta":[571.2,408.4],
+  mano_rows:[483.4,535.1,586.8,638.4,690.1,741.8,793.6],
+  mano_cols:[276.4,297.8,319.3,340.8,362.2,384.7,408.6,432.2,455.9,479.5]};
+
+// coprifilo → casella del blocco + larghezze da barrare + gruppo (a/b)
+const COPRI_BLOCCO = {
+  listellare:   { box: 'cop_liscio', larg: [70, 90], gr: 'a', serie: true },
+  massello:     { box: 'cop_liscio', larg: [70, 90], gr: 'a', nota: 'Coprifili liscio MASSELLO' },
+  pierre:       { box: 'cop_s1',    larg: [70],     gr: 'a' },
+  giotto:       { box: 'cop_s2',    larg: [70, 90], gr: 'a' },
+  tintoretto:   { box: 'cop_b',     larg: [70, 90], gr: 'a' },
+  raffaello:    { box: 'cop_cs400', larg: [70, 90], gr: 'a' },
+  leonardo:     { box: 'cop_cs1',   larg: [90],     gr: 'a' },
+  michelangelo: { box: 'cop_cs300', larg: [70, 90], gr: 'a' },
+  cartesio:     { box: 'cop_cs207', larg: [70],     gr: 'a', nota: 'Cartesio CS207: lato esterno 100 mm' },
+  caravaggio:   { box: 'cop_cs206', larg: [90],     gr: 'a' },
+  tiziano:      { box: 'cop_cs204', larg: [90],     gr: 'b' },
+  canaletto:    { box: 'cop_cs3',   larg: [90],     gr: 'b' },
+  novecento:    { box: 'cop_cap1',  larg: [],       gr: 'b', nota: 'Novecento CAP1 42×110' },
+};
+
+// telaio → casella (null = senza casella nel modulo → in NOTE)
+const TELAI_BLOCCO = {
+  std: 'tel_std', alpha: 'tel_alpha', alpha_comp: 'tel_alphaco',
+  alpha_comp_sp: 'tel_spingere', design: 'tel_design', design_comp: 'tel_design',
+  r10b: 'tel_barocco', madonna: 'tel_madsag', madonna_mod: 'tel_madmod',
+  r10: null, moderno: null, passaggio90: null,
+};
+
+// apertura → colonna mano (0=BATT 1=SCOR 4=LIB.S; DX = 0–4, SX = +5)
+const MANO_COL = {
+  battente: 0, justor: 0, ergon: 0,
+  scomparsa: 1, est_muro: 1, est_muro_m: 1, int_telaio: 1, magic: 1,
+  koblenz: 4,
+};
+
+let bloccoBg = null; // dataURL del modulo, precaricato
+fetch('assets/blocco_tl2018.jpg')
+  .then((r) => r.blob())
+  .then((b) => { const fr = new FileReader(); fr.onload = () => { bloccoBg = fr.result; }; fr.readAsDataURL(b); })
+  .catch((e) => console.warn('Blocco TL_2018 non disponibile:', e));
+
+function buildBlocco(cliente, rif) {
+  if (!bloccoBg) return null;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  doc.addImage(bloccoBg, 'JPEG', 0, 0, 595, 842);
+
+  doc.setTextColor(20, 20, 90); // blu compilazione
+  const X = (k) => { const c = BLOCCO_C[k]; if (!c) return; doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text('X', c[0] - 3.2, c[1] + 3.6); };
+  const T = (x, y, t, s = 8, bold = true) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(s); doc.text(String(t), x, y); };
+
+  const mod = MODELLI[state.modello];
+  const note = [];
+
+  // — intestazione
+  T(60, 118, new Date().toLocaleDateString('it-IT'), 9);
+  T(345, 83, cliente.rivenditore || 'Italian Doorway Elegance', 9);
+  T(345, 97, `${cliente.nome} — ${cliente.citta}`, 8);
+  T(345, 118, cliente.pagamento || 'da concordare', 8);
+
+  // — coprifili
+  const cb = COPRI_BLOCCO[state.copri];
+  X(cb.serie ? 'diserie' : 'opzionali');
+  X(cb.box);
+  for (const l of cb.larg) X(`larg${l}_${cb.gr}`);
+  if (cb.nota) note.push(cb.nota);
+  note.push(`Coprifili in ${COPRI_WOOD_LABEL[state.copriWood]}`);
+
+  // — telaio
+  const tb = TELAI_BLOCCO[state.telaio];
+  if (tb) X(tb); else note.push(`Telaio: ${TELAI.find((t) => t.id === state.telaio).label}`);
+  if (state.telaio === 'design') note.push('Telaio DESIGN (non complanare)');
+  if (state.telaio === 'design_comp') note.push('Telaio DESIGN COMPLANARE');
+  X('legno');
+  if (state.muro > 108) {
+    X(state.allargato === 'imbottino' ? 'allarg_imb' : 'allarg_int');
+    note.push(`Allargato ${state.allargato} — muro ${state.muro} mm`);
+  }
+
+  // — anta, cerniera, serratura, ferramenta, misure
+  X('nessuna');
+  X(state.cerniere === 'scomparsa' ? 'cern_scomp' : 'cern_anube');
+  X(state.serratura === 'magnetica' ? 'serr_magn' : 'serr_mecc');
+  if (['yale', 'opera', 'cisa'].includes(state.serratura))
+    note.push(`Serratura ${SERRATURE.find((s) => s.id === state.serratura).label}`);
+  if (state.maniglia === 'ottone') X('ferr_ott');
+  else if (state.maniglia === 'cromo') X('ferr_cromo');
+  else note.push('Ferramenta NERO opaco');
+  X('luce_netta');
+
+  // — riga 1 dell'ordine
+  T(58, 453.5, `${mod.label} ${mod.linea !== 'Base' ? mod.linea : ''} · ID ${mod.id}`, 7.5);
+  T(58, 469.8, `${ESSENZE[state.essenza].label} massello`, 7);
+  const finTxt = isLaccato()
+    ? `Verniciata · Laccato ${LACCATI[state.colore].label}`
+    : `${FINITURA_LABEL[state.finitura]}`;
+  T(58, 486, finTxt, 7);
+  T(196, 453.5, state.w, 8);
+  T(221, 453.5, state.h, 8);
+  T(245, 453.5, state.muro, 8);
+  const qty = Math.max(1, parseInt(cliente.quantita, 10) || 1);
+  T(498, 453.5, qty, 9);
+
+  // — mano: colonna dal tipo di apertura, blocco DX o SX
+  const col = MANO_COL[state.apertura] + (state.mano === 'sx' ? 5 : 0);
+  const mc = BLOCCO_C.mano_cols[col], mr = BLOCCO_C.mano_rows[0];
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text('X', mc - 3.2, mr + 3.6);
+
+  // — note: tutto ciò che non ha casella
+  const ape = APERTURE.find((a) => a.id === state.apertura);
+  if (state.apertura !== 'battente') note.push(`Apertura: ${ape.label}`);
+  if (state.forma !== 'diritta') note.push(`Porta ${FORME.find((f) => f.id === state.forma).label}`);
+  if (state.sopraluce !== 'no') note.push(SOPRALUCI.find((s) => s.id === state.sopraluce).label);
+  if (state.ante === 2) note.push('2 ante (+100%)');
+  const capB = CAPITELLI.find((c) => c.id === state.capitello);
+  const capCompl = Object.entries(state.capCompl).filter(([, on]) => on).map(([id]) => CAP_COMPL[id].label);
+  if (capB.extra || capCompl.length)
+    note.push(`${capB.extra ? capB.label : 'Compl. capitello'}${capCompl.length ? ' + ' + capCompl.join(', ') : ''} × ${state.capLati} lato/i`);
+  if (state.manigliaMod !== 'no')
+    note.push(`Maniglia ${MANIGLIE_MOD.find((m) => m.id === state.manigliaMod).label}`);
+  note.push(`Rif. preventivo ${rif}`);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.4);
+  note.slice(0, 12).forEach((l, i) => doc.text(doc.splitTextToSize(l, 58)[0], 516, 449 + i * 8.2));
+
+  return doc;
+}
+
 function openQuote() {
   quoteFormView.hidden = false;
   quoteDoneView.hidden = true;
@@ -1241,12 +1439,14 @@ quoteForm.addEventListener('submit', (e) => {
   const rif = `TC-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   const doc = buildPDF(cliente, rif);
   doc.save(`Toscornici_Preventivo_${rif}.pdf`);
+  const blocco = buildBlocco(cliente, rif);
+  if (blocco) blocco.save(`Toscornici_Blocco_Ordine_${rif}.pdf`);
   document.getElementById('doneRef').textContent = `Rif. ${rif}`;
   quoteFormView.hidden = true;
   quoteDoneView.hidden = false;
 });
 
-window.__pdf = { buildPDF }; // hook di verifica
+window.__pdf = { buildPDF, buildBlocco }; // hook di verifica
 
 /* ============================================================
    AVVIO
