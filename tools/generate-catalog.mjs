@@ -164,6 +164,14 @@ function classifyNodes(names, warnings, tag) {
 }
 
 // ------------------------------------------------------------------
+// Modelli esclusi dal configuratore: i design hanno errori da correggere.
+// I GLB sorgente restano in "Assets doors" — per riattivarne uno basta
+// toglierlo da questa lista e rigenerare.
+const EXCLUDE = new Set([
+  'america', 'arizona', 'indiana', 'florida', 'california', 'georgia',
+  'newjersey', 'montana', 'vercelli', 'alessandria', 'piccadilly', 'queen',
+]);
+
 const warnings = [];
 const modelli = {};
 const skipped = [];
@@ -177,6 +185,7 @@ for (const glb of glbs.sort()) {
   const rawName = glb.replace(/^PUERTA\d+_/, '').replace(/\.glb$/i, ''); // "NEW JERSEY"
   if (size < 10000) { skipped.push(`${glb} (file corrotto: ${size} B)`); continue; }
   const slug = rawName.toLowerCase().replace(/\s+/g, '-');
+  if (EXCLUDE.has(slug.replace(/-/g, ''))) { skipped.push(`${glb} (escluso: design da correggere)`); continue; }
   const md = mds.find((f) => new RegExp(`^\\d+-${slug}\\.md$`).test(f));
   if (!md) { skipped.push(`${glb} (nessuna scheda .md per "${slug}")`); continue; }
 

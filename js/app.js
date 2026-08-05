@@ -46,7 +46,7 @@ function essenzaLabel() {
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
 const state = {
-  modello: 'california',
+  modello: 'liverpool',
   essenza: 'rovere',
   colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
   finitura: 'verniciata',
