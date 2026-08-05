@@ -957,13 +957,14 @@ function refreshUI() {
   document.querySelectorAll('#cernierePills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
 
-  // i laccati sono disponibili solo verniciati
-  const grezzaBtn = document.querySelector('[data-finitura="grezza"]');
-  grezzaBtn.disabled = isLaccato();
+  // la laccatura è una verniciatura: "grezza" resta cliccabile e,
+  // se scelta, toglie il colore e torna al legno a vista
+  document.querySelector('[data-finitura="grezza"]').disabled = false;
   pillNoteEl.textContent = !isLaccato() ? ''
-    : laccatoExtra()
-      ? `La laccatura è una verniciatura (solo verniciata). Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50).`
-      : 'La laccatura è una verniciatura (solo verniciata). Bianco Tosco: compreso nel prezzo.';
+    : (laccatoExtra()
+        ? `La laccatura è una verniciatura. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50). `
+        : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
+      + 'Scegliendo "Grezza" si torna al legno a vista.';
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
@@ -1005,12 +1006,18 @@ function renderModelli() {
   modelloSelect.addEventListener('change', () => setModello(modelloSelect.value));
 }
 
-// finitura (solo le pill della sezione finitura, non quelle ambiente)
+// finitura (solo le pill della sezione finitura, non quelle ambiente).
+// Scegliere "grezza" con un colore laccato attivo NON è bloccato: il
+// colore si toglie da solo e si torna al legno a vista.
 document.querySelectorAll('#pills .pill').forEach((btn) => {
   btn.addEventListener('click', () => {
-    if (btn.disabled) return;
     state.finitura = btn.dataset.finitura;
-    applyMaterialLook();
+    if (state.finitura === 'grezza' && isLaccato()) {
+      state.colore = 'nessuno';
+      applyEssenza();            // ripristina venatura e tinta del legno
+    } else {
+      applyMaterialLook();
+    }
     refreshUI();
   });
 });
