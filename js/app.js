@@ -1325,10 +1325,21 @@ const MANO_COL = {
 };
 
 let bloccoBg = null; // dataURL del modulo, precaricato
-fetch('assets/blocco_tl2018.jpg')
-  .then((r) => r.blob())
-  .then((b) => { const fr = new FileReader(); fr.onload = () => { bloccoBg = fr.result; }; fr.readAsDataURL(b); })
-  .catch((e) => console.warn('Blocco TL_2018 non disponibile:', e));
+function loadBloccoBg() {
+  return fetch('assets/blocco_tl2018.jpg')
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .then((b) => new Promise((res) => {
+      const fr = new FileReader();
+      fr.onload = () => { bloccoBg = fr.result; res(bloccoBg); };
+      fr.readAsDataURL(b);
+    }));
+}
+loadBloccoBg().catch((e) => console.warn('Blocco TL_2018 non precaricato:', e));
+// se il precarico è fallito (rete, deploy in corso), riprova al momento dell'invio
+async function ensureBloccoBg() {
+  if (bloccoBg) return true;
+  try { await loadBloccoBg(); return true; } catch (e) { return false; }
+}
 
 function buildBlocco(cliente, rif) {
   if (!bloccoBg) return null;
@@ -1432,16 +1443,26 @@ document.getElementById('quoteCancel').addEventListener('click', closeQuote);
 document.getElementById('quoteClose').addEventListener('click', closeQuote);
 quoteModal.addEventListener('click', (e) => { if (e.target === quoteModal) closeQuote(); });
 
-quoteForm.addEventListener('submit', (e) => {
+quoteForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const cliente = Object.fromEntries(new FormData(quoteForm).entries());
   const d = new Date();
   const rif = `TC-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
   const doc = buildPDF(cliente, rif);
   doc.save(`Toscornici_Preventivo_${rif}.pdf`);
-  const blocco = buildBlocco(cliente, rif);
-  if (blocco) blocco.save(`Toscornici_Blocco_Ordine_${rif}.pdf`);
+
+  // blocco ordine: assicura lo sfondo (riprova se il precarico era fallito)
+  // e scarica con un piccolo ritardo — Chrome blocca i download multipli
+  // simultanei, distanziarli evita il blocco nella maggior parte dei casi.
+  const okBg = await ensureBloccoBg();
+  const blocco = okBg ? buildBlocco(cliente, rif) : null;
+  if (blocco) setTimeout(() => blocco.save(`Toscornici_Blocco_Ordine_${rif}.pdf`), 800);
+
   document.getElementById('doneRef').textContent = `Rif. ${rif}`;
+  document.getElementById('doneFiles').innerHTML = blocco
+    ? `Scaricati 2 PDF:<br>· <b>Toscornici_Preventivo_${rif}.pdf</b> — per il cliente<br>· <b>Toscornici_Blocco_Ordine_${rif}.pdf</b> — modulo TL_2018 per la fabbrica<br><span class="en">Se vedi un solo file, consenti i download multipli nel browser.</span>`
+    : `Scaricato: <b>Toscornici_Preventivo_${rif}.pdf</b><br><span class="en">⚠ Blocco ordine non generato (modulo non raggiungibile) — riprova.</span>`;
   quoteFormView.hidden = true;
   quoteDoneView.hidden = false;
 });
