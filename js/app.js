@@ -197,24 +197,23 @@ const CAP_COMPL = {
   zoc: { label: 'Zoccoli 78×325 (2 pz)', extra: 80 },
 };
 
-// Maniglie a listino (pag. 64)
+// Maniglie — inventario reale della fabbrica (cartella Chapas).
+// Con prezzo di listino (pag. 64): Simona, Spigola, Torino, Marea.
+// extra:null = prezzo da definire → esclusa dal totale, indicata nel PDF.
 const MANIGLIE_MOD = [
-  { id: 'no',       label: 'Da definire (esclusa)', extra: 0 },
-  { id: 'sidney',   label: 'SIDNEY',    extra: 30 },
-  { id: 'simona',   label: 'SIMONA',    extra: 40 },
-  { id: 'spigola',  label: 'SPIGOLA',   extra: 45 },
-  { id: 'torino',   label: 'TORINO',    extra: 55 },
-  { id: 'la50',     label: 'LA50',      extra: 55 },
-  { id: 'marea',    label: 'MAREA',     extra: 60 },
-  { id: 'frame',    label: 'Pomolo FRAME', extra: 70 },
-  { id: 'siena',    label: 'SIENA',     extra: 85 },
-  { id: 'quattro',  label: 'Maniglione QUATTRO', extra: 100 },
-  { id: 'ola',      label: 'OLA',       extra: 135 },
-  { id: 'tubal',    label: 'Maniglione TUBAL', extra: 170 },
-  { id: 'arco',     label: 'ARCO',      extra: 195 },
-  { id: 'tratto',   label: 'TRATTO',    extra: 225 },
-  { id: 'grafite',  label: 'GRAFITE',   extra: 285 },
-  { id: 'sesamo',   label: 'Pomolo SESAMO', extra: 350 },
+  { id: 'no',      label: 'Da definire (esclusa)', extra: 0,    img: null },
+  { id: 'simona',  label: 'SIMONA',  extra: 40,   img: 'assets/maniglie/simona.jpg' },
+  { id: 'spigola', label: 'SPIGOLA', extra: 45,   img: 'assets/maniglie/spigola.jpg' },
+  { id: 'torino',  label: 'TORINO',  extra: 55,   img: 'assets/maniglie/torino.jpg' },
+  { id: 'marea',   label: 'MAREA',   extra: 60,   img: 'assets/maniglie/marea.jpg' },
+  { id: 'alma',    label: 'ALMA',    extra: null, img: 'assets/maniglie/alma.jpg' },
+  { id: 'ariana',  label: 'ARIANA',  extra: null, img: 'assets/maniglie/ariana.jpg' },
+  { id: 'cuba',    label: 'CUBA',    extra: null, img: 'assets/maniglie/cuba.jpg' },
+  { id: 'elissa',  label: 'ELISSA',  extra: null, img: 'assets/maniglie/elissa.jpg' },
+  { id: 'honey',   label: 'HONEY',   extra: null, img: 'assets/maniglie/honey.jpg' },
+  { id: 'milano',  label: 'MILANO',  extra: null, img: 'assets/maniglie/milano.jpg' },
+  { id: 'square',  label: 'SQUARE',  extra: null, img: 'assets/maniglie/square.jpg' },
+  { id: 'toga',    label: 'TOGA',    extra: null, img: 'assets/maniglie/toga.jpg' },
 ];
 
 const MANIGLIE = {
@@ -843,13 +842,42 @@ function computePreventivo() {
   if (CERNIERE_EXTRA[state.cerniere]) righe.push({ k: 'Cerniere a scomparsa regolazione 3D', sub: 'n. 2 cerniere', v: CERNIERE_EXTRA[state.cerniere] });
 
   const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
-  if (man.extra) righe.push({ k: `Maniglia ${man.label}`, sub: `finitura ${MANIGLIE[state.maniglia].label}`, v: man.extra });
+  if (man.extra) {
+    righe.push({ k: `Maniglia ${man.label}`, sub: `finitura ${MANIGLIE[state.maniglia].label}`, v: man.extra });
+  } else if (man.extra === null) {
+    // modello nuovo senza prezzo: si ordina, ma non entra nel totale
+    righe.push({ k: `Maniglia ${man.label}`, sub: 'prezzo da definire — escluso dal totale', v: 0 });
+  }
 
   const totale = Math.round(righe.reduce((s, r) => s + r.v, 0) * 100) / 100;
   return { righe, totale, suPreventivo, motivo, baseTariffa };
 }
 
 const computeTotale = () => computePreventivo().totale;
+
+// griglia maniglie: foto reale della fabbrica per ogni modello
+function renderManiglieGrid() {
+  const grid = document.getElementById('manigliaGrid');
+  grid.innerHTML = MANIGLIE_MOD.map((m) => `
+    <button class="man-card${m.id === state.manigliaMod ? ' is-active' : ''}" data-manmod="${m.id}">
+      ${m.img
+        ? `<span class="man-photo"><img src="${m.img}" alt="Maniglia ${m.label}" loading="lazy"></span>`
+        : '<span class="man-photo man-photo--none">—</span>'}
+      <span class="man-label">${m.label}</span>
+      <span class="man-extra">${
+        m.id === 'no' ? 'esclusa'
+        : m.extra === null ? 'prezzo da definire'
+        : `+ ${eur.format(m.extra)}`}</span>
+    </button>`).join('');
+  grid.querySelectorAll('.man-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.manigliaMod = btn.dataset.manmod;
+      grid.querySelectorAll('.man-card').forEach((b) =>
+        b.classList.toggle('is-active', b === btn));
+      refreshUI();
+    });
+  });
+}
 
 // menu essenze: legni raw + laccati su base universal
 const swatchesEl = document.getElementById('swatches');
@@ -915,8 +943,7 @@ function renderExtras() {
     .addEventListener('change', (e) => { state.capitello = e.target.value; refreshUI(); });
   fillSelect('serraturaSelect', SERRATURE, state.serratura)
     .addEventListener('change', (e) => { state.serratura = e.target.value; refreshUI(); });
-  fillSelect('manigliaModSelect', MANIGLIE_MOD, state.manigliaMod)
-    .addEventListener('change', (e) => { state.manigliaMod = e.target.value; refreshUI(); });
+  renderManiglieGrid();
 
   document.getElementById('mW').addEventListener('input', (e) => { state.w = +e.target.value || 0; refreshCopriSelect(); refreshUI(); });
   document.getElementById('mH').addEventListener('input', (e) => { state.h = +e.target.value || 0; refreshCopriSelect(); refreshUI(); });

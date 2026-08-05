@@ -39,7 +39,9 @@ body {
 
 .app {
   display: grid;
-  grid-template-columns: 1fr 420px;
+  /* pannello più largo (540px) → viewer 3D più contenuto e sezione
+     configurazione più leggibile */
+  grid-template-columns: 1fr 540px;
   height: 100vh;
 }
 
@@ -336,6 +338,48 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+}
+
+/* ---- griglia maniglie (foto inventario fabbrica) ---- */
+.maniglie-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+.man-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px 9px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, transform .15s;
+}
+.man-card:hover { transform: translateY(-2px); border-color: #c9b48a; }
+.man-card.is-active { border: 1.5px solid var(--gold, #a8843c); }
+.man-photo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fff;
+}
+.man-photo img { width: 100%; height: 100%; object-fit: contain; }
+.man-photo--none { color: #b9ac97; font-size: 22px; }
+.man-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+.man-extra {
+  font-size: 9.5px;
+  color: var(--ink-soft, #8d7d6a);
 }
 
 /* chip "legno a vista": nessun colore, si vede la venatura */
