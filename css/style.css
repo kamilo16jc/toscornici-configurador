@@ -375,6 +375,13 @@ body {
   line-height: 1.2;
 }
 
+.lacc-extra {
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--brass);
+  letter-spacing: 0.02em;
+}
+
 .swatch {
   appearance: none;
   border: 1px solid var(--hairline);

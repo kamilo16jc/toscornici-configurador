@@ -21,15 +21,19 @@ const ESSENZE = {
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
 // Prezzi: colonna Toulipier verniciata, la base tipica dei laccati.
+// Il Bianco Tosco è l'unico laccato compreso nel prezzo; ogni altro
+// colore RAL paga l'aumento del listino (voce n. 50): € 180.
+const RAL_EXTRA = 180;
 const LACCATI = {
-  bianco:  { label: 'Bianco',         color: 0xf2efe6 },
-  avorio:  { label: 'Avorio',         color: 0xe7d9b8 },
-  tortora: { label: 'Grigio Tortora', color: 0xb3a894 },
-  salvia:  { label: 'Verde Salvia',   color: 0x8b9c85 },
-  notte:   { label: 'Blu Notte',      color: 0x39465a },
+  bianco:  { label: 'Bianco Tosco',   color: 0xf2efe6, extra: 0 },
+  avorio:  { label: 'Avorio',         color: 0xe7d9b8, extra: RAL_EXTRA },
+  tortora: { label: 'Grigio Tortora', color: 0xb3a894, extra: RAL_EXTRA },
+  salvia:  { label: 'Verde Salvia',   color: 0x8b9c85, extra: RAL_EXTRA },
+  notte:   { label: 'Blu Notte',      color: 0x39465a, extra: RAL_EXTRA },
 };
 
 const isLaccato = () => state.essenza === 'laccato';
+const laccatoExtra = () => (isLaccato() ? LACCATI[state.colore].extra : 0);
 
 function essenzaLabel() {
   return isLaccato()
@@ -619,7 +623,7 @@ function computeTotale() {
   const prices = currentPrices();
   return Object.entries(state.comps)
     .filter(([, on]) => on)
-    .reduce((sum, [comp]) => sum + (prices[comp] || 0), 0);
+    .reduce((sum, [comp]) => sum + (prices[comp] || 0), 0) + laccatoExtra();
 }
 
 // menu essenze: legni raw + laccati su base universal
@@ -637,6 +641,7 @@ function renderEssenze() {
     <button class="lacc" data-colore="${k}">
       <span class="lacc-chip" style="background:#${l.color.toString(16).padStart(6, '0')}"></span>
       <span class="lacc-label">${l.label}</span>
+      <span class="lacc-extra">${l.extra ? `+ ${eur.format(l.extra)}` : 'incluso'}</span>
     </button>`).join('');
   swatchesEl.querySelectorAll('.swatch').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -702,7 +707,10 @@ function refreshUI() {
   // i laccati sono disponibili solo verniciati
   const grezzaBtn = document.querySelector('[data-finitura="grezza"]');
   grezzaBtn.disabled = isLaccato();
-  pillNoteEl.textContent = isLaccato() ? 'I laccati sono disponibili solo verniciati.' : '';
+  pillNoteEl.textContent = !isLaccato() ? ''
+    : laccatoExtra()
+      ? `I laccati sono disponibili solo verniciati. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50).`
+      : 'I laccati sono disponibili solo verniciati. Bianco Tosco: compreso nel prezzo.';
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
@@ -912,6 +920,14 @@ function buildPDF(cliente, rif) {
     doc.setTextColor(on ? 43 : 180, on ? 33 : 170, on ? 26 : 155);
     doc.text(`${on ? '' : '(escluso) '}${c.it} / ${c.en}`, M, y);
     doc.text(on ? pdfMoney(prices[c.id] || 0) : '—', W - M, y, { align: 'right' });
+    y += 15;
+  }
+  if (laccatoExtra()) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(43, 33, 26);
+    doc.text(`Aumento colore RAL — ${LACCATI[state.colore].label} (listino n. 50) / RAL colour surcharge`, M, y);
+    doc.text(pdfMoney(laccatoExtra()), W - M, y, { align: 'right' });
     y += 15;
   }
   doc.setDrawColor(43, 33, 26);
