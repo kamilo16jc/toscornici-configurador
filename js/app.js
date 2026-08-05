@@ -52,13 +52,147 @@ const state = {
   finitura: 'verniciata',
   ambiente: 'galleria',
   maniglia: 'ottone',
-  comps: {},
+  // — misure e extra (listino 2025, pagg. 48–65) —
+  w: 900, h: 2100, ante: 1,
+  muro: 108, allargato: 'integrale',
+  telaio: 'std',
+  copriWood: 'toulipier', copri: 'listellare',
+  apertura: 'battente', forma: 'diritta', sopraluce: 'no',
+  serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
 };
 
-function defaultComps(modelKey) {
-  return Object.fromEntries(MODELLI[modelKey].componenti.map((c) => [c.id, true]));
+/* ============================================================
+   LISTINO EXTRA — tabelle generali (riferimento misura base
+   luce 900×2100×108). Valgono per tutti i modelli; verificate
+   sul 400-C Liverpool.
+   ============================================================ */
+
+// Fuori misura (voci 16/17): scaglioni, NON proporzionale.
+// Oltre 1200×2600 il listino non dà prezzo → su preventivo.
+function sizeBand(w, h) {
+  const out = { ok: true, factor: 1, note: [] };
+  if (w > 1200 || h > 2600) { out.ok = false; return out; }
+  if (w > 900)  { out.factor *= 1.20; out.note.push('fuori misura larghezza +20%'); }
+  if (h > 2100) { out.factor *= 1.40; out.note.push('fuori misura altezza +40%'); }
+  return out;
 }
-state.comps = defaultComps(state.modello);
+
+// Coprifili: l'EXTRA A PORTA copre la misura standard = 11,50 ml;
+// oltre, proporzionale ai metri lineari. Mai sconto sotto lo standard.
+const STD_PERIM = 2 * 2100 + 900; // 5100 mm per lato
+const mlFactor = (w, h) => (!w || !h ? 1 : Math.max(1, (2 * h + w) / STD_PERIM));
+
+const TELAI = [
+  { id: 'std',           label: 'Standard (compreso)',                    extra: 0 },
+  { id: 'alpha',         label: 'ALPHA — piatti 70/90',                   extra: 30 },
+  { id: 'alpha_comp',    label: 'ALPHA COMPLANARE',                       extra: 50 },
+  { id: 'alpha_comp_sp', label: 'ALPHA COMPLANARE SPINGERE',              extra: 200 },
+  { id: 'design',        label: 'DESIGN',                                 extra: 80 },
+  { id: 'design_comp',   label: 'DESIGN COMPLANARE',                      extra: 90 },
+  { id: 'passaggio90',   label: 'Passaggio listellare, coprifili 90',     extra: 250 },
+  { id: 'r10',           label: 'R10 (coprifili esclusi)',                extra: 40 },
+  { id: 'r10b',          label: 'R10 BAROCCO (coprifili esclusi)',        extra: 60 },
+  { id: 'moderno',       label: 'MODERNO (coprifili esclusi)',            extra: 90 },
+  { id: 'madonna',       label: 'A MADONNA sagomato 44×79',               extra: 70 },
+  { id: 'madonna_mod',   label: 'A MADONNA MODERNO 44×79',                extra: 80 },
+];
+const FERMAPORTA = 20; // obbligatorio con complanare a spingere (voce 74)
+
+// Allargato per muri oltre 108 mm (pag. 49)
+function allargatoExtra(muro, sistema) {
+  if (muro <= 108) return { extra: 0, label: 'muro ≤ 108 mm (standard)' };
+  if (sistema === 'imbottino') {
+    if (muro <= 158) return { extra: 110, label: 'con imbottino 108→158' };
+    if (muro <= 220) return { extra: 180, label: 'con imbottino 158→220' };
+    if (muro <= 300) return { extra: 310, label: 'con imbottino 220→300' };
+    const cm = Math.ceil((muro - 300) / 10);
+    return { extra: 310 + cm * 20, label: `con imbottino >300 (+${cm} cm × €20)` };
+  }
+  if (muro <= 118) return { extra: 34,  label: 'integrale 108→118' };
+  if (muro <= 158) return { extra: 150, label: 'integrale 118→158' };
+  if (muro <= 220) return { extra: 250, label: 'integrale 158→220' };
+  if (muro <= 300) return { extra: 380, label: 'integrale 220→300' };
+  const cm = Math.ceil((muro - 300) / 10);
+  return { extra: 380 + cm * 25, label: `integrale >300 (+${cm} cm × €25)` };
+}
+
+// Coprifili con aletta (pagg. 52–53) — EXTRA A PORTA (cad), già la
+// differenza rispetto al liscio listellare compreso (1 lato 90 + 1 lato 70).
+// Il coprifilo esiste SOLO in frassino / toulipier / pino.
+const COPRI = [
+  { id: 'listellare',   label: 'Liscio listellare — compreso',      prezzi: { frassino: 0,     toulipier: 0,   pino: 0 } },
+  { id: 'massello',     label: 'Liscio massello',                    prezzi: { frassino: 43.5,  toulipier: 16,  pino: 3.5 } },
+  { id: 'pierre',       label: 'Pierre S1 (70/70)',                  prezzi: { frassino: 45,    toulipier: 30,  pino: 30 } },
+  { id: 'tintoretto',   label: 'Tintoretto (90/70)',                 prezzi: { frassino: 75,    toulipier: 60,  pino: 60 } },
+  { id: 'raffaello',    label: 'Raffaello-S (90/70)',                prezzi: { frassino: 75,    toulipier: 60,  pino: 60 } },
+  { id: 'giotto',       label: 'Giotto S2 (90/70)',                  prezzi: { frassino: 65,    toulipier: 50,  pino: 50 } },
+  { id: 'leonardo',     label: 'Leonardo CS1-S2 (90/70)',            prezzi: { frassino: 65,    toulipier: 50,  pino: 50 } },
+  { id: 'michelangelo', label: 'Michelangelo CS300 (90/70)',         prezzi: { frassino: 85,    toulipier: 70,  pino: 70 } },
+  { id: 'cartesio',     label: 'Cartesio CS207 (100/70)',            prezzi: { frassino: 85,    toulipier: 70,  pino: 70 } },
+  { id: 'caravaggio',   label: 'Caravaggio CS206 (27×90)',           prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
+  { id: 'tiziano',      label: 'Tiziano CS204 (30×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
+  { id: 'canaletto',    label: 'Canaletto CS3 (34×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
+  { id: 'novecento',    label: 'Novecento CAP1 (42×110)',            prezzi: { frassino: 290,   toulipier: 250, pino: 250 } },
+];
+const COPRI_WOOD_LABEL = { frassino: 'Frassino', toulipier: 'Toulipier', pino: 'Pino' };
+
+// Aperture speciali (pagg. 61–62)
+const APERTURE = [
+  { id: 'battente',   label: 'Battente (standard)',                          extra: 0 },
+  { id: 'scomparsa',  label: 'Scorrevole a scomparsa nel muro',              extra: 85 },
+  { id: 'est_muro',   label: 'Scorrevole esterno muro, guide a filo',        extra: 250 },
+  { id: 'est_muro_m', label: 'Scorrevole esterno muro con mantovana',        extra: 250 },
+  { id: 'int_telaio', label: 'Scorrevole interno telaio',                    extra: 165 },
+  { id: 'magic',      label: 'Kit MAGIC (luce muro ≤ 800)',                  extra: 550 },
+  { id: 'justor',     label: 'A ventola JUSTOR',                             extra: 200 },
+  { id: 'ergon',      label: 'Rototraslante ERGON',                          extra: 550 },
+  { id: 'koblenz',    label: 'A libro KOBLENZ',                              extra: 600 },
+];
+
+// Porte ad arco e curve (pag. 62) — solo fino a 90×210
+const FORME = [
+  { id: 'diritta', label: 'Diritta (standard)',                    extra: 0 },
+  { id: 'arco_ts', label: 'Ad arco tutto sesto',                   extra: 1000 },
+  { id: 'arco_sr', label: 'Ad arco sesto ribassato',               extra: 1500 },
+  { id: 'curva',   label: 'Curva in pianta (solo liscia)',         extra: 2500 },
+];
+
+const SOPRALUCI = [
+  { id: 'no',       label: 'Senza sopraluce',                      extra: 0 },
+  { id: 'fisso',    label: 'Sopraluce fisso (fino a 50 cm)',       extra: 250 },
+  { id: 'apribile', label: 'Sopraluce apribile (fino a 50 cm)',    extra: 500 },
+  { id: 'wasistas', label: 'Sopraluce a wasistas (fino a 50 cm)',  extra: 650 },
+];
+
+// Serrature e cerniere (pag. 63)
+const SERRATURE = [
+  { id: 'std',       label: 'Meccanica standard (compresa)',            extra: 0 },
+  { id: 'magnetica', label: 'Magnetica patent',                         extra: 20 },
+  { id: 'yale',      label: 'Nucleo yale AGB (cilindro escluso)',       extra: 30 },
+  { id: 'opera',     label: 'Yale AGB "OPERA" (cilindro escluso)',      extra: 200 },
+  { id: 'cisa',      label: 'Sicurezza 3 punti CISA',                   extra: 330 },
+];
+const CERNIERE_EXTRA = { anuba: 0, scomparsa: 50 };
+
+// Maniglie a listino (pag. 64)
+const MANIGLIE_MOD = [
+  { id: 'no',       label: 'Da definire (esclusa)', extra: 0 },
+  { id: 'sidney',   label: 'SIDNEY',    extra: 30 },
+  { id: 'simona',   label: 'SIMONA',    extra: 40 },
+  { id: 'spigola',  label: 'SPIGOLA',   extra: 45 },
+  { id: 'torino',   label: 'TORINO',    extra: 55 },
+  { id: 'la50',     label: 'LA50',      extra: 55 },
+  { id: 'marea',    label: 'MAREA',     extra: 60 },
+  { id: 'frame',    label: 'Pomolo FRAME', extra: 70 },
+  { id: 'siena',    label: 'SIENA',     extra: 85 },
+  { id: 'quattro',  label: 'Maniglione QUATTRO', extra: 100 },
+  { id: 'ola',      label: 'OLA',       extra: 135 },
+  { id: 'tubal',    label: 'Maniglione TUBAL', extra: 170 },
+  { id: 'arco',     label: 'ARCO',      extra: 195 },
+  { id: 'tratto',   label: 'TRATTO',    extra: 225 },
+  { id: 'grafite',  label: 'GRAFITE',   extra: 285 },
+  { id: 'sesamo',   label: 'Pomolo SESAMO', extra: 350 },
+];
 
 const MANIGLIE = {
   ottone: { label: 'Ottone',     en: 'Brass',       color: 0xc9a227, metalness: 1,   roughness: 0.35 },
@@ -380,11 +514,10 @@ function loadModel(key) {
 }
 
 function applyVisibility() {
+  // La porta si preventiva sempre completa: tutti i nodi visibili.
   const def = MODELLI[state.modello];
-  for (const [comp, names] of Object.entries(def.nodi)) {
-    for (const n of names) {
-      if (nodes[n]) nodes[n].visible = state.comps[comp] !== false;
-    }
+  for (const names of Object.values(def.nodi)) {
+    for (const n of names) if (nodes[n]) nodes[n].visible = true;
   }
 }
 
@@ -611,7 +744,6 @@ const totalEl = document.getElementById('totalValue');
 const summaryLabelEl = document.getElementById('summaryLabel');
 const summaryConfigEl = document.getElementById('summaryConfig');
 const pillNoteEl = document.getElementById('pillNote');
-const componentsEl = document.getElementById('components');
 const panelTitleEl = document.getElementById('panelTitle');
 const panelSubEl = document.getElementById('panelSub');
 const captionModelEl = document.getElementById('captionModel');
@@ -621,12 +753,64 @@ function currentPrices() {
   return MODELLI[state.modello].listino[state.essenza][state.finitura];
 }
 
-function computeTotale() {
+/* Motore del preventivo: porta completa a listino → scaglioni fuori
+   misura → 2 ante → extra. Ritorna le righe pronte per UI e PDF. */
+function computePreventivo() {
   const prices = currentPrices();
-  return Object.entries(state.comps)
-    .filter(([, on]) => on)
-    .reduce((sum, [comp]) => sum + (prices[comp] || 0), 0) + laccatoExtra();
+  const baseTariffa = Object.values(prices).reduce((s, v) => s + (v || 0), 0);
+  const band = sizeBand(state.w, state.h);
+  const righe = [];
+  let suPreventivo = !band.ok;
+  let motivo = suPreventivo ? 'misura oltre 1200×2600 — fuori listino' : '';
+
+  let base = Math.round(baseTariffa * band.factor * 100) / 100;
+  if (state.ante === 2) base = Math.round(base * 2 * 100) / 100;
+  let baseNote = band.note.slice();
+  if (state.ante === 2) baseNote.push('2 ante +100%');
+  righe.push({ k: 'Porta completa a listino', sub: baseNote.join(' · '), v: base });
+
+  if (laccatoExtra()) righe.push({ k: `Colore RAL — ${LACCATI[state.colore].label}`, sub: 'listino n. 50', v: laccatoExtra() });
+
+  const tel = TELAI.find((t) => t.id === state.telaio);
+  const fermaporta = state.telaio === 'alpha_comp_sp' ? FERMAPORTA : 0;
+  if (tel.extra) righe.push({ k: `Telaio ${tel.label}`, sub: fermaporta ? 'fermaporta a pavimento obbligatorio compreso' : '', v: tel.extra + fermaporta });
+
+  const all = allargatoExtra(state.muro, state.allargato);
+  if (all.extra) righe.push({ k: 'Allargato telaio', sub: all.label, v: all.extra });
+
+  const cop = COPRI.find((c) => c.id === state.copri);
+  const fml = mlFactor(state.w, state.h);
+  const copExtra = Math.round(cop.prezzi[state.copriWood] * fml * 100) / 100;
+  if (copExtra) righe.push({
+    k: `Coprifili ${cop.label} · ${COPRI_WOOD_LABEL[state.copriWood]}`,
+    sub: fml > 1 ? `${(11.5 * fml).toFixed(1)} ml (extra a porta ${eur.format(cop.prezzi[state.copriWood])} fino a 11,5 ml)` : '',
+    v: copExtra,
+  });
+
+  const ape = APERTURE.find((a) => a.id === state.apertura);
+  if (ape.extra) righe.push({ k: `Apertura ${ape.label}`, sub: '', v: ape.extra });
+
+  const forma = FORME.find((f) => f.id === state.forma);
+  if (forma.extra) righe.push({ k: `Porta ${forma.label}`, sub: 'telaio ad arco/curvo escluso (voci 41–45)', v: forma.extra });
+  if (forma.id !== 'diritta' && (state.w > 900 || state.h > 2100)) {
+    suPreventivo = true; motivo = 'archi e curve solo fino a 90×210 — fuori listino';
+  }
+
+  const sop = SOPRALUCI.find((s) => s.id === state.sopraluce);
+  if (sop.extra) righe.push({ k: sop.label, sub: '', v: sop.extra });
+
+  const ser = SERRATURE.find((s) => s.id === state.serratura);
+  if (ser.extra) righe.push({ k: `Serratura ${ser.label}`, sub: '', v: ser.extra });
+  if (CERNIERE_EXTRA[state.cerniere]) righe.push({ k: 'Cerniere a scomparsa regolazione 3D', sub: 'n. 2 cerniere', v: CERNIERE_EXTRA[state.cerniere] });
+
+  const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
+  if (man.extra) righe.push({ k: `Maniglia ${man.label}`, sub: `finitura ${MANIGLIE[state.maniglia].label}`, v: man.extra });
+
+  const totale = Math.round(righe.reduce((s, r) => s + r.v, 0) * 100) / 100;
+  return { righe, totale, suPreventivo, motivo, baseTariffa };
 }
+
+const computeTotale = () => computePreventivo().totale;
 
 // menu essenze: legni raw + laccati su base universal
 const swatchesEl = document.getElementById('swatches');
@@ -667,48 +851,111 @@ function renderEssenze() {
   });
 }
 
-// lista componenti generata dal modello attivo
-function renderComponents() {
-  const def = MODELLI[state.modello];
-  componentsEl.innerHTML = def.componenti.map((c) => `
-    <li>
-      <label class="comp">
-        <input type="checkbox" data-comp="${c.id}" ${state.comps[c.id] ? 'checked' : ''}>
-        <span class="comp-check"></span>
-        <span class="comp-body">
-          <span class="comp-name">${c.it} <span class="en">${c.en}</span></span>
-          <span class="comp-desc">${c.desc}</span>
-        </span>
-        <span class="comp-price" data-price="${c.id}">—</span>
-      </label>
-    </li>`).join('');
-  componentsEl.querySelectorAll('[data-comp]').forEach((input) => {
-    input.addEventListener('change', () => {
-      state.comps[input.dataset.comp] = input.checked;
-      applyVisibility();
-      refreshUI();
-    });
-  });
+// controlli degli extra: select popolati dalle tabelle del listino
+function fillSelect(id, list, current) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = list.map((o) =>
+    `<option value="${o.id}">${o.label}${o.extra ? ` — + ${eur.format(o.extra)}` : ''}</option>`).join('');
+  sel.value = current;
+  return sel;
+}
+
+function renderExtras() {
+  fillSelect('telaioSelect', TELAI, state.telaio)
+    .addEventListener('change', (e) => { state.telaio = e.target.value; refreshUI(); });
+  refreshCopriSelect();
+  document.getElementById('copriSelect')
+    .addEventListener('change', (e) => { state.copri = e.target.value; refreshUI(); });
+  fillSelect('aperturaSelect', APERTURE, state.apertura)
+    .addEventListener('change', (e) => { state.apertura = e.target.value; refreshUI(); });
+  fillSelect('formaSelect', FORME, state.forma)
+    .addEventListener('change', (e) => { state.forma = e.target.value; refreshUI(); });
+  fillSelect('sopraluceSelect', SOPRALUCI, state.sopraluce)
+    .addEventListener('change', (e) => { state.sopraluce = e.target.value; refreshUI(); });
+  fillSelect('serraturaSelect', SERRATURE, state.serratura)
+    .addEventListener('change', (e) => { state.serratura = e.target.value; refreshUI(); });
+  fillSelect('manigliaModSelect', MANIGLIE_MOD, state.manigliaMod)
+    .addEventListener('change', (e) => { state.manigliaMod = e.target.value; refreshUI(); });
+
+  document.getElementById('mW').addEventListener('input', (e) => { state.w = +e.target.value || 0; refreshCopriSelect(); refreshUI(); });
+  document.getElementById('mH').addEventListener('input', (e) => { state.h = +e.target.value || 0; refreshCopriSelect(); refreshUI(); });
+  document.getElementById('mMuro').addEventListener('input', (e) => { state.muro = +e.target.value || 0; refreshUI(); });
+
+  document.querySelectorAll('#antePills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.ante = +b.dataset.ante; refreshUI(); }));
+  document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.allargato = b.dataset.allargato; refreshUI(); }));
+  document.querySelectorAll('#copriWoodPills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.copriWood = b.dataset.copriwood; refreshCopriSelect(); refreshUI(); }));
+  document.querySelectorAll('#cernierePills .pill').forEach((b) =>
+    b.addEventListener('click', () => { state.cerniere = b.dataset.cerniere; refreshUI(); }));
+}
+
+// il menu coprifili mostra il prezzo già scalato sui ml della misura attuale
+function refreshCopriSelect() {
+  const fml = mlFactor(state.w, state.h);
+  const sel = document.getElementById('copriSelect');
+  sel.innerHTML = COPRI.map((c) => {
+    const p = Math.round(c.prezzi[state.copriWood] * fml * 100) / 100;
+    return `<option value="${c.id}">${c.label}${p ? ` — + ${eur.format(p)}` : ''}</option>`;
+  }).join('');
+  sel.value = state.copri;
 }
 
 function refreshUI() {
-  const prices = currentPrices();
+  const prev = computePreventivo();
 
-  document.querySelectorAll('[data-price]').forEach((el) => {
-    el.textContent = eur.format(prices[el.dataset.price] || 0);
-  });
+  // — riepilogo con righe
+  const bkEl = document.getElementById('breakdown');
+  bkEl.innerHTML = prev.suPreventivo
+    ? `<div class="bk-row bk-warn">${prev.motivo} — da quotare con la fabbrica.</div>`
+    : prev.righe.map((r) => `
+      <div class="bk-row">
+        <span class="bk-k">${r.k}${r.sub ? `<small>${r.sub}</small>` : ''}</span>
+        <span class="bk-v">${eur.format(r.v)}</span>
+      </div>`).join('');
 
-  totalEl.textContent = eur.format(computeTotale());
+  totalEl.textContent = prev.suPreventivo ? 'SU PREVENTIVO' : eur.format(prev.totale);
+  totalEl.classList.toggle('is-prev', prev.suPreventivo);
   totalEl.classList.remove('bump');
   void totalEl.offsetWidth;
   totalEl.classList.add('bump');
+  document.getElementById('cta').disabled = prev.suPreventivo;
 
-  const allOn = Object.values(state.comps).every(Boolean);
-  summaryLabelEl.innerHTML = allOn
-    ? 'Porta completa · <span class="en">Complete door</span>'
-    : 'Configurazione parziale · <span class="en">Partial configuration</span>';
+  summaryLabelEl.innerHTML = 'Porta completa · <span class="en">Complete door</span>';
   summaryConfigEl.textContent =
-    `${MODELLI[state.modello].label} · ${essenzaLabel()} — ${FINITURA_LABEL[state.finitura]} · ${MANIGLIE[state.maniglia].label}`;
+    `${MODELLI[state.modello].label} · ${essenzaLabel()} — ${FINITURA_LABEL[state.finitura]} · ${state.w}×${state.h} mm`;
+
+  // — note contestuali
+  const band = sizeBand(state.w, state.h);
+  const misureNote = document.getElementById('misureNote');
+  if (!band.ok) misureNote.textContent = '⚠ Oltre 1200×2600 mm: fuori listino, su preventivo.';
+  else if (band.note.length) misureNote.textContent = `Scaglioni listino: ${band.note.join(' e ')} sul prezzo base.`;
+  else if (state.w < 700) misureNote.textContent = '⚠ Luce minima 700 mm: sotto, occorre cambiare modello.';
+  else misureNote.textContent = 'Misura standard di listino (900×2100).';
+
+  const allPills = document.getElementById('allargatoPills');
+  allPills.hidden = state.muro <= 108;
+  document.getElementById('muroNote').textContent = state.muro <= 108
+    ? 'Il telaio standard copre muri fino a 108 mm.'
+    : `Allargato ${allargatoExtra(state.muro, state.allargato).label}: + ${eur.format(allargatoExtra(state.muro, state.allargato).extra)}.`;
+
+  document.getElementById('telaioNote').textContent =
+    state.telaio === 'alpha_comp_sp' ? `Con il complanare a spingere il fermaporta a pavimento è obbligatorio: + ${eur.format(FERMAPORTA)} (voce 74).` : '';
+
+  const apNote = [];
+  if (state.apertura === 'magic' && state.w > 800) apNote.push('⚠ Il kit MAGIC è disponibile solo per luce muro fino a 800 mm.');
+  if (state.forma !== 'diritta' && (state.w > 900 || state.h > 2100)) apNote.push('⚠ Archi e curve solo fino a 90×210.');
+  document.getElementById('aperturaNote').textContent = apNote.join(' ');
+
+  document.querySelectorAll('#antePills .pill').forEach((b) =>
+    b.classList.toggle('is-active', +b.dataset.ante === state.ante));
+  document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.allargato === state.allargato));
+  document.querySelectorAll('#copriWoodPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.copriwood === state.copriWood));
+  document.querySelectorAll('#cernierePills .pill').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
 
   // i laccati sono disponibili solo verniciati
   const grezzaBtn = document.querySelector('[data-finitura="grezza"]');
@@ -729,7 +976,6 @@ function refreshUI() {
 function setModello(key) {
   if (state.modello === key && model) return;
   state.modello = key;
-  state.comps = defaultComps(key);
   const def = MODELLI[key];
   // intestazioni pannello e viewer
   captionModelEl.innerHTML = def.linea === 'Base'
@@ -739,7 +985,6 @@ function setModello(key) {
   panelTitleEl.textContent = def.linea === 'Base' ? def.label : `${def.label} ${def.linea}`;
   panelSubEl.innerHTML = `${def.descIt} — <span class="en">${def.descEn}</span>`;
   modelloSelect.value = key;
-  renderComponents();
   refreshUI();
   loadModel(key);
 }
@@ -833,9 +1078,9 @@ function buildPDF(cliente, rif) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = 595, M = 48;
   const mod = MODELLI[state.modello];
-  const prices = currentPrices();
+  const prev = computePreventivo();
   const qty = Math.max(1, parseInt(cliente.quantita, 10) || 1);
-  const unitTotal = computeTotale();
+  const unitTotal = prev.totale;
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 
   // — intestazione
@@ -911,29 +1156,20 @@ function buildPDF(cliente, rif) {
   row('Modello', `${mod.label} — ${mod.sub}`, y);
   row('Essenza', essenzaLabel(), y + 14);
   row('Finitura', `${FINITURA_LABEL[state.finitura]} / ${state.finitura === 'grezza' ? 'raw' : 'painted'}`, y + 28);
-  row('Maniglia', `${MANIGLIE[state.maniglia].label} / ${MANIGLIE[state.maniglia].en}`, y + 42);
-  row('Ambiente', `${AMBIENTI_LABEL[state.ambiente]} (visualizzazione)`, y + 56);
-  row('Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte'}`, y + 70);
+  row('Misure luce', `${state.w} × ${state.h} mm — ${state.ante === 1 ? '1 anta' : '2 ante'}`, y + 42);
+  row('Muro', `${state.muro} mm`, y + 56);
+  row('Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte'} · maniglia fin. ${MANIGLIE[state.maniglia].label}`, y + 70);
 
-  // — componenti e prezzi
+  // — righe del preventivo
   y += 96;
-  section('COMPONENTI E PREZZI / COMPONENTS AND PRICES', y);
+  section('PREVENTIVO / QUOTE', y);
   y += 20;
-  for (const c of mod.componenti) {
-    const on = state.comps[c.id];
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(on ? 43 : 180, on ? 33 : 170, on ? 26 : 155);
-    doc.text(`${on ? '' : '(escluso) '}${c.it} / ${c.en}`, M, y);
-    doc.text(on ? pdfMoney(prices[c.id] || 0) : '—', W - M, y, { align: 'right' });
-    y += 15;
-  }
-  if (laccatoExtra()) {
+  for (const r of prev.righe) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(43, 33, 26);
-    doc.text(`Aumento colore RAL — ${LACCATI[state.colore].label} (listino n. 50) / RAL colour surcharge`, M, y);
-    doc.text(pdfMoney(laccatoExtra()), W - M, y, { align: 'right' });
+    doc.text(`${r.k}${r.sub ? ` — ${r.sub}` : ''}`, M, y, { maxWidth: W - 2 * M - 90 });
+    doc.text(pdfMoney(r.v), W - M, y, { align: 'right' });
     y += 15;
   }
   doc.setDrawColor(43, 33, 26);
@@ -1011,7 +1247,7 @@ window.__pdf = { buildPDF }; // hook di verifica
 
 renderModelli();
 renderEssenze();
-renderComponents();
+renderExtras();
 setManiglia(state.maniglia);
 refreshUI();
 loadModel(state.modello);

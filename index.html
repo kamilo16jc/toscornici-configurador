@@ -76,15 +76,81 @@
       <p class="pill-note" id="pillNote"></p>
     </section>
 
-    <!-- Componenti -->
+    <!-- Misure -->
     <section class="section">
-      <h2 class="section-title"><span class="num">04</span> Componenti <span class="en">/ Components</span></h2>
-      <ul class="components" id="components"><!-- generato dal modello attivo --></ul>
+      <h2 class="section-title"><span class="num">04</span> Misure luce <span class="en">/ Opening size</span></h2>
+      <div class="measures">
+        <label class="measure">Larghezza <span class="en">mm</span>
+          <input type="number" id="mW" value="900" min="500" max="1400" step="10">
+        </label>
+        <label class="measure">Altezza <span class="en">mm</span>
+          <input type="number" id="mH" value="2100" min="1700" max="2800" step="10">
+        </label>
+      </div>
+      <div class="pills" id="antePills">
+        <button class="pill is-active" data-ante="1">1 anta</button>
+        <button class="pill" data-ante="2">2 ante <span class="en">+100%</span></button>
+      </div>
+      <p class="pill-note" id="misureNote"></p>
+    </section>
+
+    <!-- Muro e allargato -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">05</span> Muro e allargato <span class="en">/ Wall</span></h2>
+      <div class="measures">
+        <label class="measure">Spessore muro <span class="en">mm</span>
+          <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
+        </label>
+      </div>
+      <div class="pills" id="allargatoPills" hidden>
+        <button class="pill is-active" data-allargato="integrale">Integrale</button>
+        <button class="pill" data-allargato="imbottino">Con imbottino</button>
+      </div>
+      <p class="pill-note" id="muroNote"></p>
+    </section>
+
+    <!-- Telaio -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">06</span> Telaio <span class="en">/ Frame profile</span></h2>
+      <select class="model-select" id="telaioSelect" aria-label="Telaio"></select>
+      <p class="pill-note" id="telaioNote"></p>
+    </section>
+
+    <!-- Coprifili -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">07</span> Coprifili <span class="en">/ Architraves</span></h2>
+      <div class="pills" id="copriWoodPills">
+        <button class="pill" data-copriwood="frassino">Frassino</button>
+        <button class="pill is-active" data-copriwood="toulipier">Toulipier</button>
+        <button class="pill" data-copriwood="pino">Pino</button>
+      </div>
+      <select class="model-select" id="copriSelect" aria-label="Coprifilo"></select>
+      <p class="pill-note" id="copriNote">Il coprifilo è un pezzo indipendente dall'anta: il listino lo produce solo in questi 3 legni. Liscio listellare (90/70) compreso nel prezzo.</p>
+    </section>
+
+    <!-- Apertura e forma -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">08</span> Apertura e forma <span class="en">/ Opening</span></h2>
+      <select class="model-select" id="aperturaSelect" aria-label="Apertura"></select>
+      <select class="model-select" id="formaSelect" aria-label="Forma"></select>
+      <select class="model-select" id="sopraluceSelect" aria-label="Sopraluce"></select>
+      <p class="pill-note" id="aperturaNote"></p>
+    </section>
+
+    <!-- Ferramenta -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">09</span> Ferramenta <span class="en">/ Hardware extras</span></h2>
+      <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
+      <div class="pills" id="cernierePills">
+        <button class="pill is-active" data-cerniere="anuba">Anuba <span class="en">incluse</span></button>
+        <button class="pill" data-cerniere="scomparsa">A scomparsa 3D <span class="en">+€50</span></button>
+      </div>
+      <select class="model-select" id="manigliaModSelect" aria-label="Modello maniglia"></select>
     </section>
 
     <!-- Maniglia -->
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> Maniglia <span class="en">/ Hardware</span></h2>
+      <h2 class="section-title"><span class="num">10</span> Finitura maniglia <span class="en">/ Hardware finish</span></h2>
       <div class="metals" id="maniglie">
         <button class="metal is-active" data-maniglia="ottone">
           <span class="metal-chip chip-ottone"></span>
@@ -103,7 +169,7 @@
 
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">06</span> Ambiente <span class="en">/ Setting</span></h2>
+      <h2 class="section-title"><span class="num">11</span> Ambiente <span class="en">/ Setting</span></h2>
       <div class="pills pills-grid" id="ambienti">
         <button class="pill is-active" data-ambiente="galleria">Galleria <span class="en">Showroom</span></button>
         <button class="pill" data-ambiente="ingresso">Ingresso <span class="en">Entrance</span></button>
@@ -118,6 +184,7 @@
         <span class="summary-label" id="summaryLabel">Porta completa · <span class="en">Complete door</span></span>
         <span class="summary-config" id="summaryConfig">—</span>
       </div>
+      <div class="breakdown" id="breakdown"><!-- righe del preventivo --></div>
       <div class="summary-total">
         <span class="total-label">Totale <span class="en">Total</span></span>
         <span class="total-value" id="totalValue">€ 0,00</span>

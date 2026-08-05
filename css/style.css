@@ -862,3 +862,32 @@ body {
   .viewer-caption { left: 20px; bottom: 22px; }
   .viewer-hint { display: none; }
 }
+
+/* ============================================================
+   EXTRA LISTINO — misure, allargato, coprifili, ferramenta
+   ============================================================ */
+.measures { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.measure { display: block; font-size: 12px; letter-spacing: .04em; color: #8d7d6a; }
+.measure input {
+  width: 100%; margin-top: 6px; padding: 11px 12px;
+  border: 1px solid #ddd2c1; background: #fdfbf7; color: #2b211a;
+  font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500;
+}
+.measure input:focus { outline: none; border-color: #a8843c; }
+.model-select + .model-select { margin-top: 8px; }
+#telaioSelect, #copriSelect { margin-top: 2px; }
+.pill-note.warn { color: #a8552e; }
+
+/* riepilogo a righe */
+.breakdown { margin: 10px 0 4px; max-height: 150px; overflow-y: auto; }
+.bk-row {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 5px 0; border-bottom: 1px dotted #e4dac9;
+  font-size: 12.5px; color: #2b211a;
+}
+.bk-row:last-child { border-bottom: none; }
+.bk-k small { display: block; color: #8d7d6a; font-size: 10.5px; margin-top: 1px; }
+.bk-v { white-space: nowrap; font-weight: 500; }
+.bk-warn { color: #a8552e; font-size: 12.5px; }
+.total-value.is-prev { font-size: 20px; letter-spacing: .06em; color: #a8552e; }
+.cta:disabled { opacity: .45; cursor: not-allowed; }
