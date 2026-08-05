@@ -4,8 +4,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
-window.__ver = 'width-test-1';
-
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
    Colonne listino: sbiancato → Rovere, pino → Pino,
@@ -235,9 +233,27 @@ function toggleDoor() {
 
 const gltfLoader = new GLTFLoader();
 
+// libera GPU: geometrie, materiali e texture del GLB precedente.
+// I materiali condivisi (woodMat, handleMat) e le loro texture in cache
+// NON si toccano — vengono riusati dal modello successivo.
+function disposeMaterial(m) {
+  if (!m || m === woodMat || m === handleMat) return;
+  for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'])
+    if (m[k]) m[k].dispose();
+  m.dispose();
+}
+
+function disposeSubtree(root) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.geometry) o.geometry.dispose();
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) disposeMaterial(m);
+  });
+}
+
 function clearModel() {
-  if (doorPivot) { scene.remove(doorPivot); doorPivot = null; }
-  if (model) { scene.remove(model); model = null; }
+  if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
+  if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   for (const k of Object.keys(nodes)) delete nodes[k];
   leafParts = [];
   doorTargetAngle = 0;
@@ -268,17 +284,14 @@ function loadModel(key) {
       const rawH = rawBox.getSize(new THREE.Vector3()).y;
       if (rawH > 100) model.scale.setScalar(1 / 1000);
 
-      // TEST: allargamento per modello (fattore sull'asse X).
-      // Tutto il resto (muro, perno, inquadratura) si adatta da solo
-      // perché le misure si prendono dopo questa scala.
-      const WIDTH_TEST = { virginia: 1.1 };
-      if (WIDTH_TEST[key]) model.scale.x *= WIDTH_TEST[key];
-
       model.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
-          if (o.material && o.material.name.startsWith('Mat_puerta')) o.material = woodMat;
+          if (o.material && o.material.name.startsWith('Mat_puerta')) {
+            disposeMaterial(o.material); // texture 4K embebida nel GLB, non serve più
+            o.material = woodMat;
+          }
         }
       });
 
@@ -317,7 +330,9 @@ function loadModel(key) {
 
       // maniglia con materiale configurabile
       const lockNode = nodes[def.lockNode];
-      if (lockNode) lockNode.traverse((o) => { if (o.isMesh) o.material = handleMat; });
+      if (lockNode) lockNode.traverse((o) => {
+        if (o.isMesh) { disposeMaterial(o.material); o.material = handleMat; }
+      });
 
       // perno di apertura sul lato cerniere (opposto alla maniglia)
       scene.updateMatrixWorld(true);
