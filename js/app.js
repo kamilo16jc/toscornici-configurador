@@ -1179,22 +1179,24 @@ function buildPDF(cliente, rif) {
   const unitTotal = prev.totale;
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 
-  // — intestazione
-  doc.setDrawColor(168, 132, 60);
-  doc.setLineWidth(1);
-  doc.rect(M, 44, 30, 30);
-  doc.setFont('times', 'normal');
-  doc.setFontSize(22);
-  doc.setTextColor(168, 132, 60);
-  doc.text('T', M + 15, 65, { align: 'center' });
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(43, 33, 26);
-  doc.text('T O S C O R N I C I', M + 42, 58);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(141, 125, 106);
-  doc.text('Porte in legno massello · Configuratore 3D', M + 42, 70);
+  // — intestazione: logo ufficiale (fallback testuale se non caricato)
+  if (logoData) {
+    const lw = 150, lh = lw * (240 / 1048); // ~34pt, proporzioni del PNG
+    doc.addImage(logoData, 'PNG', M, 44, lw, lh);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(141, 125, 106);
+    doc.text('Porte in legno massello · Configuratore 3D', M, 44 + lh + 11);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(43, 33, 26);
+    doc.text('T O S C O C O R N I C I', M, 58);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(141, 125, 106);
+    doc.text('Porte in legno massello · Configuratore 3D', M, 70);
+  }
 
   doc.setFontSize(9);
   doc.setTextColor(43, 33, 26);
@@ -1303,7 +1305,7 @@ function buildPDF(cliente, rif) {
   doc.setFontSize(8);
   doc.setTextColor(141, 125, 106);
   doc.text(
-    'Documento generato automaticamente dal Configuratore 3D Toscornici e inoltrato a ordini@toscornici.it',
+    'Documento generato automaticamente dal Configuratore 3D Toscocornici e inoltrato a ordini@toscocornici.it',
     W / 2, 812, { align: 'center' }
   );
   return doc;
@@ -1362,6 +1364,13 @@ function loadBloccoBg() {
     }));
 }
 loadBloccoBg().catch((e) => console.warn('Blocco TL_2018 non precaricato:', e));
+
+// logo ufficiale per l'intestazione del PDF preventivo
+let logoData = null;
+fetch('assets/logo_toscocornici.png')
+  .then((r) => r.blob())
+  .then((b) => { const fr = new FileReader(); fr.onload = () => { logoData = fr.result; }; fr.readAsDataURL(b); })
+  .catch(() => {});
 // se il precarico è fallito (rete, deploy in corso), riprova al momento dell'invio
 async function ensureBloccoBg() {
   if (bloccoBg) return true;
