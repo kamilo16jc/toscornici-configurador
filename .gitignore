@@ -3,3 +3,10 @@
 .vercel
 
 .vercel
+
+# credenciales locales — nunca deben entrar al repo
+*.token
+token
+.env
+.env.*
+.replicate/
