@@ -1039,8 +1039,7 @@ function renderExtras() {
     b.addEventListener('click', () => { state.ante = +b.dataset.ante; refreshUI(); }));
   document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.allargato = b.dataset.allargato; refreshUI(); }));
-  document.querySelectorAll('#copriWoodPills .pill').forEach((b) =>
-    b.addEventListener('click', () => { state.copriWood = b.dataset.copriwood; refreshCopriSelect(); refreshUI(); }));
+  // il legno del coprifilo si sceglie dentro il visore (lente sulla scheda)
   document.querySelectorAll('#cernierePills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.cerniere = b.dataset.cerniere; refreshUI(); }));
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
@@ -1061,6 +1060,11 @@ function refreshCopriSelect() {
   const fml = mlFactor(state.w, state.h);
   const grid = document.getElementById('copriGrid');
   const metri = 11.5 * fml;
+  // senza le pastiglie esterne il legno attivo non si vedrebbe: va in nota,
+  // perché è quello a cui si riferiscono i prezzi delle schede.
+  const nota = document.getElementById('copriNote');
+  if (!nota.dataset.base) nota.dataset.base = nota.textContent;
+  nota.textContent = `Prezzi in ${COPRI_WOOD_LABEL[state.copriWood]}. ${nota.dataset.base}`;
   grid.innerHTML = COPRI.map((c) => {
     const attiva = c.id === state.copri;
     const mis = attiva ? misuraAttiva(c) : misureDi(c.id)[0];
@@ -1210,8 +1214,6 @@ function refreshUI() {
     b.classList.toggle('is-active', +b.dataset.ante === state.ante));
   document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.allargato === state.allargato));
-  document.querySelectorAll('#copriWoodPills .pill').forEach((b) =>
-    b.classList.toggle('is-active', b.dataset.copriwood === state.copriWood));
   document.querySelectorAll('#cernierePills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
