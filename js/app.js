@@ -533,10 +533,10 @@ function loadSet(essenza) {
     return t;
   };
   texCache[essenza] = {
-    map: load('albedo.webp', true),
-    normalMap: load('normal.webp'),
-    roughnessMap: load('roughness.webp'),
-    aoMap: load('ao.webp'),
+    map: load('albedo.jpg', true),
+    normalMap: load('normal.jpg'),
+    roughnessMap: load('roughness.jpg'),
+    aoMap: load('ao.jpg'),
   };
   return texCache[essenza];
 }
@@ -846,7 +846,7 @@ function makeZoccolino(group, color) {
 let floorTex = null;
 function woodFloorMat(tint) {
   if (!floorTex) {
-    floorTex = texLoader.load('assets/textures/pino/albedo.webp');
+    floorTex = texLoader.load('assets/textures/pino/albedo.jpg');
     floorTex.colorSpace = THREE.SRGBColorSpace;
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
     floorTex.repeat.set(3, 2.6);
@@ -1231,7 +1231,7 @@ const laccatiEl = document.getElementById('laccati');
 function renderEssenze() {
   swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
     <button class="swatch" data-essenza="${k}">
-      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.webp');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
+      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.jpg');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
@@ -1795,7 +1795,7 @@ const MANO_COL = {
 
 let bloccoBg = null; // dataURL del modulo, precaricato
 function loadBloccoBg() {
-  return fetch('assets/blocco_tl2018.webp')
+  return fetch('assets/blocco_tl2018.jpg')
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
     .then((b) => new Promise((res) => {
       const fr = new FileReader();
