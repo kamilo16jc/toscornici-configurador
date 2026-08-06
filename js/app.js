@@ -389,8 +389,10 @@ const doorBtn = document.getElementById('doorBtn');
 function toggleDoor() {
   const opening = doorTargetAngle === 0;
   doorTargetAngle = opening ? doorOpenAngle : 0;
-  doorBtn.textContent = opening ? 'Chiudi la porta' : 'Apri la porta';
-  doorBtn.title = opening ? 'Close the door' : 'Open the door';
+  // il pulsante è un'icona SVG: si cambia solo lo stato (l'icona ruota via CSS)
+  doorBtn.classList.toggle('is-open', opening);
+  doorBtn.title = opening ? 'Chiudi la porta / Close the door' : 'Apri la porta / Open the door';
+  doorBtn.setAttribute('aria-label', opening ? 'Chiudi la porta' : 'Apri la porta');
 }
 
 const gltfLoader = new GLTFLoader();
@@ -420,7 +422,8 @@ function clearModel() {
   leafParts = [];
   doorTargetAngle = 0;
   doorBtn.hidden = true;
-  doorBtn.textContent = 'Apri la porta';
+  doorBtn.classList.remove('is-open');
+  doorBtn.title = 'Apri la porta / Open the door';
   // gli ambienti sono tagliati sulle misure della porta → si ricostruiscono
   for (const [k, g] of Object.entries(ambienti)) {
     scene.remove(g);
@@ -1071,7 +1074,7 @@ function setModello(key) {
   captionModelEl.innerHTML = def.linea === 'Base'
     ? def.label
     : `${def.label} <span>${def.linea}</span>`;
-  captionLineEl.textContent = `${def.sub} · Porte in legno massello`;
+  if (captionLineEl) captionLineEl.textContent = def.sub;
   panelTitleEl.textContent = def.linea === 'Base' ? def.label : `${def.label} ${def.linea}`;
   panelSubEl.innerHTML = `${def.descIt} — <span class="en">${def.descEn}</span>`;
   modelloSelect.value = key;
