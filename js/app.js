@@ -121,19 +121,19 @@ function allargatoExtra(muro, sistema) {
 // differenza rispetto al liscio listellare compreso (1 lato 90 + 1 lato 70).
 // Il coprifilo esiste SOLO in frassino / toulipier / pino.
 const COPRI = [
-  { id: 'listellare',   label: 'Liscio listellare — compreso',      prezzi: { frassino: 0,     toulipier: 0,   pino: 0 } },
-  { id: 'massello',     label: 'Liscio massello',                    prezzi: { frassino: 43.5,  toulipier: 16,  pino: 3.5 } },
-  { id: 'pierre',       label: 'Pierre S1 (70/70)',                  prezzi: { frassino: 45,    toulipier: 30,  pino: 30 } },
-  { id: 'tintoretto',   label: 'Tintoretto (90/70)',                 prezzi: { frassino: 75,    toulipier: 60,  pino: 60 } },
-  { id: 'raffaello',    label: 'Raffaello-S (90/70)',                prezzi: { frassino: 75,    toulipier: 60,  pino: 60 } },
-  { id: 'giotto',       label: 'Giotto S2 (90/70)',                  prezzi: { frassino: 65,    toulipier: 50,  pino: 50 } },
-  { id: 'leonardo',     label: 'Leonardo CS1-S2 (90/70)',            prezzi: { frassino: 65,    toulipier: 50,  pino: 50 } },
-  { id: 'michelangelo', label: 'Michelangelo CS300 (90/70)',         prezzi: { frassino: 85,    toulipier: 70,  pino: 70 } },
-  { id: 'cartesio',     label: 'Cartesio CS207 (100/70)',            prezzi: { frassino: 85,    toulipier: 70,  pino: 70 } },
-  { id: 'caravaggio',   label: 'Caravaggio CS206 (27×90)',           prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
-  { id: 'tiziano',      label: 'Tiziano CS204 (30×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
-  { id: 'canaletto',    label: 'Canaletto CS3 (34×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 } },
-  { id: 'novecento',    label: 'Novecento CAP1 (42×110)',            prezzi: { frassino: 290,   toulipier: 250, pino: 250 } },
+  { id: 'listellare',   label: 'Liscio listellare — compreso',      prezzi: { frassino: 0,     toulipier: 0,   pino: 0 }, img: 'assets/coprifili/liscio.png' },
+  { id: 'massello',     label: 'Liscio massello',                    prezzi: { frassino: 43.5,  toulipier: 16,  pino: 3.5 }, img: 'assets/coprifili/liscio.png' },
+  { id: 'pierre',       label: 'Pierre S1 (70/70)',                  prezzi: { frassino: 45,    toulipier: 30,  pino: 30 }, img: 'assets/coprifili/pierre.png' },
+  { id: 'tintoretto',   label: 'Tintoretto (90/70)',                 prezzi: { frassino: 75,    toulipier: 60,  pino: 60 }, img: 'assets/coprifili/tintoretto.png' },
+  { id: 'raffaello',    label: 'Raffaello-S (90/70)',                prezzi: { frassino: 75,    toulipier: 60,  pino: 60 }, img: 'assets/coprifili/raffaello.png' },
+  { id: 'giotto',       label: 'Giotto S2 (90/70)',                  prezzi: { frassino: 65,    toulipier: 50,  pino: 50 }, img: 'assets/coprifili/giotto.png' },
+  { id: 'leonardo',     label: 'Leonardo CS1-S2 (90/70)',            prezzi: { frassino: 65,    toulipier: 50,  pino: 50 }, img: 'assets/coprifili/leonardo.png' },
+  { id: 'michelangelo', label: 'Michelangelo CS300 (90/70)',         prezzi: { frassino: 85,    toulipier: 70,  pino: 70 }, img: 'assets/coprifili/michelangelo.png' },
+  { id: 'cartesio',     label: 'Cartesio CS207 (100/70)',            prezzi: { frassino: 85,    toulipier: 70,  pino: 70 }, img: null },
+  { id: 'caravaggio',   label: 'Caravaggio CS206 (27×90)',           prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: null },
+  { id: 'tiziano',      label: 'Tiziano CS204 (30×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: null },
+  { id: 'canaletto',    label: 'Canaletto CS3 (34×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: null },
+  { id: 'novecento',    label: 'Novecento CAP1 (42×110)',            prezzi: { frassino: 290,   toulipier: 250, pino: 250 }, img: null },
 ];
 const COPRI_WOOD_LABEL = { frassino: 'Frassino', toulipier: 'Toulipier', pino: 'Pino' };
 
@@ -934,8 +934,6 @@ function renderExtras() {
   fillSelect('telaioSelect', TELAI, state.telaio)
     .addEventListener('change', (e) => { state.telaio = e.target.value; refreshUI(); });
   refreshCopriSelect();
-  document.getElementById('copriSelect')
-    .addEventListener('change', (e) => { state.copri = e.target.value; refreshUI(); });
   fillSelect('aperturaSelect', APERTURE, state.apertura)
     .addEventListener('change', (e) => { state.apertura = e.target.value; refreshUI(); });
   fillSelect('formaSelect', FORME, state.forma)
@@ -973,13 +971,28 @@ function renderExtras() {
 
 // il menu coprifili mostra il prezzo già scalato sui ml della misura attuale
 function refreshCopriSelect() {
+  // griglia con anteprima: stessa immagine per tutte le misure di uno stesso
+  // modello (il profilo non cambia, cambia solo la larghezza).
   const fml = mlFactor(state.w, state.h);
-  const sel = document.getElementById('copriSelect');
-  sel.innerHTML = COPRI.map((c) => {
+  const grid = document.getElementById('copriGrid');
+  grid.innerHTML = COPRI.map((c) => {
     const p = Math.round(c.prezzi[state.copriWood] * fml * 100) / 100;
-    return `<option value="${c.id}">${c.label}${p ? ` — + ${eur.format(p)}` : ''}</option>`;
+    return `
+    <button class="man-card${c.id === state.copri ? ' is-active' : ''}" data-copri="${c.id}">
+      ${c.img
+        ? `<span class="man-photo"><img src="${c.img}" alt="Coprifilo ${c.label}" loading="lazy"></span>`
+        : '<span class="man-photo man-photo--none">—</span>'}
+      <span class="man-label">${c.label.replace(/ \(.*/, '').replace(' — compreso', '')}</span>
+      <span class="man-extra">${p ? `+ ${eur.format(p)}` : 'compreso'}</span>
+    </button>`;
   }).join('');
-  sel.value = state.copri;
+  grid.querySelectorAll('.man-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.copri = btn.dataset.copri;
+      grid.querySelectorAll('.man-card').forEach((b) => b.classList.toggle('is-active', b === btn));
+      refreshUI();
+    });
+  });
 }
 
 function refreshUI() {
