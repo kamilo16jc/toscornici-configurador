@@ -943,3 +943,57 @@ body {
 .bk-warn { color: #a8552e; font-size: 12.5px; }
 .total-value.is-prev { font-size: 20px; letter-spacing: .06em; color: #a8552e; }
 .cta:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ============================================================
+   >>> INIZIO TEMA TOSCOCORNICI.IT (proposta A+B) <<<
+   Palette e titoli allineati al sito ufficiale toscocornici.it:
+   bianco, grigi neutri, greige #ada18b, nero targa, Montserrat.
+   REVERSIBILE: per tornare al tema avorio/ottone originale basta
+   eliminare questo blocco intero — nessuna regola sopra è stata
+   modificata (le vecchie variabili restano definite in :root).
+   ============================================================ */
+
+:root {
+  --ivory: #f7f6f4;          /* prima: #f4efe6 (avorio caldo) */
+  --ivory-deep: #edecec;     /* prima: #ece5d8 */
+  --espresso: #222222;       /* prima: #2b211a (espresso) */
+  --espresso-soft: #454545;  /* prima: #4a3c30 */
+  --taupe: #666666;          /* prima: #8d7d6a (taupe caldo) */
+  --brass: #ada18b;          /* prima: #a8843c — greige ufficiale del sito */
+  --brass-bright: #c2b7a2;   /* prima: #c19a4b */
+  --hairline: rgba(34, 34, 34, 0.14);
+  --panel-bg: #ffffff;       /* prima: #faf7f0 */
+}
+
+/* sfondo del viewer: neutro chiaro come il catalogo web (era avorio) */
+.viewer {
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 105%, #e3e1dd 0%, transparent 55%),
+    linear-gradient(175deg, #fafaf9 0%, #f1f0ee 60%, #e8e6e2 100%);
+}
+
+/* titoli di sezione: Montserrat 700 MAIUSCOLO — come i titolari del sito */
+.section-title {
+  font-family: "Montserrat", var(--sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  color: #222222;
+}
+.section-title .en { font-family: var(--sans); font-weight: 300; }
+
+/* CTA e stati attivi: nero targa, eco del logo ufficiale */
+.cta { background: #111111; }
+.cta:hover { background: var(--brass); }
+.pill.is-active { background: #111111; }
+
+/* campi su fondo bianco: bordi neutri */
+.measure input, .model-select, select, textarea, input[type="text"],
+input[type="email"], input[type="tel"], input[type="number"] {
+  background: #fbfbfa;
+  border-color: #d9d5cd;
+}
+
+/* ============================================================
+   >>> FINE TEMA TOSCOCORNICI.IT <<<
+   ============================================================ */
