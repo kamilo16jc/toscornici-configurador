@@ -129,7 +129,7 @@ const COPRI = [
   { id: 'giotto',       label: 'Giotto S2 (90/70)',                  prezzi: { frassino: 65,    toulipier: 50,  pino: 50 }, img: 'assets/coprifili/giotto.png' },
   { id: 'leonardo',     label: 'Leonardo CS1-S2 (90/70)',            prezzi: { frassino: 65,    toulipier: 50,  pino: 50 }, img: 'assets/coprifili/leonardo.png' },
   { id: 'michelangelo', label: 'Michelangelo CS300 (90/70)',         prezzi: { frassino: 85,    toulipier: 70,  pino: 70 }, img: 'assets/coprifili/michelangelo.png' },
-  { id: 'cartesio',     label: 'Cartesio CS207 (100/70)',            prezzi: { frassino: 85,    toulipier: 70,  pino: 70 }, img: null },
+  { id: 'cartesio',     label: 'Cartesio CS207 (100/70)',            prezzi: { frassino: 85,    toulipier: 70,  pino: 70 }, img: 'assets/coprifili/cartesio.png' },
   { id: 'caravaggio',   label: 'Caravaggio CS206 (27×90)',           prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/caravaggio.png' },
   { id: 'tiziano',      label: 'Tiziano CS204 (30×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/tiziano.png' },
   { id: 'canaletto',    label: 'Canaletto CS3 (34×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/canaletto.png' },
