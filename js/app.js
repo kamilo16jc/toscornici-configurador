@@ -279,30 +279,30 @@ const CAP_COMPL = {
 // extra:null = prezzo da definire → esclusa dal totale, indicata nel PDF.
 const MANIGLIE_MOD = [
   { id: 'no',      label: 'Da definire (esclusa)', extra: 0,   img: null, fin: [] },
-  { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.jpg',
+  { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.webp',
     fin: ['MCS', 'MCR', 'MNO', 'MATX'] },
-  { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.jpg',
+  { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.webp',
      fin: ['MCS', 'MCR', 'MNO', 'MBGO'] },
-  { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.jpg',
+  { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.webp',
     fin: ['OLV', 'MCS', 'MCR', 'MNO', 'MBIA', 'MSV', 'MBGO', 'MATX'] },
-  { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.jpg',
+  { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.webp',
        fin: ['MCS', 'MCR', 'MNO'] },
-  { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.jpg',
+  { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.webp',
       fin: ['OLV', 'CS', 'CR'] },
-  { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.jpg',
+  { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.webp',
       fin: ['PVD', 'OLV', 'SV', 'CS', 'CR', 'ANT', 'OLD', 'BG'] },
   // la scheda del Toga arriva tagliata: si legge solo la prima finitura
-  { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.jpg',
+  { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.webp',
        fin: ['MCS'], finParziale: true },
-  { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.jpg',
+  { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.webp',
      fin: ['CR', 'CS', 'OLV', 'ANT', 'OLD', 'ARG', 'RAM', 'BU'] },
-  { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.jpg',
+  { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.webp',
      fin: ['MCS', 'MCR', 'MNO', 'MATX', 'MBIA'] },
-  { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.jpg',
+  { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.webp',
        fin: ['MCS', 'MCR', 'MNO'] },
-  { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.jpg',
+  { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.webp',
       fin: ['CS', 'CR', 'CR/CS', 'ATX', 'NO'] },
-  { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.jpg',
+  { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.webp',
      fin: ['CS', 'CR', 'CR/CS'] },
 ];
 
@@ -533,10 +533,10 @@ function loadSet(essenza) {
     return t;
   };
   texCache[essenza] = {
-    map: load('albedo.jpg', true),
-    normalMap: load('normal.jpg'),
-    roughnessMap: load('roughness.jpg'),
-    aoMap: load('ao.jpg'),
+    map: load('albedo.webp', true),
+    normalMap: load('normal.webp'),
+    roughnessMap: load('roughness.webp'),
+    aoMap: load('ao.webp'),
   };
   return texCache[essenza];
 }
@@ -846,7 +846,7 @@ function makeZoccolino(group, color) {
 let floorTex = null;
 function woodFloorMat(tint) {
   if (!floorTex) {
-    floorTex = texLoader.load('assets/textures/pino/albedo.jpg');
+    floorTex = texLoader.load('assets/textures/pino/albedo.webp');
     floorTex.colorSpace = THREE.SRGBColorSpace;
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
     floorTex.repeat.set(3, 2.6);
@@ -1158,7 +1158,7 @@ function renderVisoreManiglia() {
   document.getElementById('manVisoreTitolo').textContent = man.label;
   // foto grande della maniglia, come i coprifili
   document.getElementById('manVisoreFig').innerHTML =
-    `<img src="${man.img.replace('.jpg', '_big.jpg')}" alt="Maniglia ${man.label}">`;
+    `<img src="${man.img.replace('.webp', '_big.webp')}" alt="Maniglia ${man.label}">`;
 
   // — misure: un blocco per ogni configurazione del disegno di fabbrica
   const mm = (v) => String(v).replace('.', ',');
@@ -1231,7 +1231,7 @@ const laccatiEl = document.getElementById('laccati');
 function renderEssenze() {
   swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
     <button class="swatch" data-essenza="${k}">
-      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.jpg');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
+      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.webp');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
@@ -1795,7 +1795,7 @@ const MANO_COL = {
 
 let bloccoBg = null; // dataURL del modulo, precaricato
 function loadBloccoBg() {
-  return fetch('assets/blocco_tl2018.jpg')
+  return fetch('assets/blocco_tl2018.webp')
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
     .then((b) => new Promise((res) => {
       const fr = new FileReader();
