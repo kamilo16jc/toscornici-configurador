@@ -56,7 +56,7 @@ const state = {
   w: 900, h: 2100, ante: 1,
   muro: 108, allargato: 'integrale',
   telaio: 'std',
-  copriWood: 'toulipier', copri: 'listellare', copriMisura: null,
+  copriWood: 'toulipier', copri: 'listellare', copriMisura: null, manFinitura: null,
   apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
   capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
@@ -274,22 +274,80 @@ const CAP_COMPL = {
 
 // Maniglie — inventario reale della fabbrica (cartella Chapas).
 // Prezzi confermati dal cliente per tutti i 12 modelli.
+// fin = finiture ammesse dalla scheda tecnica del modello: ogni maniglia ne
+// ha una lista sua, non sono intercambiabili.
 // extra:null = prezzo da definire → esclusa dal totale, indicata nel PDF.
 const MANIGLIE_MOD = [
-  { id: 'no',      label: 'Da definire (esclusa)', extra: 0,   img: null },
-  { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.jpg' },
-  { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.jpg' },
-  { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.jpg' },
-  { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.jpg' },
-  { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.jpg' },
-  { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.jpg' },
-  { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.jpg' },
-  { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.jpg' },
-  { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.jpg' },
-  { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.jpg' },
-  { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.jpg' },
-  { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.jpg' },
+  { id: 'no',      label: 'Da definire (esclusa)', extra: 0,   img: null, fin: [] },
+  { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.jpg',
+    ficha: 'assets/fichas/arianna.png', fin: ['MCS', 'MCR', 'MNO', 'MATX'] },
+  { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.jpg',
+    ficha: 'assets/fichas/simona.png',  fin: ['MCS', 'MCR', 'MNO', 'MBGO'] },
+  { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.jpg',
+    ficha: 'assets/fichas/spigola.png', fin: ['OLV', 'MCS', 'MCR', 'MNO', 'MBIA', 'MSV', 'MBGO', 'MATX'] },
+  { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.jpg',
+    ficha: 'assets/fichas/cuba.png',    fin: ['MCS', 'MCR', 'MNO'] },
+  { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.jpg',
+    ficha: 'assets/fichas/elisa.png',   fin: ['OLV', 'CS', 'CR'] },
+  { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.jpg',
+    ficha: 'assets/fichas/marea.png',   fin: ['PVD', 'OLV', 'SV', 'CS', 'CR', 'ANT', 'OLD', 'BG'] },
+  // la scheda del Toga arriva tagliata: si legge solo la prima finitura
+  { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.jpg',
+    ficha: 'assets/fichas/toga.png',    fin: ['MCS'], finParziale: true },
+  { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.jpg',
+    ficha: 'assets/fichas/torino.png',  fin: ['CR', 'CS', 'OLV', 'ANT', 'OLD', 'ARG', 'RAM', 'BU'] },
+  { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.jpg',
+    ficha: 'assets/fichas/milano.png',  fin: ['MCS', 'MCR', 'MNO', 'MATX', 'MBIA'] },
+  { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.jpg',
+    ficha: 'assets/fichas/alma.png',    fin: ['MCS', 'MCR', 'MNO'] },
+  { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.jpg',
+    ficha: 'assets/fichas/honey.png',   fin: ['CS', 'CR', 'CR/CS', 'ATX', 'NO'] },
+  { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.jpg',
+    ficha: 'assets/fichas/square.png',  fin: ['CS', 'CR', 'CR/CS'] },
 ];
+
+// Finiture delle maniglie: campioni ritagliati dalle tavole colori originali.
+// mat = materiale usato nel 3D e nella casella ferramenta del blocco ordini.
+const FINITURE = {
+  // ottone
+  PVD:       { label: 'Ottone PVD',                 mat: 'ottone' },
+  PVDINOX:   { label: 'Ottone PVD INOX',            mat: 'cromo'  },
+  'PVD/SAT': { label: 'Ottone bicolore PVD / SAT',  mat: 'ottone' },
+  OLV:       { label: 'Ottone lucido verniciato',   mat: 'ottone' },
+  SV:        { label: 'Ottone satinato verniciato', mat: 'ottone' },
+  CS:        { label: 'Ottone cromato satinato',    mat: 'cromo'  },
+  CR:        { label: 'Ottone cromato lucido',      mat: 'cromo'  },
+  'CR/CS':   { label: 'Ottone bicolore CR / CS',    mat: 'cromo'  },
+  'OLV/OLS': { label: 'Ottone bicolore OLV / OLS',  mat: 'ottone' },
+  NKS:       { label: 'Ottone nichelato satinato',  mat: 'cromo'  },
+  BG:        { label: 'Ottone bronzato graffiato',  mat: 'nero'   },
+  BU:        { label: 'Ottone bronzato uniforme',   mat: 'nero'   },
+  BS:        { label: 'Ottone bronzato sfumato',    mat: 'nero'   },
+  BV:        { label: 'Ottone bronzato verniciato', mat: 'nero'   },
+  ANT:       { label: 'Ottone bronzo antico',       mat: 'nero'   },
+  OLD:       { label: 'Ottone oro antico',          mat: 'ottone' },
+  ARG:       { label: 'Ottone argento antico',      mat: 'cromo'  },
+  RAM:       { label: 'Ottone ramato antico',       mat: 'ottone' },
+  // verniciati
+  BIA:       { label: 'Verniciato bianco 9010 opaco', mat: 'cromo' },
+  NO:        { label: 'Verniciato nero opaco 9005',   mat: 'nero'  },
+  NL:        { label: 'Verniciato nero lucido 9005',  mat: 'nero'  },
+  ATX:       { label: 'Antracite',                    mat: 'nero'  },
+  // maritech
+  MORO:      { label: 'Maritech oro',               mat: 'ottone' },
+  MCS:       { label: 'Maritech cromato satinato',  mat: 'cromo'  },
+  MCR:       { label: 'Maritech cromato lucido',    mat: 'cromo'  },
+  'MCR/CS':  { label: 'Maritech bicolore CR / CS',  mat: 'cromo'  },
+  MBG:       { label: 'Maritech bronzato graffiato',       mat: 'nero' },
+  MBGO:      { label: 'Maritech bronzato graffiato opaco', mat: 'nero' },
+  // Il Maritech è il materiale, non la tinta: queste quattro finiture non
+  // hanno campione proprio nelle tavole, si mostrano con quello della tinta.
+  MNO:       { label: 'Maritech nero opaco',            mat: 'nero',  camp: 'NO'  },
+  MATX:      { label: 'Maritech verniciato antracite',  mat: 'nero',  camp: 'ATX' },
+  MBIA:      { label: 'Maritech verniciato bianco',     mat: 'cromo', camp: 'BIA' },
+  MSV:       { label: 'Maritech satinato verniciato',   mat: 'ottone', camp: 'SV' },
+};
+const finSlug = (c) => (FINITURE[c].camp || c).replace('/', '').toLowerCase();
 
 const MANIGLIE = {
   ottone: { label: 'Ottone',     en: 'Brass',       color: 0xc9a227, metalness: 1,   roughness: 0.35 },
@@ -931,7 +989,12 @@ function computePreventivo() {
 
   const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
   if (man.extra) {
-    righe.push({ k: `Maniglia ${man.label}`, sub: `finitura ${MANIGLIE[state.maniglia].label}`, v: man.extra });
+    righe.push({
+      k: `Maniglia ${man.label}`,
+      sub: state.manFinitura
+        ? `finitura ${state.manFinitura} — ${FINITURE[state.manFinitura].label}`
+        : `finitura ${MANIGLIE[state.maniglia].label}`,
+      v: man.extra });
   } else if (man.extra === null) {
     // modello nuovo senza prezzo: si ordina, ma non entra nel totale
     righe.push({ k: `Maniglia ${man.label}`, sub: 'prezzo da definire — escluso dal totale', v: 0 });
@@ -951,20 +1014,75 @@ function renderManiglieGrid() {
       ${m.img
         ? `<span class="man-photo"><img src="${m.img}" alt="Maniglia ${m.label}" loading="lazy"></span>`
         : '<span class="man-photo man-photo--none">—</span>'}
+      ${m.ficha ? `<span class="man-zoom" data-zoomman="${m.id}" role="button" tabindex="0"
+            title="Scheda tecnica e finiture"
+            aria-label="Scheda tecnica ${m.label}">${SVG_LENTE}</span>` : ''}
       <span class="man-label">${m.label}</span>
       <span class="man-extra">${
         m.id === 'no' ? 'esclusa'
         : m.extra === null ? 'prezzo da definire'
-        : `+ ${eur.format(m.extra)}`}</span>
+        : `+ ${eur.format(m.extra)}`}${
+        m.id === state.manigliaMod && state.manFinitura ? ` · ${state.manFinitura}` : ''}</span>
     </button>`).join('');
+  grid.querySelectorAll('.man-zoom').forEach((z) => {
+    const apri = (ev) => { ev.stopPropagation(); apriVisoreManiglia(z.dataset.zoomman); };
+    z.addEventListener('click', apri);
+    z.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') apri(ev); });
+  });
   grid.querySelectorAll('.man-card').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (ev) => {
+      if (ev.target.closest('.man-zoom')) return;      // la lente apre la scheda
       state.manigliaMod = btn.dataset.manmod;
+      state.manFinitura = null;                        // finitura da riscegliere
       grid.querySelectorAll('.man-card').forEach((b) =>
         b.classList.toggle('is-active', b === btn));
       refreshUI();
     });
   });
+}
+
+// ── Visore maniglia: scheda tecnica e finiture ammesse dal modello ────────
+function apriVisoreManiglia(id) {
+  state.manigliaMod = id;
+  document.getElementById('manModal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  renderVisoreManiglia();
+}
+
+function chiudiVisoreManiglia() {
+  document.getElementById('manModal').hidden = true;
+  document.body.style.overflow = '';
+  renderManiglieGrid();
+  refreshUI();
+}
+
+function renderVisoreManiglia() {
+  const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
+  document.getElementById('manVisoreTitolo').textContent = man.label;
+  document.getElementById('manVisoreFig').innerHTML =
+    `<img src="${man.ficha}" alt="Scheda tecnica ${man.label}">`;
+
+  document.getElementById('manVisoreFiniture').innerHTML = man.fin.map((c) => {
+    const f = FINITURE[c];
+    return `<button class="fin-card${c === state.manFinitura ? ' is-active' : ''}" data-vfin="${c}">
+      <span class="fin-camp"><img src="assets/finiture/${finSlug(c)}.png" alt="" loading="lazy"></span>
+      <span class="fin-cod">${c}</span>
+      <span class="fin-lab">${f.label}</span>
+    </button>`;
+  }).join('');
+
+  document.getElementById('manVisoreNota').textContent = man.finParziale
+    ? 'La scheda tecnica di questa maniglia arriva tagliata in fondo: si legge '
+      + 'solo la prima finitura. Chiedere l’elenco completo alla fabbrica.'
+    : `${man.fin.length} finiture ammesse da scheda tecnica. I campioni sono `
+      + 'ritagliati dalle tavole colori originali.';
+
+  document.querySelectorAll('[data-vfin]').forEach((b) =>
+    b.addEventListener('click', () => {
+      state.manFinitura = b.dataset.vfin;
+      setManiglia(FINITURE[b.dataset.vfin].mat);   // aggiorna anche il 3D
+      renderVisoreManiglia();
+    }));
 }
 
 // menu essenze: legni raw + laccati su base universal
@@ -1645,7 +1763,8 @@ function buildBlocco(cliente, rif) {
   if (capB.extra || capCompl.length)
     note.push(`${capB.extra ? capB.label : 'Compl. capitello'}${capCompl.length ? ' + ' + capCompl.join(', ') : ''} × ${state.capLati} lato/i`);
   if (state.manigliaMod !== 'no')
-    note.push(`Maniglia ${MANIGLIE_MOD.find((m) => m.id === state.manigliaMod).label}`);
+    note.push(`Maniglia ${MANIGLIE_MOD.find((m) => m.id === state.manigliaMod).label}`
+      + (state.manFinitura ? ` fin. ${state.manFinitura}` : ''));
   note.push(`Rif. preventivo ${rif}`);
 
   doc.setFont('helvetica', 'normal');
@@ -1668,6 +1787,14 @@ document.getElementById('cta').addEventListener('click', openQuote);
 document.getElementById('quoteCancel').addEventListener('click', closeQuote);
 document.getElementById('quoteClose').addEventListener('click', closeQuote);
 quoteModal.addEventListener('click', (e) => { if (e.target === quoteModal) closeQuote(); });
+
+const manModal = document.getElementById('manModal');
+document.getElementById('manVisoreX').addEventListener('click', chiudiVisoreManiglia);
+document.getElementById('manVisoreOk').addEventListener('click', chiudiVisoreManiglia);
+manModal.addEventListener('click', (e) => { if (e.target === manModal) chiudiVisoreManiglia(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !manModal.hidden) chiudiVisoreManiglia();
+});
 
 const copriModal = document.getElementById('copriModal');
 document.getElementById('copriVisoreX').addEventListener('click', chiudiVisoreCopri);
