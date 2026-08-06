@@ -56,7 +56,7 @@ const state = {
   w: 900, h: 2100, ante: 1,
   muro: 108, allargato: 'integrale',
   telaio: 'std',
-  copriWood: 'toulipier', copri: 'listellare',
+  copriWood: 'toulipier', copri: 'listellare', copriMisura: null,
   apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
   capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
@@ -136,6 +136,63 @@ const COPRI = [
   { id: 'novecento',    label: 'Novecento CAP1 (42×110)',            prezzi: { frassino: 290,   toulipier: 250, pino: 250 }, img: 'assets/coprifili/novecento.png' },
 ];
 const COPRI_WOOD_LABEL = { frassino: 'Frassino', toulipier: 'Toulipier', pino: 'Pino' };
+
+// Misure di ogni profilo (listino pagg. 52–53). Ogni modello sagomato esiste
+// in altezza 69/70 e — quasi sempre — anche in 90; l'EXTRA PORTA di listino
+// copre UNA sola combinazione (quella marcata pack:true).
+//   pack:true  → prezzo cad di listino, quello già in COPRI.prezzi
+//   ml         → prezzo al metro lineare, per le combinazioni non a listino
+// Il coprifilo compreso nella porta è il liscio listellare 22×70 = € 80 cad:
+// è il credito da scalare quando si calcola una combinazione a ml.
+const COPRI_INCLUSO_CAD = 80;
+const ml1 = (n) => n.toFixed(1).replace('.', ',');   // metri all'italiana
+const ML = (f, t, p) => ({ frassino: f, toulipier: t, pino: p });
+const COPRI_MISURE = {
+  listellare: [
+    { id: 'l70', label: '22×70', pack: true,  cad: ML(80, 80, 80) },
+    { id: 'l90', label: '22×90', pack: false, cad: ML(116, 100, 100) },
+  ],
+  massello: [
+    { id: 'm70', label: '22×70', pack: true,  cad: ML(106.5, 86, 81) },
+    { id: 'm90', label: '22×90', pack: false, cad: ML(133, 110, 102.5) },
+  ],
+  pierre:     [{ id: 'p70', label: '70 / 70', code: 'S1_24,5×69', pack: true, ml: ML(12.2, 10.5, 10.5) }],
+  tintoretto: [
+    { id: 't9070', label: '90 / 70', code: 'B_27×69 + B_32×90', pack: true },
+    { id: 't70',   label: '70 / 70', code: 'B_27×69',  ml: ML(12.2, 10.5, 10.5) },
+    { id: 't90',   label: '90 / 90', code: 'B_32×90',  ml: ML(17.4, 14.8, 14.8) },
+  ],
+  raffaello: [
+    { id: 'r9070', label: '90 / 70', code: 'BS_27×69 + CS400_32×90', pack: true },
+    { id: 'r70',   label: '70 / 70', code: 'BS_27×69',      ml: ML(12.2, 10.5, 10.5) },
+    { id: 'r90',   label: '90 / 90', code: 'CS400_32×90',   ml: ML(17.4, 14.8, 14.8) },
+  ],
+  giotto: [
+    { id: 'g9070', label: '90 / 70', code: 'S2_30×69 + S2-90_32,5×90', pack: true },
+    { id: 'g70',   label: '70 / 70', code: 'S2_30×69',      ml: ML(12.2, 10.5, 10.5) },
+    { id: 'g90',   label: '90 / 90', code: 'S2-90_32,5×90', ml: ML(15.7, 13.9, 13.9) },
+  ],
+  leonardo: [
+    { id: 'e9070', label: '90 / 70', code: 'CS1_32,5×90', pack: true },
+    { id: 'e90',   label: '90 / 90', code: 'CS1_32,5×90', ml: ML(15.7, 13.9, 13.9) },
+  ],
+};
+
+// misure disponibili di un modello (chi non è a listino ha solo il pacchetto)
+const misureDi = (id) => COPRI_MISURE[id] || [{ id: 'std', label: 'standard', pack: true }];
+
+// misura scelta, o la prima del modello se non se n'è scelta nessuna
+function misuraAttiva(cop) {
+  const ms = misureDi(cop.id);
+  return ms.find((m) => m.id === state.copriMisura) || ms[0];
+}
+
+// extra a porta di una misura, per legno e metri lineari effettivi
+function extraMisura(cop, mis, wood, metri) {
+  if (mis.cad) return Math.max(0, mis.cad[wood] - COPRI_INCLUSO_CAD);
+  if (mis.pack) return cop.prezzi[wood];
+  return Math.max(0, mis.ml[wood] * metri - COPRI_INCLUSO_CAD);
+}
 
 // Aperture speciali (pagg. 61–62)
 const APERTURE = [
@@ -805,10 +862,20 @@ function computePreventivo() {
 
   const cop = COPRI.find((c) => c.id === state.copri);
   const fml = mlFactor(state.w, state.h);
-  const copExtra = Math.round(cop.prezzi[state.copriWood] * fml * 100) / 100;
+  const mis = misuraAttiva(cop);
+  const metri = 11.5 * fml;
+  // il pacchetto di listino si scala sui ml; le altre misure sono già a ml
+  const copBase = extraMisura(cop, mis, state.copriWood, metri);
+  const copExtra = Math.round((mis.pack && !mis.cad ? copBase * fml : copBase) * 100) / 100;
+  // il nome porta già la misura di listino fra parentesi: la si toglie quando
+  // se ne mostra una scelta a parte, per non leggere "(90/70) 90 / 90"
+  const copNome = misureDi(cop.id).length > 1
+    ? cop.label.replace(/\s*\(.*?\)/, '') : cop.label;
   if (copExtra) righe.push({
-    k: `Coprifili ${cop.label} · ${COPRI_WOOD_LABEL[state.copriWood]}`,
-    sub: fml > 1 ? `${(11.5 * fml).toFixed(1)} ml (extra a porta ${eur.format(cop.prezzi[state.copriWood])} fino a 11,5 ml)` : '',
+    k: `Coprifili ${copNome} ${mis.label} · ${COPRI_WOOD_LABEL[state.copriWood]}`,
+    sub: mis.pack
+      ? (fml > 1 ? `${ml1(metri)} ml (extra a porta ${eur.format(cop.prezzi[state.copriWood])} fino a 11,5 ml)` : '')
+      : `${ml1(metri)} ml a listino, meno il listellare 22×70 compreso (${eur.format(COPRI_INCLUSO_CAD)})`,
     v: copExtra,
   });
 
@@ -975,24 +1042,101 @@ function refreshCopriSelect() {
   // modello (il profilo non cambia, cambia solo la larghezza).
   const fml = mlFactor(state.w, state.h);
   const grid = document.getElementById('copriGrid');
+  const metri = 11.5 * fml;
   grid.innerHTML = COPRI.map((c) => {
-    const p = Math.round(c.prezzi[state.copriWood] * fml * 100) / 100;
+    const attiva = c.id === state.copri;
+    const mis = attiva ? misuraAttiva(c) : misureDi(c.id)[0];
+    const b = extraMisura(c, mis, state.copriWood, metri);
+    const p = Math.round((mis.pack && !mis.cad ? b * fml : b) * 100) / 100;
+    const n = misureDi(c.id).length;
     return `
-    <button class="man-card${c.id === state.copri ? ' is-active' : ''}" data-copri="${c.id}">
+    <button class="man-card${attiva ? ' is-active' : ''}" data-copri="${c.id}">
       ${c.img
         ? `<span class="man-photo"><img src="${c.img}" alt="Coprifilo ${c.label}" loading="lazy"></span>`
         : '<span class="man-photo man-photo--none">—</span>'}
+      <span class="man-zoom" data-zoom="${c.id}" role="button" tabindex="0"
+            title="Ingrandisci e scegli la misura"
+            aria-label="Ingrandisci ${c.label}">${SVG_LENTE}</span>
       <span class="man-label">${c.label.replace(/ \(.*/, '').replace(' — compreso', '')}</span>
-      <span class="man-extra">${p ? `+ ${eur.format(p)}` : 'compreso'}</span>
+      <span class="man-extra">${p ? `+ ${eur.format(p)}` : 'compreso'}${
+        n > 1 ? ` · ${mis.label}` : ''}</span>
     </button>`;
   }).join('');
   grid.querySelectorAll('.man-card').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (ev) => {
+      if (ev.target.closest('.man-zoom')) return;      // la lente apre il visore
       state.copri = btn.dataset.copri;
-      grid.querySelectorAll('.man-card').forEach((b) => b.classList.toggle('is-active', b === btn));
+      state.copriMisura = null;                        // torna alla misura di listino
+      refreshCopriSelect();
       refreshUI();
     });
   });
+  grid.querySelectorAll('.man-zoom').forEach((z) => {
+    const apri = (ev) => { ev.stopPropagation(); apriVisoreCopri(z.dataset.zoom); };
+    z.addEventListener('click', apri);
+    z.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') apri(ev); });
+  });
+}
+
+const SVG_LENTE = `<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+  <circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <path d="M10.4 10.4 14 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+</svg>`;
+
+// ── Visore coprifilo: immagine grande, legno e misura ─────────────────────
+function apriVisoreCopri(id) {
+  state.copri = id;
+  const modal = document.getElementById('copriModal');
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  renderVisoreCopri();
+}
+
+function chiudiVisoreCopri() {
+  document.getElementById('copriModal').hidden = true;
+  document.body.style.overflow = '';
+  refreshCopriSelect();
+  refreshUI();
+}
+
+function renderVisoreCopri() {
+  const cop = COPRI.find((c) => c.id === state.copri);
+  const fml = mlFactor(state.w, state.h);
+  const metri = 11.5 * fml;
+  const misure = misureDi(cop.id);
+  const attiva = misuraAttiva(cop);
+
+  document.getElementById('copriVisoreTitolo').textContent = cop.label.replace(' — compreso', '');
+  const fig = document.getElementById('copriVisoreFig');
+  fig.innerHTML = cop.img
+    ? `<img src="${cop.img}" alt="Coprifilo ${cop.label}">`
+    : '<span class="visore-nofoto">Render non ancora disponibile</span>';
+
+  document.getElementById('copriVisoreLegni').innerHTML = Object.entries(COPRI_WOOD_LABEL)
+    .map(([k, v]) => `<button class="pill${k === state.copriWood ? ' is-active' : ''}"
+      data-vlegno="${k}">${v}</button>`).join('');
+
+  document.getElementById('copriVisoreMisure').innerHTML = misure.map((m) => {
+    const b = extraMisura(cop, m, state.copriWood, metri);
+    const p = Math.round((m.pack && !m.cad ? b * fml : b) * 100) / 100;
+    return `<button class="misura-row${m.id === attiva.id ? ' is-active' : ''}" data-vmisura="${m.id}">
+      <span class="misura-mis">${m.label}</span>
+      <span class="misura-cod">${m.code || (m.cad ? 'prezzo cad a listino' : '')}</span>
+      <span class="misura-p">${p ? `+ ${eur.format(p)}` : 'compreso'}</span>
+      <span class="misura-src">${m.pack ? 'listino' : m.cad ? 'listino' : 'calcolo a ml'}</span>
+    </button>`;
+  }).join('');
+
+  document.getElementById('copriVisoreNota').textContent = attiva.pack || attiva.cad
+    ? `Prezzo a listino per ${ml1(metri)} ml (misura porta attuale).`
+    : `Combinazione non tariffata a pacchetto: calcolata al prezzo di listino al metro `
+      + `(${eur.format(attiva.ml[state.copriWood])}/ml × ${ml1(metri)} ml) meno il `
+      + `liscio listellare 22×70 già compreso. Da confermare con la fabbrica.`;
+
+  document.querySelectorAll('[data-vlegno]').forEach((b) =>
+    b.addEventListener('click', () => { state.copriWood = b.dataset.vlegno; renderVisoreCopri(); }));
+  document.querySelectorAll('[data-vmisura]').forEach((b) =>
+    b.addEventListener('click', () => { state.copriMisura = b.dataset.vmisura; renderVisoreCopri(); }));
 }
 
 function refreshUI() {
@@ -1416,9 +1560,16 @@ function buildBlocco(cliente, rif) {
   const cb = COPRI_BLOCCO[state.copri];
   X(cb.serie ? 'diserie' : 'opzionali');
   X(cb.box);
-  for (const l of cb.larg) X(`larg${l}_${cb.gr}`);
+  // le larghezze barrate seguono la misura scelta nel visore, non il default:
+  // "70 / 70" barra solo 70, "90 / 90" solo 90, il pacchetto entrambe.
+  const cmis = misuraAttiva(COPRI.find((c) => c.id === state.copri));
+  const largScelte = /^(\d+)\s*\/\s*(\d+)$/.test(cmis.label)
+    ? [...new Set(cmis.label.split('/').map((s) => +s.trim()))].filter((l) => cb.larg.includes(l))
+    : cb.larg;
+  for (const l of (largScelte.length ? largScelte : cb.larg)) X(`larg${l}_${cb.gr}`);
   if (cb.nota) note.push(cb.nota);
   note.push(`Coprifili in ${COPRI_WOOD_LABEL[state.copriWood]}`);
+  if (!cmis.pack && !cmis.cad) note.push(`Coprifilo ${cmis.label} — prezzo calcolato a ml, da confermare`);
 
   // — telaio
   const tb = TELAI_BLOCCO[state.telaio];
@@ -1494,6 +1645,14 @@ document.getElementById('cta').addEventListener('click', openQuote);
 document.getElementById('quoteCancel').addEventListener('click', closeQuote);
 document.getElementById('quoteClose').addEventListener('click', closeQuote);
 quoteModal.addEventListener('click', (e) => { if (e.target === quoteModal) closeQuote(); });
+
+const copriModal = document.getElementById('copriModal');
+document.getElementById('copriVisoreX').addEventListener('click', chiudiVisoreCopri);
+document.getElementById('copriVisoreOk').addEventListener('click', chiudiVisoreCopri);
+copriModal.addEventListener('click', (e) => { if (e.target === copriModal) chiudiVisoreCopri(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !copriModal.hidden) chiudiVisoreCopri();
+});
 
 quoteForm.addEventListener('submit', async (e) => {
   e.preventDefault();
