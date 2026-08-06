@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" role="img" aria-label="">
+<style>.m{stroke:#2b211a;stroke-width:7;stroke-linecap:butt}.a{stroke:#a8843c;stroke-width:5;stroke-linecap:round}.t{stroke:#8d7d6a;stroke-width:1.1;stroke-dasharray:3 4;opacity:.5}.s{stroke:#8d7d6a;stroke-width:1.6;opacity:.75}line,path,rect{fill:none}g,path,line,rect{transform-box:view-box}.anta{transform-origin:70px 50px;animation:v 5s ease-in-out infinite}@keyframes v{0%,6%{transform:rotate(0)}26%{transform:rotate(-72deg)}46%{transform:rotate(0)}66%{transform:rotate(72deg)}86%,100%{transform:rotate(0)}}</style>
+<line class="m" x1="8" y1="50" x2="70" y2="50"/><line class="m" x1="130" y1="50" x2="192" y2="50"/><path class="t" d="M122 50 A52 52 0 0 0 70 -2"/><path class="t" d="M122 50 A52 52 0 0 1 70 102"/><line class="a anta" x1="70" y1="50" x2="122" y2="50"/>
+</svg>

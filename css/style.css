@@ -481,6 +481,17 @@ body {
   color: var(--ink-soft, #8d7d6a);
 }
 
+/* schema animato del movimento (pianta o sezione) */
+.anim {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+}
+.anim img { display: block; width: 100%; max-width: 300px; margin: 0 auto; }
+/* chi ha chiesto meno movimento non lo subisce */
+@media (prefers-reduced-motion: reduce) { .anim { display: none; } }
+
 /* misure della scheda tecnica, un blocco per configurazione */
 .mis-grid {
   display: grid;

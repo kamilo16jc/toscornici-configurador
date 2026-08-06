@@ -1362,7 +1362,22 @@ function renderVisoreCopri() {
     b.addEventListener('click', () => { state.copriMisura = b.dataset.vmisura; renderVisoreCopri(); }));
 }
 
+// Schemi animati: il movimento è ciò che distingue queste opzioni, e in un
+// menu a tendina non si vede. I file stanno in assets/aperture.
+function refreshAnim() {
+  document.getElementById('anteAnim').src =
+    `assets/aperture/${state.ante === 2 ? 'due_ante' : 'battente'}.svg`;
+  document.getElementById('aperturaAnim').src =
+    `assets/aperture/${state.apertura}.svg`;
+  // il sopraluce fisso non si muove: niente schema
+  const conMoto = state.sopraluce === 'apribile' || state.sopraluce === 'wasistas';
+  document.getElementById('sopraluceAnimBox').hidden = !conMoto;
+  if (conMoto) document.getElementById('sopraluceAnim').src =
+    `assets/aperture/sopraluce_${state.sopraluce}.svg`;
+}
+
 function refreshUI() {
+  refreshAnim();
   const prev = computePreventivo();
 
   // — riepilogo con righe

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" role="img" aria-label="">
+<style>.m{stroke:#2b211a;stroke-width:7;stroke-linecap:butt}.a{stroke:#a8843c;stroke-width:5;stroke-linecap:round}.t{stroke:#8d7d6a;stroke-width:1.1;stroke-dasharray:3 4;opacity:.5}.s{stroke:#8d7d6a;stroke-width:1.6;opacity:.75}line,path,rect{fill:none}g,path,line,rect{transform-box:view-box}.co2{animation:c2 4.4s ease-in-out infinite}@keyframes c2{0%,12%{transform:translateX(0)}52%,70%{transform:translateX(38px)}94%,100%{transform:translateX(0)}}</style>
+<line class="m" x1="8" y1="50" x2="82" y2="50"/><line class="m" x1="118" y1="50" x2="192" y2="50"/><rect class="s" x="78" y="31" width="68" height="9" rx="1"/><line class="a co2" x1="82" y1="50" x2="118" y2="50"/>
+</svg>
