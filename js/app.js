@@ -176,6 +176,24 @@ const COPRI_MISURE = {
     { id: 'e9070', label: '90 / 70', code: 'CS1_32,5×90', pack: true },
     { id: 'e90',   label: '90 / 90', code: 'CS1_32,5×90', ml: ML(15.7, 13.9, 13.9) },
   ],
+  michelangelo: [
+    { id: 'h9070', label: '90 / 70', code: 'CS300-28_30×70 + CS205_40×90', pack: true },
+    { id: 'h70',   label: '70 / 70', code: 'CS300-28_30×70', ml: ML(13.9, 11.3, 11.3) },
+    { id: 'h90',   label: '90 / 90', code: 'CS205_40×90',    ml: ML(17.4, 14.8, 14.8) },
+  ],
+  // il "-90" del Cartesio è in realtà alto 100 mm: la combinazione di listino
+  // è 100/70, e nel blocco ordini resta barrato il 70 (il 100 non ha casella).
+  cartesio: [
+    { id: 'c10070', label: '100 / 70', code: 'CS207_32×70 + CS2_34×100', pack: true },
+    { id: 'c70',    label: '70 / 70',  code: 'CS207_32×70', ml: ML(13.9, 11.3, 11.3) },
+    { id: 'c100',   label: '100 / 100', code: 'CS2_34×100', ml: ML(17.4, 14.8, 14.8) },
+  ],
+  // questi esistono in una sola altezza: nessuna scelta, solo il dato a ml
+  caravaggio: [{ id: 'v90',  label: '27×90',  code: 'CS206_27×90', pack: true, ml: ML(19.2, 16.5, 16.5) }],
+  tiziano:    [{ id: 'z90',  label: '30×90',  code: 'CS204_30×90', pack: true, ml: ML(19.2, 16.5, 16.5) }],
+  canaletto:  [{ id: 'n90',  label: '34×90',  code: 'CS3_34×90',   pack: true, ml: ML(19.2, 16.5, 16.5) }],
+  novecento:  [{ id: 'w110', label: '42×110', code: 'CAP1_42×110', pack: true, ml: ML(33, 29, 29),
+                 minimo: 500 }],
 };
 
 // misure disponibili di un modello (chi non è a listino ha solo il pacchetto)
@@ -1121,17 +1139,20 @@ function renderVisoreCopri() {
     const p = Math.round((m.pack && !m.cad ? b * fml : b) * 100) / 100;
     return `<button class="misura-row${m.id === attiva.id ? ' is-active' : ''}" data-vmisura="${m.id}">
       <span class="misura-mis">${m.label}</span>
-      <span class="misura-cod">${m.code || (m.cad ? 'prezzo cad a listino' : '')}</span>
+      <span class="misura-cod">${m.code || (m.cad ? 'prezzo cad a listino' : '')}${
+        m.ml ? ` · ${eur.format(m.ml[state.copriWood])}/ml` : ''}</span>
       <span class="misura-p">${p ? `+ ${eur.format(p)}` : 'compreso'}</span>
       <span class="misura-src">${m.pack ? 'listino' : m.cad ? 'listino' : 'calcolo a ml'}</span>
     </button>`;
   }).join('');
 
-  document.getElementById('copriVisoreNota').textContent = attiva.pack || attiva.cad
+  const minimo = attiva.minimo
+    ? ` Acquistato a metro ha un minimo fatturabile di ${eur.format(attiva.minimo)}.` : '';
+  document.getElementById('copriVisoreNota').textContent = (attiva.pack || attiva.cad
     ? `Prezzo a listino per ${ml1(metri)} ml (misura porta attuale).`
     : `Combinazione non tariffata a pacchetto: calcolata al prezzo di listino al metro `
       + `(${eur.format(attiva.ml[state.copriWood])}/ml × ${ml1(metri)} ml) meno il `
-      + `liscio listellare 22×70 già compreso. Da confermare con la fabbrica.`;
+      + `liscio listellare 22×70 già compreso. Da confermare con la fabbrica.`) + minimo;
 
   document.querySelectorAll('[data-vlegno]').forEach((b) =>
     b.addEventListener('click', () => { state.copriWood = b.dataset.vlegno; renderVisoreCopri(); }));
