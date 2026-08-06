@@ -506,26 +506,6 @@ body {
 }
 .mis-riga b { color: var(--ink, #2b211a); font-weight: 600; }
 
-/* componenti standard: etichetta a sinistra, descrizione a destra */
-.cmp-list { border-top: 1px solid var(--hairline); }
-.cmp-riga {
-  display: grid;
-  grid-template-columns: 128px 1fr;
-  gap: 12px;
-  margin: 0;
-  padding: 7px 2px;
-  border-bottom: 1px solid var(--hairline);
-  font-size: 11px;
-  line-height: 1.45;
-}
-.cmp-riga span {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--ink-soft, #8d7d6a);
-}
-
 /* griglia delle finiture ammesse dalla maniglia */
 .fin-grid {
   display: grid;

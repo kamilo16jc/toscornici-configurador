@@ -349,100 +349,51 @@ const FINITURE = {
 };
 const finSlug = (c) => (FINITURE[c].camp || c).replace('/', '').toLowerCase();
 
-// Schede tecniche ricostruite dai disegni di fabbrica (catalogo Mariva).
-// misure in mm. m = maniglia su rosetta · dk = dry keep · pl = maniglia su
-// placca lunga · mt = martellina / cremonese su placca.
-//   L sporgenza? no: L = lunghezza, S = sporgenza, h = altezza, sp = spessore
-const F = (rosetta, varianti, dk, martellina, cremonese, placca) =>
-  ({ rosetta, varianti, dk, martellina, cremonese, placca });
-const RQ = 'RQB rosetta quadra bassa';
-const NOTT = 'nottolino Wc abbinato da pag. 321';
-const DQ = 'DQ dry keep quadro con mov. in metallo 7×42 mm con boccole 4 scatti art. 1672 pag. 364';
-const DO = 'D dry keep ovale con mov. in metallo 7×42 mm con boccole 4 scatti art. 1672 pag. 364';
-const P110M = 'placca art. P110 pag. 359 con movimento intercambiabile art. M1559 pag. 365';
-const P110C = 'placca art. P110 pag. 359, movimento intercambiabile art. M1551R pag. 365';
-const P108M = 'placca art. P108 pag. 359 con movimento intercambiabile art. M1559 pag. 365';
-const P108C = 'placca art. P108 pag. 359, movimento intercambiabile art. M1551R pag. 365';
-const P102 = 'placca distanza 70/90/yale/wc art. P102 pag. 358';
-
+// Misure delle schede tecniche, prese dai disegni di fabbrica (cat. Mariva).
+// In mm. m = maniglia su rosetta · dk = dry keep · pl = maniglia su placca
+// lunga · mt = martellina / cremonese su placca.
+//   L = lunghezza · S = sporgenza · h = altezza · sp = spessore · q = quadro
 const SCHEDE = {
-  ariana: { ...F('RQ45 rosetta quadra mm 45×45',
-      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 30×65',
-       'RRO rosetta rettangolare orizzontale', NOTT],
-      'DQ dry keep quadro con mov. in metallo 7×42 mm con boccole art. 1672 pag. 364',
-      P110M, 'placca art. P110 pag. 359, movimento intercambiabile art. 1551R pag. 365', null),
-    misure: { m: { L: 142, S: 58, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 152, q: 65, S: 60 },
-              mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } } },
-  simona: { ...F('R45 rosetta tonda d. 45 mm',
-      ['RTB rosetta tonda bassa', 'RP50 rosetta premontata tonda d. 50 mm',
-       'RO rosetta ovale mm 30×60', NOTT], DO, P108M, P108C, P102),
-    misure: { m: { L: 135, ros: 'd. 45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 145, q: 65, S: 62 },
-              pl: { L: 135, h: 245, larg: 39, sp: 9 },
-              mt: { L: 57, S: 61, h: 185, q: 177, sp: 11 } } },
-  spigola: { ...F('RQ45 rosetta quadra mm 45×45',
-      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
-       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
-    misure: { m: { L: 145, S: 56, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 155, q: 65, S: 58 },
-              mt: { L: 38, S: 57, h: 185, q: 150, sp: 11 } } },
-  cuba: { ...F('RQ45 rosetta quadra mm 45×45',
-      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
-       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
-    misure: { m: { L: 137, S: 58, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 147, q: 65, S: 60 },
-              mt: { L: 38, S: 63, h: 187, q: 150, sp: 11 } } },
-  elissa: { ...F('R45 rosetta tonda d. 45 mm',
-      ['R50 rosetta tonda d. 52 mm', 'RO rosetta ovale mm 30×60', NOTT],
-      DO, 'placca art. P106 pag. 359 con quadro 7',
-      'placca art. P106 pag. 359, movimento intercambiabile art. M1551 pag. 365', P102),
-    misure: { m: { L: 135, S: 68, ros: 'd. 45', sp: 9 },
-              dk: { L: 30, sp: 11, h: 145, q: 65, S: 70 },
-              pl: { L: 133, S: 68, h: 245, larg: 39, sp: 9 },
-              mt: { L: 37, S: 59, h: 178, sp: 12 } } },
-  marea: { ...F('RB rosetta bombata premontata d. 48 mm',
-      ['RPO rosetta ovale premontata mm 30×60', NOTT], DO, P108M, P108C,
-      'placca 70/960/yale/wc art. P102 pag. 358'),
-    misure: { m: { L: 130, S: 62, ros: 'd. 48', sp: 11 },
-              dk: { L: 30, sp: 11, h: 140, q: 65, S: 62 },
-              pl: { L: 126, S: 60, h: 245, larg: 40, sp: 9 },
-              mt: { L: 36, S: 84, h: 195, q: 177, sp: 13 } } },
-  toga: { ...F('RQ45 rosetta quadra mm 45×45',
-      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
-       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
-    misure: { m: { L: 145, S: 58, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 155, q: 65, S: 60 },
-              mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } } },
-  torino: { ...F('R45 rosetta tonda d. 45 mm',
-      ['RB rosetta bombata', 'RO rosetta ovale mm 30×60', NOTT], DO, P108M, P108C, P102),
-    misure: { m: { L: 135, S: 75, ros: 'd. 45', sp: 9 },
-              dk: { L: 30, sp: 11, h: 145, q: 65, S: 77 },
-              pl: { L: 133, S: 75, h: 245, larg: 40, sp: 9 },
-              mt: { L: 36, S: 79, h: 190, q: 177, sp: 13 } } },
-  milano: { ...F('RQ45 rosetta quadra mm 45×45',
-      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
-       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
-    misure: { m: { L: 148, S: 61, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 158, q: 65, S: 63 },
-              mt: { L: 38, S: 62, h: 200, q: 150, sp: 11 } } },
-  alma: { ...F('RQ50 rosetta quadra mm 50×50',
-      [RQ, 'RR rosetta rettangolare mm 65×33', NOTT], DQ, P110M, P110C, null),
-    misure: { m: { L: 150, S: 62, ros: '50×50', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 165, q: 65, S: 62 },
-              mt: { L: 38, S: 61, h: 195, q: 150, sp: 11 } } },
-  honey: { ...F('RQ45 rosetta quadra mm 45×45',
-      ['RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33', NOTT],
-      DQ, P110M, P110C, null),
-    misure: { m: { L: 141, S: 68, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 151, q: 65, S: 70 },
-              mt: { L: 38, S: 69, h: 193, q: 150, sp: 11 } } },
-  square: { ...F('RQ45 rosetta quadra mm 45×45',
-      ['RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33 da pag. 321'],
-      DQ, P110M, P110C, null),
-    misure: { m: { L: 141, S: 62, ros: '45×45', sp: 10.5 },
-              dk: { L: 30, sp: 12, h: 151, q: 65, S: 63 },
-              mt: { L: 38, S: 62, h: 193, q: 150, sp: 11 } } },
+  ariana:  { m: { L: 142, S: 58, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 152, q: 65, S: 60 },
+             mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } },
+  simona:  { m: { L: 135, ros: 'd. 45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 145, q: 65, S: 62 },
+             pl: { L: 135, h: 245, larg: 39, sp: 9 },
+             mt: { L: 57, S: 61, h: 185, q: 177, sp: 11 } },
+  spigola: { m: { L: 145, S: 56, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 155, q: 65, S: 58 },
+             mt: { L: 38, S: 57, h: 185, q: 150, sp: 11 } },
+  cuba:    { m: { L: 137, S: 58, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 147, q: 65, S: 60 },
+             mt: { L: 38, S: 63, h: 187, q: 150, sp: 11 } },
+  elissa:  { m: { L: 135, S: 68, ros: 'd. 45', sp: 9 },
+             dk: { L: 30, sp: 11, h: 145, q: 65, S: 70 },
+             pl: { L: 133, S: 68, h: 245, larg: 39, sp: 9 },
+             mt: { L: 37, S: 59, h: 178, sp: 12 } },
+  marea:   { m: { L: 130, S: 62, ros: 'd. 48', sp: 11 },
+             dk: { L: 30, sp: 11, h: 140, q: 65, S: 62 },
+             pl: { L: 126, S: 60, h: 245, larg: 40, sp: 9 },
+             mt: { L: 36, S: 84, h: 195, q: 177, sp: 13 } },
+  toga:    { m: { L: 145, S: 58, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 155, q: 65, S: 60 },
+             mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } },
+  torino:  { m: { L: 135, S: 75, ros: 'd. 45', sp: 9 },
+             dk: { L: 30, sp: 11, h: 145, q: 65, S: 77 },
+             pl: { L: 133, S: 75, h: 245, larg: 40, sp: 9 },
+             mt: { L: 36, S: 79, h: 190, q: 177, sp: 13 } },
+  milano:  { m: { L: 148, S: 61, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 158, q: 65, S: 63 },
+             mt: { L: 38, S: 62, h: 200, q: 150, sp: 11 } },
+  alma:    { m: { L: 150, S: 62, ros: '50×50', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 165, q: 65, S: 62 },
+             mt: { L: 38, S: 61, h: 195, q: 150, sp: 11 } },
+  honey:   { m: { L: 141, S: 68, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 151, q: 65, S: 70 },
+             mt: { L: 38, S: 69, h: 193, q: 150, sp: 11 } },
+  square:  { m: { L: 141, S: 62, ros: '45×45', sp: 10.5 },
+             dk: { L: 30, sp: 12, h: 151, q: 65, S: 63 },
+             mt: { L: 38, S: 62, h: 193, q: 150, sp: 11 } },
 };
 
 const MANIGLIE = {
@@ -1164,7 +1115,7 @@ function renderVisoreManiglia() {
   const mm = (v) => String(v).replace('.', ',');
   const blocco = (t, righe) => `<div class="mis-blocco"><p class="mis-tit">${t}</p>${
     righe.map(([k, v]) => `<p class="mis-riga"><span>${k}</span><b>${v}</b></p>`).join('')}</div>`;
-  const M = sc.misure;
+  const M = sc;
   document.getElementById('manVisoreMisure').innerHTML = [
     blocco('Maniglia su rosetta', [
       ['lunghezza', `${mm(M.m.L)} mm`],
@@ -1190,16 +1141,6 @@ function renderVisoreManiglia() {
       ['spessore', `${mm(M.mt.sp)} mm`]]),
   ].join('');
 
-  // — componenti standard e varianti
-  const riga = (t, v) => (v ? `<p class="cmp-riga"><span>${t}</span>${v}</p>` : '');
-  document.getElementById('manVisoreComp').innerHTML =
-    riga('Rosetta standard', sc.rosetta)
-    + (sc.varianti.length
-        ? `<p class="cmp-riga"><span>Varianti</span>${sc.varianti.join('<br>')}</p>` : '')
-    + riga('Dry keep standard', sc.dk)
-    + riga('Martellina standard', sc.martellina)
-    + riga('Cremonese standard', sc.cremonese)
-    + riga('Placca standard', sc.placca);
 
   document.getElementById('manVisoreFiniture').innerHTML = man.fin.map((c) => {
     const f = FINITURE[c];
