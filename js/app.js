@@ -280,30 +280,30 @@ const CAP_COMPL = {
 const MANIGLIE_MOD = [
   { id: 'no',      label: 'Da definire (esclusa)', extra: 0,   img: null, fin: [] },
   { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.jpg',
-    ficha: 'assets/fichas/arianna.png', fin: ['MCS', 'MCR', 'MNO', 'MATX'] },
+    fin: ['MCS', 'MCR', 'MNO', 'MATX'] },
   { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.jpg',
-    ficha: 'assets/fichas/simona.png',  fin: ['MCS', 'MCR', 'MNO', 'MBGO'] },
+     fin: ['MCS', 'MCR', 'MNO', 'MBGO'] },
   { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.jpg',
-    ficha: 'assets/fichas/spigola.png', fin: ['OLV', 'MCS', 'MCR', 'MNO', 'MBIA', 'MSV', 'MBGO', 'MATX'] },
+    fin: ['OLV', 'MCS', 'MCR', 'MNO', 'MBIA', 'MSV', 'MBGO', 'MATX'] },
   { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.jpg',
-    ficha: 'assets/fichas/cuba.png',    fin: ['MCS', 'MCR', 'MNO'] },
+       fin: ['MCS', 'MCR', 'MNO'] },
   { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.jpg',
-    ficha: 'assets/fichas/elisa.png',   fin: ['OLV', 'CS', 'CR'] },
+      fin: ['OLV', 'CS', 'CR'] },
   { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.jpg',
-    ficha: 'assets/fichas/marea.png',   fin: ['PVD', 'OLV', 'SV', 'CS', 'CR', 'ANT', 'OLD', 'BG'] },
+      fin: ['PVD', 'OLV', 'SV', 'CS', 'CR', 'ANT', 'OLD', 'BG'] },
   // la scheda del Toga arriva tagliata: si legge solo la prima finitura
   { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.jpg',
-    ficha: 'assets/fichas/toga.png',    fin: ['MCS'], finParziale: true },
+       fin: ['MCS'], finParziale: true },
   { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.jpg',
-    ficha: 'assets/fichas/torino.png',  fin: ['CR', 'CS', 'OLV', 'ANT', 'OLD', 'ARG', 'RAM', 'BU'] },
+     fin: ['CR', 'CS', 'OLV', 'ANT', 'OLD', 'ARG', 'RAM', 'BU'] },
   { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.jpg',
-    ficha: 'assets/fichas/milano.png',  fin: ['MCS', 'MCR', 'MNO', 'MATX', 'MBIA'] },
+     fin: ['MCS', 'MCR', 'MNO', 'MATX', 'MBIA'] },
   { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.jpg',
-    ficha: 'assets/fichas/alma.png',    fin: ['MCS', 'MCR', 'MNO'] },
+       fin: ['MCS', 'MCR', 'MNO'] },
   { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.jpg',
-    ficha: 'assets/fichas/honey.png',   fin: ['CS', 'CR', 'CR/CS', 'ATX', 'NO'] },
+      fin: ['CS', 'CR', 'CR/CS', 'ATX', 'NO'] },
   { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.jpg',
-    ficha: 'assets/fichas/square.png',  fin: ['CS', 'CR', 'CR/CS'] },
+     fin: ['CS', 'CR', 'CR/CS'] },
 ];
 
 // Finiture delle maniglie: campioni ritagliati dalle tavole colori originali.
@@ -348,6 +348,102 @@ const FINITURE = {
   MSV:       { label: 'Maritech satinato verniciato',   mat: 'ottone', camp: 'SV' },
 };
 const finSlug = (c) => (FINITURE[c].camp || c).replace('/', '').toLowerCase();
+
+// Schede tecniche ricostruite dai disegni di fabbrica (catalogo Mariva).
+// misure in mm. m = maniglia su rosetta · dk = dry keep · pl = maniglia su
+// placca lunga · mt = martellina / cremonese su placca.
+//   L sporgenza? no: L = lunghezza, S = sporgenza, h = altezza, sp = spessore
+const F = (rosetta, varianti, dk, martellina, cremonese, placca) =>
+  ({ rosetta, varianti, dk, martellina, cremonese, placca });
+const RQ = 'RQB rosetta quadra bassa';
+const NOTT = 'nottolino Wc abbinato da pag. 321';
+const DQ = 'DQ dry keep quadro con mov. in metallo 7×42 mm con boccole 4 scatti art. 1672 pag. 364';
+const DO = 'D dry keep ovale con mov. in metallo 7×42 mm con boccole 4 scatti art. 1672 pag. 364';
+const P110M = 'placca art. P110 pag. 359 con movimento intercambiabile art. M1559 pag. 365';
+const P110C = 'placca art. P110 pag. 359, movimento intercambiabile art. M1551R pag. 365';
+const P108M = 'placca art. P108 pag. 359 con movimento intercambiabile art. M1559 pag. 365';
+const P108C = 'placca art. P108 pag. 359, movimento intercambiabile art. M1551R pag. 365';
+const P102 = 'placca distanza 70/90/yale/wc art. P102 pag. 358';
+
+const SCHEDE = {
+  ariana: { ...F('RQ45 rosetta quadra mm 45×45',
+      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 30×65',
+       'RRO rosetta rettangolare orizzontale', NOTT],
+      'DQ dry keep quadro con mov. in metallo 7×42 mm con boccole art. 1672 pag. 364',
+      P110M, 'placca art. P110 pag. 359, movimento intercambiabile art. 1551R pag. 365', null),
+    misure: { m: { L: 142, S: 58, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 152, q: 65, S: 60 },
+              mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } } },
+  simona: { ...F('R45 rosetta tonda d. 45 mm',
+      ['RTB rosetta tonda bassa', 'RP50 rosetta premontata tonda d. 50 mm',
+       'RO rosetta ovale mm 30×60', NOTT], DO, P108M, P108C, P102),
+    misure: { m: { L: 135, ros: 'd. 45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 145, q: 65, S: 62 },
+              pl: { L: 135, h: 245, larg: 39, sp: 9 },
+              mt: { L: 57, S: 61, h: 185, q: 177, sp: 11 } } },
+  spigola: { ...F('RQ45 rosetta quadra mm 45×45',
+      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
+       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
+    misure: { m: { L: 145, S: 56, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 155, q: 65, S: 58 },
+              mt: { L: 38, S: 57, h: 185, q: 150, sp: 11 } } },
+  cuba: { ...F('RQ45 rosetta quadra mm 45×45',
+      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
+       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
+    misure: { m: { L: 137, S: 58, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 147, q: 65, S: 60 },
+              mt: { L: 38, S: 63, h: 187, q: 150, sp: 11 } } },
+  elissa: { ...F('R45 rosetta tonda d. 45 mm',
+      ['R50 rosetta tonda d. 52 mm', 'RO rosetta ovale mm 30×60', NOTT],
+      DO, 'placca art. P106 pag. 359 con quadro 7',
+      'placca art. P106 pag. 359, movimento intercambiabile art. M1551 pag. 365', P102),
+    misure: { m: { L: 135, S: 68, ros: 'd. 45', sp: 9 },
+              dk: { L: 30, sp: 11, h: 145, q: 65, S: 70 },
+              pl: { L: 133, S: 68, h: 245, larg: 39, sp: 9 },
+              mt: { L: 37, S: 59, h: 178, sp: 12 } } },
+  marea: { ...F('RB rosetta bombata premontata d. 48 mm',
+      ['RPO rosetta ovale premontata mm 30×60', NOTT], DO, P108M, P108C,
+      'placca 70/960/yale/wc art. P102 pag. 358'),
+    misure: { m: { L: 130, S: 62, ros: 'd. 48', sp: 11 },
+              dk: { L: 30, sp: 11, h: 140, q: 65, S: 62 },
+              pl: { L: 126, S: 60, h: 245, larg: 40, sp: 9 },
+              mt: { L: 36, S: 84, h: 195, q: 177, sp: 13 } } },
+  toga: { ...F('RQ45 rosetta quadra mm 45×45',
+      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
+       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
+    misure: { m: { L: 145, S: 58, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 155, q: 65, S: 60 },
+              mt: { L: 38, S: 59, h: 195, q: 150, sp: 11 } } },
+  torino: { ...F('R45 rosetta tonda d. 45 mm',
+      ['RB rosetta bombata', 'RO rosetta ovale mm 30×60', NOTT], DO, P108M, P108C, P102),
+    misure: { m: { L: 135, S: 75, ros: 'd. 45', sp: 9 },
+              dk: { L: 30, sp: 11, h: 145, q: 65, S: 77 },
+              pl: { L: 133, S: 75, h: 245, larg: 40, sp: 9 },
+              mt: { L: 36, S: 79, h: 190, q: 177, sp: 13 } } },
+  milano: { ...F('RQ45 rosetta quadra mm 45×45',
+      [RQ, 'RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33',
+       'RRO rosetta rettangolare orizzontale', NOTT], DQ, P110M, P110C, null),
+    misure: { m: { L: 148, S: 61, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 158, q: 65, S: 63 },
+              mt: { L: 38, S: 62, h: 200, q: 150, sp: 11 } } },
+  alma: { ...F('RQ50 rosetta quadra mm 50×50',
+      [RQ, 'RR rosetta rettangolare mm 65×33', NOTT], DQ, P110M, P110C, null),
+    misure: { m: { L: 150, S: 62, ros: '50×50', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 165, q: 65, S: 62 },
+              mt: { L: 38, S: 61, h: 195, q: 150, sp: 11 } } },
+  honey: { ...F('RQ45 rosetta quadra mm 45×45',
+      ['RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33', NOTT],
+      DQ, P110M, P110C, null),
+    misure: { m: { L: 141, S: 68, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 151, q: 65, S: 70 },
+              mt: { L: 38, S: 69, h: 193, q: 150, sp: 11 } } },
+  square: { ...F('RQ45 rosetta quadra mm 45×45',
+      ['RQ50 rosetta quadra mm 50×50', 'RR rosetta rettangolare mm 65×33 da pag. 321'],
+      DQ, P110M, P110C, null),
+    misure: { m: { L: 141, S: 62, ros: '45×45', sp: 10.5 },
+              dk: { L: 30, sp: 12, h: 151, q: 65, S: 63 },
+              mt: { L: 38, S: 62, h: 193, q: 150, sp: 11 } } },
+};
 
 const MANIGLIE = {
   ottone: { label: 'Ottone',     en: 'Brass',       color: 0xc9a227, metalness: 1,   roughness: 0.35 },
@@ -1014,7 +1110,7 @@ function renderManiglieGrid() {
       ${m.img
         ? `<span class="man-photo"><img src="${m.img}" alt="Maniglia ${m.label}" loading="lazy"></span>`
         : '<span class="man-photo man-photo--none">—</span>'}
-      ${m.ficha ? `<span class="man-zoom" data-zoomman="${m.id}" role="button" tabindex="0"
+      ${SCHEDE[m.id] ? `<span class="man-zoom" data-zoomman="${m.id}" role="button" tabindex="0"
             title="Scheda tecnica e finiture"
             aria-label="Scheda tecnica ${m.label}">${SVG_LENTE}</span>` : ''}
       <span class="man-label">${m.label}</span>
@@ -1058,9 +1154,52 @@ function chiudiVisoreManiglia() {
 
 function renderVisoreManiglia() {
   const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
+  const sc = SCHEDE[man.id];
   document.getElementById('manVisoreTitolo').textContent = man.label;
+  // foto grande della maniglia, come i coprifili
   document.getElementById('manVisoreFig').innerHTML =
-    `<img src="${man.ficha}" alt="Scheda tecnica ${man.label}">`;
+    `<img src="${man.img.replace('.jpg', '_big.jpg')}" alt="Maniglia ${man.label}">`;
+
+  // — misure: un blocco per ogni configurazione del disegno di fabbrica
+  const mm = (v) => String(v).replace('.', ',');
+  const blocco = (t, righe) => `<div class="mis-blocco"><p class="mis-tit">${t}</p>${
+    righe.map(([k, v]) => `<p class="mis-riga"><span>${k}</span><b>${v}</b></p>`).join('')}</div>`;
+  const M = sc.misure;
+  document.getElementById('manVisoreMisure').innerHTML = [
+    blocco('Maniglia su rosetta', [
+      ['lunghezza', `${mm(M.m.L)} mm`],
+      ...(M.m.S ? [['sporgenza', `${mm(M.m.S)} mm`]] : []),
+      ['rosetta', `${M.m.ros} mm`],
+      ['spessore', `${mm(M.m.sp)} mm`]]),
+    blocco('Dry keep', [
+      ['larghezza', `${mm(M.dk.L)} mm`],
+      ['spessore', `${mm(M.dk.sp)} mm`],
+      ['altezza', `${mm(M.dk.h)} mm`],
+      ['quadro', `${mm(M.dk.q)} mm`],
+      ['sporgenza', `${mm(M.dk.S)} mm`]]),
+    M.pl ? blocco('Maniglia su placca', [
+      ['lunghezza', `${mm(M.pl.L)} mm`],
+      ...(M.pl.S ? [['sporgenza', `${mm(M.pl.S)} mm`]] : []),
+      ['placca', `${mm(M.pl.h)} × ${mm(M.pl.larg)} mm`],
+      ['spessore', `${mm(M.pl.sp)} mm`]]) : '',
+    blocco('Martellina / cremonese', [
+      ['larghezza', `${mm(M.mt.L)} mm`],
+      ['sporgenza', `${mm(M.mt.S)} mm`],
+      ['altezza', `${mm(M.mt.h)} mm`],
+      ...(M.mt.q ? [['quadro', `${mm(M.mt.q)} mm`]] : []),
+      ['spessore', `${mm(M.mt.sp)} mm`]]),
+  ].join('');
+
+  // — componenti standard e varianti
+  const riga = (t, v) => (v ? `<p class="cmp-riga"><span>${t}</span>${v}</p>` : '');
+  document.getElementById('manVisoreComp').innerHTML =
+    riga('Rosetta standard', sc.rosetta)
+    + (sc.varianti.length
+        ? `<p class="cmp-riga"><span>Varianti</span>${sc.varianti.join('<br>')}</p>` : '')
+    + riga('Dry keep standard', sc.dk)
+    + riga('Martellina standard', sc.martellina)
+    + riga('Cremonese standard', sc.cremonese)
+    + riga('Placca standard', sc.placca);
 
   document.getElementById('manVisoreFiniture').innerHTML = man.fin.map((c) => {
     const f = FINITURE[c];

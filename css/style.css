@@ -481,9 +481,50 @@ body {
   color: var(--ink-soft, #8d7d6a);
 }
 
-/* la scheda tecnica è un disegno: sta larga e su fondo bianco */
-.visore-fig--ficha { min-height: 0; padding: 6px; }
-.visore-fig--ficha img { max-height: 340px; }
+/* misure della scheda tecnica, un blocco per configurazione */
+.mis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+  gap: 7px;
+}
+.mis-blocco { padding: 9px 11px; background: #fff; border: 1px solid var(--hairline); }
+.mis-tit {
+  margin: 0 0 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold, #a8843c);
+}
+.mis-riga {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 2px;
+  font-size: 10.5px;
+  color: var(--ink-soft, #8d7d6a);
+}
+.mis-riga b { color: var(--ink, #2b211a); font-weight: 600; }
+
+/* componenti standard: etichetta a sinistra, descrizione a destra */
+.cmp-list { border-top: 1px solid var(--hairline); }
+.cmp-riga {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 12px;
+  margin: 0;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.cmp-riga span {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #8d7d6a);
+}
 
 /* griglia delle finiture ammesse dalla maniglia */
 .fin-grid {
