@@ -60,6 +60,8 @@ const state = {
   apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
   capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
+  cilindro: 'no', nottolino: false, oroSerr: false, oroCern: false,
+  telaioForma: false, acc: { riscontro: false, paraspiffero: false, imballo: false },
 };
 
 /* ============================================================
@@ -231,6 +233,7 @@ const FORME = [
   { id: 'arco_ts', label: 'Ad arco tutto sesto',                   extra: 1000 },
   { id: 'arco_sr', label: 'Ad arco sesto ribassato',               extra: 1500 },
   { id: 'curva',   label: 'Curva in pianta (solo liscia)',         extra: 2500 },
+  { id: 'diagonale', label: 'Diagonale (taglio obliquo)',          extra: 100 },
 ];
 
 const SOPRALUCI = [
@@ -248,7 +251,37 @@ const SERRATURE = [
   { id: 'opera',     label: 'Yale AGB "OPERA" (cilindro escluso)',      extra: 200 },
   { id: 'cisa',      label: 'Sicurezza 3 punti CISA',                   extra: 330 },
 ];
-const CERNIERE_EXTRA = { anuba: 0, scomparsa: 50 };
+// Voce 60: predisposizione per il nottolino, si somma alla serratura scelta.
+const NOTTOLINO = 10;
+
+// Cilindri (voci 65–67). Le serrature yale e OPERA sono "cilindro escluso":
+// senza uno di questi il preventivo è incompleto, non solo più economico.
+const CILINDRI = [
+  { id: 'no',       label: 'Nessun cilindro',                       extra: 0 },
+  { id: 'std',      label: 'Cilindro standard AGB 70 mm',           extra: 35 },
+  { id: 'europeo',  label: 'Cilindro europeo AGB 70 mm',            extra: 80 },
+  { id: 'opera',    label: 'Cilindro europeo AGB "OPERA" 70 mm',    extra: 100 },
+];
+const VUOLE_CILINDRO = new Set(['yale', 'opera']);
+
+// Cerniere: l'Anuba compresa è quella base; la registrabile da 14 mm con
+// cappucci è la voce 69, a pagamento.
+const CERNIERE_EXTRA = { anuba: 0, anuba14: 40, scomparsa: 50 };
+
+// Sovrapprezzi oro, in fondo a pag. 63: valgono solo su quei due pezzi.
+const ORO_SERRATURA = 10;   // solo su serratura magnetica
+const ORO_CERNIERA = 20;    // solo su cerniera a scomparsa
+
+// Accessori a pezzo (voci 70, 71, 26)
+const ACCESSORI = [
+  { id: 'riscontro',   label: 'Riscontro elettrico AGB 12V cc/ca',  extra: 150 },
+  { id: 'paraspiffero', label: 'Paraspiffero (porta un’anta)',  extra: 70 },
+  { id: 'imballo',     label: 'Imballo con porta montata su telaio', extra: 15 },
+];
+
+// Telai ad arco e curvi (voci 41, 43, 45): il telaio di passaggio non è
+// compreso nel prezzo della porta ad arco, si ordina a parte.
+const TELAIO_FORMA = { arco_ts: 750, arco_sr: 1000, curva: 1500 };
 
 // Capitelli e zoccoli (pagg. 56–58) — prezzi Toulipier, Laccato Bianco
 // Tosco compreso, "solo un lato" (×2 per due lati). SOLO fino a 900×2100.
@@ -960,7 +993,17 @@ function currentPrices() {
 
 /* Motore del preventivo: porta completa a listino → scaglioni fuori
    misura → 2 ante → extra. Ritorna le righe pronte per UI e PDF. */
+// Spegne gli extra che la scelta corrente non ammette più. Deve girare PRIMA
+// del calcolo: se lo si fa dopo, il totale resta indietro di un clic.
+function coerenza() {
+  if (!VUOLE_CILINDRO.has(state.serratura)) state.cilindro = 'no';
+  if (state.serratura !== 'magnetica') state.oroSerr = false;
+  if (state.cerniere !== 'scomparsa') state.oroCern = false;
+  if (!TELAIO_FORMA[state.forma]) state.telaioForma = false;
+}
+
 function computePreventivo() {
+  coerenza();
   const prices = currentPrices();
   const baseTariffa = Object.values(prices).reduce((s, v) => s + (v || 0), 0);
   const band = sizeBand(state.w, state.h);
@@ -1006,8 +1049,15 @@ function computePreventivo() {
   if (ape.extra) righe.push({ k: `Apertura ${ape.label}`, sub: '', v: ape.extra });
 
   const forma = FORME.find((f) => f.id === state.forma);
-  if (forma.extra) righe.push({ k: `Porta ${forma.label}`, sub: 'telaio ad arco/curvo escluso (voci 41–45)', v: forma.extra });
-  if (forma.id !== 'diritta' && (state.w > 900 || state.h > 2100)) {
+  const telForma = TELAIO_FORMA[forma.id];
+  if (forma.extra) righe.push({
+    k: `Porta ${forma.label}`,
+    sub: telForma ? 'solo l’anta: il telaio di passaggio è la voce sotto' : '',
+    v: forma.extra });
+  if (telForma && state.telaioForma)
+    righe.push({ k: `Telaio di passaggio ${forma.label}`, sub: 'voci 41/43/45', v: telForma });
+  // il taglio obliquo non è una curva: non ha il limite di 90×210
+  if (!['diritta', 'diagonale'].includes(forma.id) && (state.w > 900 || state.h > 2100)) {
     suPreventivo = true; motivo = 'archi e curve solo fino a 90×210 — fuori listino';
   }
 
@@ -1032,7 +1082,26 @@ function computePreventivo() {
 
   const ser = SERRATURE.find((s) => s.id === state.serratura);
   if (ser.extra) righe.push({ k: `Serratura ${ser.label}`, sub: '', v: ser.extra });
-  if (CERNIERE_EXTRA[state.cerniere]) righe.push({ k: 'Cerniere a scomparsa regolazione 3D', sub: 'n. 2 cerniere', v: CERNIERE_EXTRA[state.cerniere] });
+  if (state.serratura === 'magnetica' && state.oroSerr)
+    righe.push({ k: 'Serratura magnetica oro', sub: '', v: ORO_SERRATURA });
+  if (state.nottolino)
+    righe.push({ k: 'Predisposizione nottolino di sicurezza', sub: 'voce 60', v: NOTTOLINO });
+
+  // il cilindro non è un optional se la serratura è a nucleo yale
+  const cil = CILINDRI.find((c) => c.id === state.cilindro);
+  if (cil.extra) righe.push({ k: cil.label, sub: '', v: cil.extra });
+  if (VUOLE_CILINDRO.has(state.serratura) && state.cilindro === 'no')
+    righe.push({ k: 'Cilindro', sub: 'la serratura scelta è "cilindro escluso": va aggiunto', v: 0 });
+
+  if (CERNIERE_EXTRA[state.cerniere]) righe.push({
+    k: state.cerniere === 'scomparsa' ? 'Cerniere a scomparsa regolazione 3D'
+                                      : 'Anuba registrabile 14 mm con cappucci',
+    sub: 'n. 2 cerniere', v: CERNIERE_EXTRA[state.cerniere] });
+  if (state.cerniere === 'scomparsa' && state.oroCern)
+    righe.push({ k: 'Cerniera a scomparsa oro', sub: '', v: ORO_CERNIERA });
+
+  for (const a of ACCESSORI)
+    if (state.acc[a.id]) righe.push({ k: a.label, sub: '', v: a.extra });
 
   const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
   if (man.extra) {
@@ -1238,8 +1307,33 @@ function renderExtras() {
   document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.allargato = b.dataset.allargato; refreshUI(); }));
   // il legno del coprifilo si sceglie dentro il visore (lente sulla scheda)
-  document.querySelectorAll('#cernierePills .pill').forEach((b) =>
+  document.querySelectorAll('#cernierePills .pill[data-cerniere]').forEach((b) =>
     b.addEventListener('click', () => { state.cerniere = b.dataset.cerniere; refreshUI(); }));
+
+  // — extra di ferramenta (voci 60, 65–67, 69–71, 26, 41/43/45)
+  fillSelect('cilindroSelect', CILINDRI, state.cilindro);
+  document.getElementById('cilindroSelect').addEventListener('change', (e) => {
+    state.cilindro = e.target.value; refreshUI();
+  });
+  document.getElementById('accPills').innerHTML = ACCESSORI.map((a) =>
+    `<button class="pill" data-acc="${a.id}">${a.label} <span class="en">+€${a.extra}</span></button>`).join('');
+  document.querySelectorAll('#accPills .pill').forEach((b) =>
+    b.addEventListener('click', () => {
+      state.acc[b.dataset.acc] = !state.acc[b.dataset.acc]; refreshUI();
+    }));
+  document.querySelector('[data-nottolino]').addEventListener('click', () => {
+    state.nottolino = !state.nottolino; refreshUI();
+  });
+  document.querySelector('[data-oroserr]').addEventListener('click', () => {
+    state.oroSerr = !state.oroSerr; refreshUI();
+  });
+  document.querySelector('[data-orocern]').addEventListener('click', () => {
+    state.oroCern = !state.oroCern; refreshUI();
+  });
+  document.querySelector('[data-telforma]').addEventListener('click', () => {
+    state.telaioForma = !state.telaioForma; refreshUI();
+  });
+
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.mano = b.dataset.mano; refreshUI(); }));
   document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
@@ -1374,6 +1468,15 @@ function refreshAnim() {
   document.getElementById('sopraluceAnimBox').hidden = !conMoto;
   if (conMoto) document.getElementById('sopraluceAnim').src =
     `assets/aperture/sopraluce_${state.sopraluce}.svg`;
+
+  document.getElementById('cerniereAnim').src =
+    `assets/aperture/${state.cerniere === 'scomparsa' ? 'cerniera_3d' : 'cerniera_anuba'}.svg`;
+
+  // accessori: si mostra lo schema dell'ultimo acceso, uno alla volta
+  const conSchema = ['riscontro', 'paraspiffero'];
+  const acceso = conSchema.find((a) => state.acc[a]) || (state.nottolino ? 'nottolino' : null);
+  document.getElementById('accAnimBox').hidden = !acceso;
+  if (acceso) document.getElementById('accAnim').src = `assets/aperture/${acceso}.svg`;
 }
 
 function refreshUI() {
@@ -1427,8 +1530,34 @@ function refreshUI() {
     b.classList.toggle('is-active', +b.dataset.ante === state.ante));
   document.querySelectorAll('#allargatoPills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.allargato === state.allargato));
-  document.querySelectorAll('#cernierePills .pill').forEach((b) =>
+  document.querySelectorAll('#cernierePills .pill[data-cerniere]').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
+
+  // il cilindro compare solo se la serratura è "cilindro escluso"
+  const vuoleCil = VUOLE_CILINDRO.has(state.serratura);
+  document.getElementById('cilindroBox').hidden = !vuoleCil;
+  document.getElementById('cilindroSelect').value = state.cilindro;
+
+  // i sovrapprezzi oro valgono solo sui due pezzi che li prevedono
+  const oroS = document.querySelector('[data-oroserr]');
+  oroS.hidden = state.serratura !== 'magnetica';
+  oroS.classList.toggle('is-active', state.oroSerr);
+  const oroC = document.querySelector('[data-orocern]');
+  oroC.hidden = state.cerniere !== 'scomparsa';
+  oroC.classList.toggle('is-active', state.oroCern);
+
+  document.querySelector('[data-nottolino]').classList.toggle('is-active', state.nottolino);
+  document.querySelectorAll('#accPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', !!state.acc[b.dataset.acc]));
+
+  // il telaio di passaggio esiste solo per archi e curve
+  const tf = TELAIO_FORMA[state.forma];
+  document.getElementById('telaioFormaPills').hidden = !tf;
+  const btf = document.querySelector('[data-telforma]');
+  btf.classList.toggle('is-active', state.telaioForma);
+  if (tf) btf.innerHTML =
+    `Aggiungi telaio di passaggio <span class="en">+€${tf}</span>`;
+
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.mano === state.mano));
   document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
