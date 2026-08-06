@@ -198,22 +198,22 @@ const CAP_COMPL = {
 };
 
 // Maniglie — inventario reale della fabbrica (cartella Chapas).
-// Con prezzo di listino (pag. 64): Simona, Spigola, Torino, Marea.
+// Prezzi confermati dal cliente per tutti i 12 modelli.
 // extra:null = prezzo da definire → esclusa dal totale, indicata nel PDF.
 const MANIGLIE_MOD = [
-  { id: 'no',      label: 'Da definire (esclusa)', extra: 0,    img: null },
-  { id: 'simona',  label: 'SIMONA',  extra: 40,   img: 'assets/maniglie/simona.jpg' },
-  { id: 'spigola', label: 'SPIGOLA', extra: 45,   img: 'assets/maniglie/spigola.jpg' },
-  { id: 'torino',  label: 'TORINO',  extra: 55,   img: 'assets/maniglie/torino.jpg' },
-  { id: 'marea',   label: 'MAREA',   extra: 60,   img: 'assets/maniglie/marea.jpg' },
-  { id: 'alma',    label: 'ALMA',    extra: null, img: 'assets/maniglie/alma.jpg' },
-  { id: 'ariana',  label: 'ARIANA',  extra: null, img: 'assets/maniglie/ariana.jpg' },
-  { id: 'cuba',    label: 'CUBA',    extra: null, img: 'assets/maniglie/cuba.jpg' },
-  { id: 'elissa',  label: 'ELISSA',  extra: null, img: 'assets/maniglie/elissa.jpg' },
-  { id: 'honey',   label: 'HONEY',   extra: null, img: 'assets/maniglie/honey.jpg' },
-  { id: 'milano',  label: 'MILANO',  extra: null, img: 'assets/maniglie/milano.jpg' },
-  { id: 'square',  label: 'SQUARE',  extra: null, img: 'assets/maniglie/square.jpg' },
-  { id: 'toga',    label: 'TOGA',    extra: null, img: 'assets/maniglie/toga.jpg' },
+  { id: 'no',      label: 'Da definire (esclusa)', extra: 0,   img: null },
+  { id: 'ariana',  label: 'ARIANNA', extra: 35,  img: 'assets/maniglie/ariana.jpg' },
+  { id: 'simona',  label: 'SIMONA',  extra: 65,  img: 'assets/maniglie/simona.jpg' },
+  { id: 'spigola', label: 'SPIGOLA', extra: 65,  img: 'assets/maniglie/spigola.jpg' },
+  { id: 'cuba',    label: 'CUBA',    extra: 65,  img: 'assets/maniglie/cuba.jpg' },
+  { id: 'elissa',  label: 'ELISA',   extra: 70,  img: 'assets/maniglie/elissa.jpg' },
+  { id: 'marea',   label: 'MAREA',   extra: 80,  img: 'assets/maniglie/marea.jpg' },
+  { id: 'toga',    label: 'TOGA',    extra: 90,  img: 'assets/maniglie/toga.jpg' },
+  { id: 'torino',  label: 'TORINO',  extra: 95,  img: 'assets/maniglie/torino.jpg' },
+  { id: 'milano',  label: 'MILANO',  extra: 95,  img: 'assets/maniglie/milano.jpg' },
+  { id: 'alma',    label: 'ALMA',    extra: 115, img: 'assets/maniglie/alma.jpg' },
+  { id: 'honey',   label: 'HONEY',   extra: 199, img: 'assets/maniglie/honey.jpg' },
+  { id: 'square',  label: 'SQUARE',  extra: 215, img: 'assets/maniglie/square.jpg' },
 ];
 
 const MANIGLIE = {
