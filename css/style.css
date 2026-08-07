@@ -488,9 +488,17 @@ body {
   background: #fff;
   border: 1px solid var(--hairline);
 }
-.anim img { display: block; width: 100%; max-width: 300px; margin: 0 auto; }
-/* chi ha chiesto meno movimento non lo subisce */
-@media (prefers-reduced-motion: reduce) { .anim { display: none; } }
+.anim svg { display: block; width: 100%; max-width: 320px; height: 210px; margin: 0 auto; }
+
+/* tinte dei solidi negli schemi: le stesse del pannello, cosi lo schema
+   sta nella pagina e non sembra incollato da un altro documento */
+.anim {
+  --f-front: #fdfaf3; --f-edge: #e3d8c2; --f-back: #cdbfa5;
+  --f-frame: #fbf7ee; --f-jamb: #e8dcc7; --f-wall: #e6ded0;
+  --f-rec: #f2ead9;   --f-wood: #e6d2ae; --f-glass: #eef2f0;
+  --floor: rgba(43, 33, 26, .07);
+  --ink: var(--espresso); --taupe: var(--taupe);
+}
 
 /* schema statico: sezione del telaio. Non si muove, quindi resta anche a
    chi ha chiesto meno movimento. */

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mostraApertura } from './aperture.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
@@ -1476,16 +1477,15 @@ function renderVisoreCopri() {
 // Schemi animati: il movimento è ciò che distingue queste opzioni, e in un
 // menu a tendina non si vede. I file stanno in assets/aperture.
 function refreshAnim() {
-  document.getElementById('anteAnim').src =
-    `assets/aperture/${state.ante === 2 ? 'due_ante' : 'battente'}.svg`;
-  document.getElementById('aperturaAnim').src =
-    `assets/aperture/${state.apertura}.svg`;
+  mostraApertura(document.getElementById('anteAnim'),
+                 state.ante === 2 ? 'due_ante' : 'battente');
+  mostraApertura(document.getElementById('aperturaAnim'), state.apertura);
   // anche il fisso ha il suo schema: fermo e senza traccia, cosi si vede che
   // quei 250 € comprano un vano chiuso e non un'anta che si apre
   const conSopraluce = state.sopraluce !== 'no';
   document.getElementById('sopraluceAnimBox').hidden = !conSopraluce;
-  if (conSopraluce) document.getElementById('sopraluceAnim').src =
-    `assets/aperture/sopraluce_${state.sopraluce}.svg`;
+  if (conSopraluce) mostraApertura(document.getElementById('sopraluceAnim'),
+                                   `sopraluce_${state.sopraluce}`);
 
   document.getElementById('cerniereAnim').src =
     `assets/aperture/${state.cerniere === 'scomparsa' ? 'cerniera_3d' : 'cerniera_anuba'}.svg`;
