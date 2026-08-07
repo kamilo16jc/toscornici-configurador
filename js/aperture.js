@@ -57,14 +57,19 @@ function pushSolid(list, o, u, v, w, tone) {
   }
 }
 
-function pushQuad(list, pts, fill, extra) {
+function pushQuad(list, pts, fill, opts) {
+  opts = opts || {};
   const q = pts.map((P) => proj(P[0], P[1], P[2]));
   const area = (q[1][0]-q[0][0])*(q[2][1]-q[0][1]) - (q[2][0]-q[0][0])*(q[1][1]-q[0][1]);
-  if (area <= 0) return;
-  list.push(Object.assign({
+  // force: per i pezzi dell'anta specchiata, che hanno il verso invertito
+  // e verrebbero scartati anche quando si vedono benissimo
+  if (area <= 0 && !opts.force) return;
+  const zm = (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4;
+  list.push({
     d: 'M' + q.map((a) => a[0].toFixed(1) + ' ' + a[1].toFixed(1)).join(' L') + 'Z',
-    z: (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4, fill,
-  }, extra || {}));
+    z: opts.z !== undefined ? opts.z : zm + (opts.zBias || 0),
+    fill, noStroke: opts.noStroke,
+  });
 }
 
 /* un'anta: solido, bugne sulle due facce, ferramenta secondo il tipo */
@@ -77,13 +82,20 @@ function anta(list, hw, o, s, ang, larg, alt, opts) {
 
   pushSolid(list, o, [larg*D[0], 0, larg*D[2]], [0, alt, 0], [T*N[0], 0, T*N[2]], opts.tone);
 
+  // quale faccia dell'anta guarda l'osservatore? Da li si decide su
+  // quale delle due posare le bugne: una sola, quella in vista.
+  const facciaAvanti = ((p, r2) => (p[1][0]-p[0][0])*(p[2][1]-p[0][1]) -
+                                   (p[2][0]-p[0][0])*(p[1][1]-p[0][1]) > 0)(
+    [at(0, 0, T), at(larg, 0, T), at(larg, alt, T), at(0, alt, T)]
+      .map((P) => proj(P[0], P[1], P[2])));
+  // appena fuori dalla faccia in vista: dentro lo spessore l'ordine
+  // per profondita' la nasconderebbe dietro la faccia stessa
+  const fw = facciaAvanti ? T + 0.4 : -0.4;
   const m = Math.min(105, larg * 0.16);
   const zone = alt > 1400 ? [[170, alt*0.43], [alt*0.51, alt-170]] : [[130, alt-130]];
-  for (const [fw, dep] of [[T*0.88, 1e5], [T*0.12, -0.9e5]]) {
-    for (const [v0, v1] of zone) {
-      pushQuad(list, [at(m, v0, fw), at(larg-m, v0, fw), at(larg-m, v1, fw), at(m, v1, fw)],
-               'var(--f-rec)', { z: dep });
-    }
+  for (const [v0, v1] of zone) {
+    pushQuad(list, [at(m, v0, fw), at(larg-m, v0, fw), at(larg-m, v1, fw), at(m, v1, fw)],
+             'var(--f-rec)', { force: true });
   }
   if (hw && !opts.noHW) {
     const hv = Math.min(1040, alt * 0.5);
@@ -158,7 +170,7 @@ function scena(tipo, u) {
                       [o[0]+larg*D[0], 1, o[2]+larg*D[2]],
                       [o[0]+larg*D[0]+210*N[0], 1, o[2]+larg*D[2]+210*N[2]],
                       [o[0]+210*N[0], 1, o[2]+210*N[2]]],
-             'var(--floor)', { z: -1e5, noStroke: true });
+             'var(--floor)', { z: -1e5, noStroke: true, force: true });
   };
 
   switch (tipo) {
