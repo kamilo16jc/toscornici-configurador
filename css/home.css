@@ -1,0 +1,231 @@
+/* ============================================================
+   TOSCOCORNICI · schermata d'ingresso
+   Stessa palette del configuratore: avorio caldo, espresso, ottone.
+   Tre strade, una sola visibile per ora: le altre due si vedono ma
+   non si cliccano, cosi si capisce cosa sta arrivando.
+   ============================================================ */
+
+:root {
+  --ivory: #f4efe6;
+  --ivory-deep: #ece5d8;
+  --espresso: #2b211a;
+  --espresso-soft: #4a3c30;
+  --taupe: #8d7d6a;
+  --brass: #a8843c;
+  --brass-bright: #c19a4b;
+  --hairline: rgba(43, 33, 26, 0.14);
+  --panel-bg: #faf7f0;
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Jost", "Segoe UI", sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  font-family: var(--sans);
+  color: var(--espresso);
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, #fbf8f2 0%, transparent 60%),
+    linear-gradient(180deg, var(--ivory) 0%, var(--ivory-deep) 100%);
+  -webkit-font-smoothing: antialiased;
+}
+
+.en { color: var(--taupe); font-weight: 300; }
+
+.home {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 54px 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-height: 100vh;
+}
+
+/* ---------- testata ---------- */
+.intro { display: flex; flex-direction: column; gap: 14px; }
+
+.marchio {
+  height: 48px;
+  width: auto;
+  align-self: flex-start;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 6px rgba(43, 33, 26, .18));
+}
+
+.intro h1 {
+  font-family: var(--serif);
+  font-size: clamp(38px, 5.4vw, 62px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.005em;
+}
+
+.intro h1 em { font-style: italic; color: var(--brass); }
+
+.sottotitolo {
+  max-width: 54ch;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--espresso-soft);
+}
+
+/* ---------- le tre schede ---------- */
+.scelte {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.scelta {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border: 1px solid var(--hairline);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+}
+
+/* quella percorribile reagisce; le altre restano ferme */
+.scelta--via {
+  transition: border-color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+.scelta--via:hover,
+.scelta--via:focus-visible {
+  border-color: var(--brass);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(43, 33, 26, .10);
+  outline: none;
+}
+.scelta--via:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+.scelta--attesa { opacity: .72; }
+
+/* ---------- figura ---------- */
+.figura {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  height: 268px;
+  padding: 22px 20px 0;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 100%, #e6ddcc 0%, transparent 70%),
+    linear-gradient(180deg, #fdfbf7 0%, #f3ede1 100%);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.figura img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  object-position: bottom;
+  filter: drop-shadow(0 8px 14px rgba(43, 33, 26, .13));
+}
+
+/* il trittico: tre porte, come le opzioni che l'assistente proporra */
+.figura--trittico img { height: 86%; }
+.figura--trittico img:nth-child(2) { height: 100%; }
+
+/* la collezione che non c'e' ancora: solo il contorno */
+.figura--vuota svg {
+  height: 86%;
+  width: auto;
+  fill: none;
+  stroke: var(--taupe);
+  stroke-width: 3;
+  opacity: .38;
+}
+.figura--vuota svg path { stroke-width: 2.4; opacity: .8; }
+
+/* ---------- testo ---------- */
+.testo {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 22px 24px 24px;
+  flex: 1;
+}
+
+.occhiello {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.testo h2 {
+  font-family: var(--serif);
+  font-size: 27px;
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.desc {
+  font-size: 13.5px;
+  font-weight: 300;
+  line-height: 1.62;
+  color: var(--espresso-soft);
+  flex: 1;
+}
+
+.azione, .stato {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 6px;
+}
+
+.azione { color: var(--espresso); }
+
+.azione::after {
+  content: "→";
+  margin-left: 9px;
+  color: var(--brass);
+  transition: margin-left .22s ease;
+  display: inline-block;
+}
+.scelta--via:hover .azione::after { margin-left: 15px; }
+
+.stato { color: var(--taupe); }
+
+.stato::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 8px;
+  vertical-align: 2px;
+  border-radius: 50%;
+  background: var(--taupe);
+}
+
+/* ---------- piede ---------- */
+.piede {
+  margin-top: auto;
+  padding-top: 22px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--taupe);
+}
+
+/* ---------- schermi stretti ---------- */
+@media (max-width: 900px) {
+  .home { padding: 38px 20px 32px; gap: 30px; }
+  .scelte { grid-template-columns: 1fr; }
+  .figura { height: 226px; }
+  .scelta--attesa { opacity: 1; }        /* in colonna l'opacita' confonde */
+  .scelta--attesa .figura { opacity: .72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scelta--via, .azione::after { transition: none; }
+  .scelta--via:hover { transform: none; }
+}
