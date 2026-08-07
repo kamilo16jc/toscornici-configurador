@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo index.html e la pagina si rompe -->
-<link rel="stylesheet" href="css/style.css?v=27">
+<link rel="stylesheet" href="css/style.css?v=29">
 <script type="importmap">
 {
   "imports": {
@@ -198,7 +198,6 @@
       <div id="cilindroBox" hidden>
         <p class="lacc-title">Cilindro — la serratura scelta è “cilindro escluso”</p>
         <select class="model-select" id="cilindroSelect" aria-label="Cilindro"></select>
-        <figure class="anim"><svg id="cilindroAnim" role="img" aria-label="Dettaglio del cilindro"></svg></figure>
       </div>
       <div class="pills" id="cernierePills">
         <button class="pill is-active" data-cerniere="anuba">Anuba <span class="en">incluse</span></button>
@@ -206,10 +205,8 @@
         <button class="pill" data-cerniere="scomparsa">A scomparsa 3D <span class="en">+€50</span></button>
         <button class="pill" data-orocern="1" hidden>Scomparsa oro <span class="en">+€20</span></button>
       </div>
-      <figure class="anim"><svg id="cerniereAnim" role="img" aria-label="Dettaglio della cerniera"></svg></figure>
       <p class="lacc-title">Accessori <span class="en">/ Accessories</span></p>
       <div class="pills" id="accPills"><!-- generato da ACCESSORI --></div>
-      <figure class="anim" id="accAnimBox" hidden><svg id="accAnim" role="img" aria-label="Dettaglio dell’accessorio"></svg></figure>
       <p class="lacc-title">Modello maniglia — inventario fabbrica <span class="en">/ Handle model</span></p>
       <div class="maniglie-grid" id="manigliaGrid"><!-- generato da MANIGLIE_MOD --></div>
     </section>
@@ -337,6 +334,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=27"></script>
+<script type="module" src="js/app.js?v=29"></script>
 </body>
 </html>

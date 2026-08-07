@@ -498,13 +498,6 @@ body {
   --f-front: #fdfaf3; --f-edge: #e3d8c2; --f-back: #cdbfa5;
   --f-frame: #fbf7ee; --f-jamb: #e8dcc7; --f-wall: #e6ded0;
   --f-rec: #f2ead9;   --f-wood: #e6d2ae; --f-glass: #eef2f0;
-  /* ottone a vista e acciaio nascosto: si distingue cosa si vede */
-  --m-lit: #c9a45a; --m-mid: #a8843c; --m-dark: #7d6129;
-  --s-lit: #cfcbc4; --s-mid: #a9a49b; --s-dark: #7d7970;
-  /* nei dettagli di ferramenta manca il contesto: i tre legni vogliono
-     tinte piu' staccate, altrimenti restano contorni su fondo chiaro */
-  --d-wall: #e7ddc8; --d-jamb: #f0e5cf; --d-leaf: #f9f2e1;
-  --d-edge: #d5c8ab; --d-mort: #cfc2a4;
   --floor: rgba(43, 33, 26, .07);
   --ink: var(--espresso); --taupe: var(--taupe);
 }

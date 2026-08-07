@@ -86,12 +86,14 @@ function anta(list, hw, o, s, ang, larg, alt, opts) {
 
   pushSolid(list, o, [larg*D[0], 0, larg*D[2]], [0, alt, 0], [T*N[0], 0, T*N[2]], opts.tone);
 
-  // quale faccia dell'anta guarda l'osservatore? Da li si decide su
-  // quale delle due posare le bugne: una sola, quella in vista.
-  const facciaAvanti = ((p, r2) => (p[1][0]-p[0][0])*(p[2][1]-p[0][1]) -
-                                   (p[2][0]-p[0][0])*(p[1][1]-p[0][1]) > 0)(
-    [at(0, 0, T), at(larg, 0, T), at(larg, alt, T), at(0, alt, T)]
-      .map((P) => proj(P[0], P[1], P[2])));
+  // Quale faccia dell'anta guarda l'osservatore? Stesso criterio con cui
+  // pushSolid sceglie le facce: quella piu' vicina del centro dell'anta.
+  // Col verso di percorrenza l'anta specchiata dava il risultato opposto,
+  // e nella porta a due ante una si vedeva bugnata e l'altra liscia.
+  const cFronte = at(larg / 2, alt / 2, T);
+  const cAnta = at(larg / 2, alt / 2, T / 2);
+  const facciaAvanti = proj(cFronte[0], cFronte[1], cFronte[2])[2]
+                     > proj(cAnta[0], cAnta[1], cAnta[2])[2];
   // appena fuori dalla faccia in vista: dentro lo spessore l'ordine
   // per profondita' la nasconderebbe dietro la faccia stessa
   const fw = facciaAvanti ? T + 0.4 : -0.4;
@@ -188,10 +190,14 @@ function scena(tipo, u) {
     }
     case 'due_ante': {
       guscio(L, {});
-      const ang = Math.min(ANG, 78) * p, L2 = W / 2;
-      for (const s of [1, -1]) {
-        ombra([s * W/2, 0, 0], s, ang, L2);
-        anta(L.anta, hw, [s * W/2, 0, 0], s, ang, L2, H);
+      // Le due ante non aprono uguale: a 78 gradi il piano dell'anta
+      // sinistra si allinea con la direzione di vista e si vede di taglio,
+      // una scheggia accanto all'altra bugnata. Lo stesso accorgimento
+      // delle tavole del listino, dove le due ante non sono mai simmetriche.
+      const L2 = W / 2;
+      for (const [s, gradi] of [[1, Math.min(ANG, 78)], [-1, 42]]) {
+        ombra([s * W/2, 0, 0], s, gradi * p, L2);
+        anta(L.anta, hw, [s * W/2, 0, 0], s, gradi * p, L2, H);
       }
       break;
     }
