@@ -1548,7 +1548,7 @@ function refreshUI() {
   document.getElementById('telaioSchemaNota').textContent =
     (TELAIO_COPRI[state.telaio] || '') + (state.telaio === 'std'
       ? ' · schema nostro, il listino non lo disegna'
-      : ' · sezione dal listino');
+      : ' · ridisegnata dalla sezione di listino');
 
   document.getElementById('telaioNote').textContent =
     state.telaio === 'alpha_comp_sp' ? `Con il complanare a spingere il fermaporta a pavimento è obbligatorio: + ${eur.format(FERMAPORTA)} (voce 74).` : '';
