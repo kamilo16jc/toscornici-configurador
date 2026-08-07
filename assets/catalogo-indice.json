@@ -123,9 +123,9 @@
    "arco": "no",
    "lastre": 0,
    "griglia": "-",
-   "bugne": 3,
+   "bugne": 2,
    "stile": "classico cieco",
-   "cerca": "emilia classico cieco - tre bugne una alta due basse"
+   "cerca": "emilia classico cieco - due bugne verticali affiancate"
   },
   {
    "id": "enna",
@@ -183,9 +183,9 @@
    "arco": "no",
    "lastre": 0,
    "griglia": "-",
-   "bugne": 5,
+   "bugne": 4,
    "stile": "classico cieco",
-   "cerca": "latina classico cieco - cinque bugne movimentata"
+   "cerca": "latina classico cieco - quattro bugne movimentata"
   },
   {
    "id": "liverpool",
@@ -243,9 +243,9 @@
    "arco": "no",
    "lastre": 0,
    "griglia": "-",
-   "bugne": 4,
+   "bugne": 3,
    "stile": "classico cieco",
-   "cerca": "mantova classico cieco - quattro bugne"
+   "cerca": "mantova classico cieco - tre bugne sovrapposte"
   },
   {
    "id": "nebraska",
@@ -421,23 +421,23 @@
    "linea": "Base",
    "vetro": "parziale",
    "arco": "no",
-   "lastre": 4,
-   "griglia": "croce centrale",
+   "lastre": 1,
+   "griglia": "lastra con griglia decorativa",
    "bugne": 1,
    "stile": "classico vetrato",
-   "cerca": "savona classico vetrato croce centrale decorata croce bugna bassa"
+   "cerca": "savona classico vetrato lastra con griglia decorativa griglia decorativa bugna bassa"
   },
   {
    "id": "sicilia",
    "nome": "Sicilia",
    "linea": "Base",
-   "vetro": "parziale",
+   "vetro": "totale",
    "arco": "no",
    "lastre": 2,
-   "griglia": "2 verticali strette",
-   "bugne": 1,
+   "griglia": "2 verticali a tutta altezza",
+   "bugne": 0,
    "stile": "moderno vetrato",
-   "cerca": "sicilia moderno vetrato 2 verticali strette due feritoie verticali slanciata"
+   "cerca": "sicilia moderno vetrato 2 verticali a tutta altezza due feritoie verticali slanciata senza bugne"
   },
   {
    "id": "siena",
@@ -519,9 +519,9 @@
    "arco": "pannello",
    "lastre": 0,
    "griglia": "-",
-   "bugne": 3,
+   "bugne": 2,
    "stile": "classico cieco",
-   "cerca": "virginia classico cieco - arco cieco tre bugne"
+   "cerca": "virginia classico cieco - arco cieco due bugne"
   },
   {
    "id": "windsor",

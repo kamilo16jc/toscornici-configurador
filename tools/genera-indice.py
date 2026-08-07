@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Indice di ricerca del catalogo. Le descrizioni del manuale non servono
 # (3 testi diversi su 44 modelli): questi attributi sono letti a occhio
-# dai render frontali di ogni GLB, uno per uno.
+# dai render FRONTALI di ogni GLB, uno per uno. In vista di tre quarti
+# gli scorci falsano il conteggio: sei schede su 44 erano sbagliate
+# e sono state corrette rifacendo gli scatti dead-on.
 #   vetro    no | parziale | totale
 #   arco     no | vetro | pannello
 #   lastre   numero di vetri
@@ -22,7 +24,7 @@ P = {
  'barletta':   ('parziale','no',9,'3x3 quadri',2,'classico vetrato','griglia inglese due bugne'),
  'taormina':   ('totale','no',5,'5 orizzontali',0,'classico vetrato','tutta vetrata fasce orizzontali'),
  'pausania':   ('totale','no',2,'lastra alta + fascia bassa',0,'classico vetrato','vetrata slanciata'),
- 'savona':     ('parziale','no',4,'croce centrale',1,'classico vetrato','decorata croce bugna bassa'),
+ 'savona':     ('parziale','no',1,'lastra con griglia decorativa',1,'classico vetrato','griglia decorativa bugna bassa'),
  'piacenza':   ('no','no',0,'-',4,'classico cieco','quattro bugne robusta'),
  'pienza':     ('no','no',0,'-',2,'classico cieco','due bugne sobria'),
 
@@ -33,16 +35,16 @@ P = {
  'ragusa':     ('no','no',0,'-',5,'classico cieco','cinque bugne'),
  'enna':       ('no','no',0,'-',6,'classico cieco','sei bugne simmetrica'),
  'faenza':     ('no','no',0,'-',3,'classico cieco','tre bugne sobria'),
- 'mantova':    ('no','no',0,'-',4,'classico cieco','quattro bugne'),
- 'latina':     ('no','no',0,'-',5,'classico cieco','cinque bugne movimentata'),
+ 'mantova':    ('no','no',0,'-',3,'classico cieco','tre bugne sovrapposte'),
+ 'latina':     ('no','no',0,'-',4,'classico cieco','quattro bugne movimentata'),
  'country':    ('no','no',0,'-',2,'rustico cieco','rustica country semplice'),
  'puglia':     ('parziale','no',1,'lastra curva verticale',1,'moderno vetrato','curva sinuosa originale design'),
  'campania':   ('totale','no',1,'lastra unica intera',0,'moderno vetrato','tutta vetro minimale luminosa'),
 
  'philadelphia':('parziale','vetro',1,'lastra ad arco',2,'classico vetrato','arco due bugne inglese'),
  'toscana':    ('no','no',0,'-',2,'classico cieco','pannello grande zoccolo basso'),
- 'sicilia':    ('parziale','no',2,'2 verticali strette',1,'moderno vetrato','due feritoie verticali slanciata'),
- 'emilia':     ('no','no',0,'-',3,'classico cieco','tre bugne una alta due basse'),
+ 'sicilia':    ('totale','no',2,'2 verticali a tutta altezza',0,'moderno vetrato','due feritoie verticali slanciata senza bugne'),
+ 'emilia':     ('no','no',0,'-',2,'classico cieco','due bugne verticali affiancate'),
  'nevada':     ('no','pannello',0,'-',2,'classico cieco','arco cieco due bugne'),
  'alaska':     ('totale','vetro',1,'lastra ad arco intera',0,'classico vetrato','arco tutta vetrata luminosa'),
  'newengland': ('no','pannello',0,'-',2,'classico cieco','arco cieco slanciata'),
@@ -57,7 +59,7 @@ P = {
  'liverpool':  ('totale','vetro',10,'arco + 3x3 quadri',0,'classico vetrato','arco griglia inglese tutta vetrata'),
  'oldcity':    ('parziale','vetro',7,'arco + griglia',2,'classico vetrato','arco griglia due bugne'),
  'oxford':     ('parziale','vetro',7,'arco + 2x3 quadri',1,'classico vetrato','arco griglia inglese bugna'),
- 'virginia':   ('no','pannello',0,'-',3,'classico cieco','arco cieco tre bugne'),
+ 'virginia':   ('no','pannello',0,'-',2,'classico cieco','arco cieco due bugne'),
  'newyork':    ('parziale','no',6,'2x3 quadri',1,'classico vetrato','quadri inglese bugna bassa'),
  'luisiana':   ('parziale','vetro',3,'arco + 2 orizzontali',1,'classico vetrato','arco fasce orizzontali bugna'),
 }
