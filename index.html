@@ -8,18 +8,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=6">
+<link rel="stylesheet" href="css/home.css?v=7">
 </head>
 <body>
 
 <!-- ==================== COPERTINA ==================== -->
 <section class="copertina">
 
-  <div class="lastre">
-    <figure class="lastra lastra--grande">
+  <div class="lastre" id="lastre">
+    <figure class="lastra is-attiva">
       <img src="assets/copertina/nebraska.webp"
            srcset="assets/copertina/nebraska-sm.webp 760w, assets/copertina/nebraska.webp 1500w"
-           sizes="(max-width: 900px) 100vw, 58vw"
+           sizes="100vw"
            alt="Porta Nebraska in rovere, vetrata con traversi, in un soggiorno"
            width="1500" height="1000" fetchpriority="high">
       <figcaption>Nebraska · rovere</figcaption>
@@ -27,12 +27,14 @@
     <figure class="lastra">
       <img src="assets/copertina/ragusa.webp"
            srcset="assets/copertina/ragusa-sm.webp 760w, assets/copertina/ragusa.webp 1500w"
-           sizes="(max-width: 900px) 100vw, 42vw"
+           sizes="100vw"
            alt="Porta Ragusa in rovere, cieca con bugne, in un ingresso"
            width="1500" height="1000" loading="lazy">
       <figcaption>Ragusa · rovere</figcaption>
     </figure>
   </div>
+
+  <div class="segnaposti" id="segnaposti" role="tablist" aria-label="Immagini di copertina"></div>
 
   <div class="velo" aria-hidden="true"></div>
 
@@ -70,9 +72,12 @@
 
     <!-- 2 · listino -->
     <a class="scelta scelta--via" href="configuratore.html">
-      <div class="figura">
-        <img src="assets/home/listino.webp" alt="Porta della collezione a listino"
-             width="197" height="460" loading="lazy">
+      <div class="figura figura--foto">
+        <img src="assets/copertina/sicilia.webp"
+             srcset="assets/copertina/sicilia-sm.webp 460w, assets/copertina/sicilia.webp 900w"
+             sizes="(max-width: 900px) 100vw, 370px"
+             alt="Porta Sicilia in rovere, due vetri verticali, in un soggiorno"
+             width="900" height="1350" loading="lazy">
       </div>
       <div class="testo">
         <p class="occhiello">Collezione <span class="en">/ Collection</span></p>
@@ -111,6 +116,56 @@
   </footer>
 
 </main>
+
+<script>
+/* Copertina: una stanza per volta, cambio ogni 5 secondi.
+   Aggiungere una foto = aggiungere una <figure class="lastra"> nell'HTML,
+   qui non si tocca niente. */
+(() => {
+  const lastre = [...document.querySelectorAll('#lastre .lastra')];
+  const barra = document.getElementById('segnaposti');
+  if (lastre.length < 2) { barra.hidden = true; return; }
+
+  const PAUSA = 5000;
+  let i = 0, timer = null;
+
+  const punti = lastre.map((_, n) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'segnaposto';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-label', 'Immagine ' + (n + 1) + ' di ' + lastre.length);
+    b.addEventListener('click', () => { mostra(n); avvia(); });
+    barra.appendChild(b);
+    return b;
+  });
+
+  function mostra(n) {
+    i = (n + lastre.length) % lastre.length;
+    lastre.forEach((l, k) => l.classList.toggle('is-attiva', k === i));
+    punti.forEach((p, k) => {
+      p.classList.toggle('is-attivo', k === i);
+      p.setAttribute('aria-selected', k === i ? 'true' : 'false');
+    });
+  }
+
+  function avvia() {
+    clearInterval(timer);
+    timer = setInterval(() => mostra(i + 1), PAUSA);
+  }
+
+  mostra(0);
+
+  /* chi ha chiesto meno movimento resta sulla prima e sceglie a mano */
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    avvia();
+    /* a scheda nascosta il timer non serve: si riprende al ritorno */
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) clearInterval(timer); else avvia();
+    });
+  }
+})();
+</script>
 
 </body>
 </html>
