@@ -465,7 +465,6 @@ const loaderEl = document.getElementById('loader');
 const loaderFill = document.getElementById('loaderFill');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.localClippingEnabled = true;   // per la porta a due ante e a libro
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
 renderer.toneMapping = THREE.NeutralToneMapping;
@@ -612,244 +611,18 @@ let currentModelKey = null;
 
 // apertura della porta: perno sulle cerniere
 let doorPivot = null;
+let doorTargetAngle = 0;
 let doorOpenAngle = 0;
 let leafParts = [];
-let doorKin = null;          // { leafW, sign, rest, box, zc } noto dopo il GLB
-let doorDemoOn = false;      // il pulsante avvia/ferma la dimostrazione
-let doorDemoT = 0;
-let twinL = null, twinR = null, foldPivot = null;   // porta divisa in due meta
-const clipMats = [];         // { base, mat } -- cloni con piano di taglio
 const doorBtn = document.getElementById('doorBtn');
 
 function toggleDoor() {
-  doorDemoOn = !doorDemoOn;
-  doorDemoT = 0;
-  doorBtn.classList.toggle('is-open', doorDemoOn);
-  doorBtn.title = doorDemoOn ? 'Ferma il movimento / Stop' : 'Mostra il movimento / Show movement';
-  doorBtn.setAttribute('aria-label', doorBtn.title);
-}
-
-/* -- porta a due ante e a libro: la stessa anta, divisa in due meta --------
-   Ogni meta e un clone ritagliato da un piano di taglio; la destra e la
-   sinistra SPECCHIATA, cosi il disegno si apre a libro come in catalogo.
-   Niente scale 0.5: schiaccerebbe le bugne.                              */
-
-function clipCloneMat(base, plane) {
-  const m = base.clone();
-  m.clippingPlanes = [plane];
-  m.clipShadows = true;
-  m.side = THREE.DoubleSide;
-  m.userData.__clipClone = true;   // le texture sono condivise: non toccarle
-  clipMats.push({ base, mat: m });
-  return m;
-}
-
-function cloneLeafInto(holder, plane) {
-  leafParts.forEach((p) => {
-    const c = p.clone(true);
-    c.traverse((o) => { if (o.isMesh) o.material = clipCloneMat(o.material, plane); });
-    holder.add(c);
-  });
-}
-
-function teardownSplit() {
-  for (const t of [twinL, twinR]) if (t) { disposeSubtree(t); scene.remove(t); }
-  twinL = twinR = foldPivot = null;
-  clipMats.length = 0;
-  leafParts.forEach((p) => { p.visible = true; });
-}
-
-function syncSplit() {
-  if (!doorKin) return;
-  const vuole = state.ante === 2 || state.apertura === 'koblenz';
-  if (!vuole) { if (twinL) teardownSplit(); return; }
-  if (twinL) return;
-  const k = doorKin, W2 = k.leafW / 2;
-  const offL = doorPivot.position.x - k.box.min.x;   // dal montante sx al perno
-
-  // meta sinistra: cardine sul montante sinistro
-  twinL = new THREE.Group();
-  twinL.position.set(k.box.min.x, 0, k.zc);
-  const holdL = new THREE.Group();
-  holdL.position.x = offL;
-  twinL.userData.plane = new THREE.Plane();
-  cloneLeafInto(holdL, twinL.userData.plane);
-  twinL.add(holdL);
-  scene.add(twinL);
-
-  if (state.apertura === 'koblenz') {
-    // la seconda meta e appesa al bordo libero della prima e si ripiega
-    foldPivot = new THREE.Group();
-    foldPivot.position.x = W2;
-    const holdF = new THREE.Group();
-    holdF.position.x = offL - W2;
-    foldPivot.userData.plane = new THREE.Plane();
-    cloneLeafInto(holdF, foldPivot.userData.plane);
-    foldPivot.add(holdF);
-    foldPivot.userData.hold = holdF;
-    twinL.add(foldPivot);
-  } else {
-    // meta destra: SPECCHIATA, cardine sul montante destro
-    twinR = new THREE.Group();
-    twinR.position.set(k.box.max.x, 0, k.zc);
-    twinR.scale.x = -1;
-    const holdR = new THREE.Group();
-    holdR.position.x = offL;
-    twinR.userData.plane = new THREE.Plane();
-    cloneLeafInto(holdR, twinR.userData.plane);
-    twinR.add(holdR);
-    scene.add(twinR);
-  }
-  leafParts.forEach((p) => { p.visible = false; });
-}
-
-// piani di taglio in coordinate mondo, ricalcolati mentre le ante girano
-const _pl = new THREE.Plane();
-function updateClipPlanes() {
-  if (!twinL || !doorKin) return;
-  const k = doorKin;
-  const offL = doorPivot.position.x - k.box.min.x;
-  const cx = offL - k.sign * k.leafW / 2;   // centro anta, in twin-locale
-  // ogni meta tiene il lato del proprio cardine (locale x=0)
-  _pl.normal.set(cx > 0 ? -1 : 1, 0, 0);
-  _pl.constant = Math.abs(cx);
-  twinL.userData.plane.copy(_pl).applyMatrix4(twinL.matrixWorld);
-  if (twinR) twinR.userData.plane.copy(_pl).applyMatrix4(twinR.matrixWorld);
-  if (foldPivot) {
-    // la piega mostra l'ALTRA meta, ricentrata sul bordo di piega
-    _pl.normal.set(cx > 0 ? 1 : -1, 0, 0);
-    _pl.constant = 0;
-    foldPivot.userData.plane.copy(_pl).applyMatrix4(foldPivot.matrixWorld);
-  }
-}
-
-// le meta clonate seguono l'essenza scelta: copia dei riferimenti, per frame
-function syncClipMats() {
-  for (const { base, mat } of clipMats) {
-    mat.map = base.map; mat.normalMap = base.normalMap;
-    mat.roughnessMap = base.roughnessMap; mat.aoMap = base.aoMap;
-    mat.color.copy(base.color); mat.roughness = base.roughness;
-  }
-}
-
-/* -- muro dimostrativo: mostra DOVE va l'anta ----------------------------
-   Scomparsa: tasca DENTRO il muro, l'anta ci sparisce in mezzo.
-   Esterno muro / MAGIC: anta davanti al muro, col binario in vista
-   (e la mantovana a coprirlo, quando c'e). Interno telaio: cassonetto
-   di legno chiaro al posto del muro. Battenti: semplice parete forata. */
-let demoWall = null;
-let wallMatA = null, wallMatB = null, wallMatC = null;
-
-function killDemoWall() {
-  if (!demoWall) return;
-  demoWall.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
-  scene.remove(demoWall);
-  demoWall = null;
-}
-
-function syncDemoWall() {
-  killDemoWall();
-  if (!doorKin || !doorDims || state.ambiente !== 'galleria') {
-    if (doorKin && doorPivot) doorPivot.position.z = doorKin.rest.z;
-    return;
-  }
-  if (!wallMatA) {
-    wallMatA = new THREE.MeshStandardMaterial({ color: 0xe9e2d3, roughness: 0.96 });
-    wallMatB = new THREE.MeshStandardMaterial({ color: 0xd9d0bd, roughness: 0.9 });
-    wallMatC = new THREE.MeshStandardMaterial({ color: 0xcbb691, roughness: 0.7 });
-  }
-  const k = doorKin, ap = state.apertura;
-  const pocket = ap === 'scomparsa';
-  const cassette = ap === 'int_telaio';
-  const external = ap === 'est_muro' || ap === 'est_muro_m' || ap === 'magic';
-  const T = Math.max(k.leafT * 2.6, 0.12);
-  const segW = k.leafW * 1.22;
-  const hMuro = doorDims.h;
-  const yC = doorDims.floorY + hMuro / 2;
-  const xEdge = doorDims.w / 2;
-  demoWall = new THREE.Group();
-
-  const slab = (w, h, d, x, y, z, m) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-    b.position.set(x, y, z);
-    b.castShadow = b.receiveShadow = true;
-    demoWall.add(b);
-    return b;
-  };
-
-  // fascia sopra la porta
-  slab(doorDims.w + 2 * segW, 0.42, T, 0, doorDims.floorY + hMuro + 0.21, k.zc, wallMatA);
-
-  const lato = (dir) => {
-    const x = dir * (xEdge + segW / 2);
-    const conTasca = (pocket || cassette) && dir === k.sign;
-    if (!conTasca) { slab(segW, hMuro, T, x, yC, k.zc, wallMatA); return; }
-    // tasca: due lastre con l'intercapedine dove scorre l'anta
-    const gap = k.leafT * 1.7;
-    const tSlab = (T - gap) / 2;
-    const m = cassette ? wallMatC : wallMatA;
-    slab(segW, hMuro, tSlab, x, yC, k.zc + gap / 2 + tSlab / 2, m);
-    slab(segW, hMuro, tSlab, x, yC, k.zc - gap / 2 - tSlab / 2, m);
-    // il fondo della tasca, per non vedere attraverso
-    slab(0.06, hMuro, gap, dir * (xEdge + segW - 0.03), yC, k.zc, wallMatB);
-  };
-  lato(1); lato(-1);
-
-  if (external) {
-    // binario davanti al muro, dal lato dove corre l'anta
-    const zTrack = k.zc + T / 2 + k.leafT * 0.75;
-    const lTrack = k.leafW * (ap === 'magic' ? 1.8 : 2.25);
-    const xTrack = k.sign * k.leafW * (ap === 'magic' ? 0.35 : 0.55);
-    const yTrack = doorDims.floorY + hMuro + 0.10;
-    if (ap === 'est_muro_m') {
-      slab(lTrack, 0.30, k.leafT * 1.9, xTrack, yTrack, zTrack, wallMatB);   // mantovana
-    } else {
-      slab(lTrack, 0.07, k.leafT * 0.8, xTrack, yTrack, zTrack, wallMatC);   // guida a filo
-    }
-  }
-  scene.add(demoWall);
-
-  // esterno muro: l'anta vive DAVANTI alla parete, sul binario
-  const off = external ? T / 2 + k.leafT * 0.75 : 0;
-  doorPivot.position.z = k.rest.z + off;
-  if (twinL) twinL.position.z = k.zc + off;
-  if (twinR) twinR.position.z = k.zc + off;
-}
-
-/* -- il movimento di ogni apertura, come corsa nel tempo ----------------- */
-const smoo = (u) => u * u * (3 - 2 * u);
-function corsa(u, t0, salita, sosta, discesa) {
-  if (u < t0) return 0;
-  u -= t0;
-  if (u < salita) return smoo(u / salita);
-  u -= salita;
-  if (u < sosta) return 1;
-  u -= sosta;
-  if (u < discesa) return smoo(1 - u / discesa);
-  return 0;
-}
-
-const SCORREVOLI = new Set(['scomparsa', 'est_muro', 'est_muro_m', 'int_telaio', 'magic']);
-
-function poseApertura(t) {
-  const A = doorOpenAngle, k = doorKin;
-  if (state.apertura === 'justor') {
-    const u = (t % 6.5) / 6.5;
-    return { ang: A * corsa(u, 0.04, 0.16, 0.10, 0.14)
-                  - 0.72 * A * corsa(u, 0.50, 0.16, 0.10, 0.14), dx: 0 };
-  }
-  if (state.apertura === 'ergon') {
-    const u = (t % 6) / 6;
-    const p = corsa(u, 0.06, 0.30, 0.24, 0.28);
-    return { ang: A * p, dx: -k.sign * k.leafW * 0.45 * p };
-  }
-  if (SCORREVOLI.has(state.apertura)) {
-    const u = (t % 6) / 6;
-    const p = corsa(u, 0.06, 0.30, 0.24, 0.28);
-    return { ang: 0, dx: k.sign * k.leafW * (state.apertura === 'magic' ? 0.62 : 0.88) * p };
-  }
-  const u = (t % 5.5) / 5.5;   // battente / a libro
-  return { ang: A * corsa(u, 0.05, 0.28, 0.28, 0.26), dx: 0 };
+  const opening = doorTargetAngle === 0;
+  doorTargetAngle = opening ? doorOpenAngle : 0;
+  // il pulsante è un'icona SVG: si cambia solo lo stato (l'icona ruota via CSS)
+  doorBtn.classList.toggle('is-open', opening);
+  doorBtn.title = opening ? 'Chiudi la porta / Close the door' : 'Apri la porta / Open the door';
+  doorBtn.setAttribute('aria-label', opening ? 'Chiudi la porta' : 'Apri la porta');
 }
 
 const gltfLoader = new GLTFLoader();
@@ -859,7 +632,6 @@ const gltfLoader = new GLTFLoader();
 // NON si toccano — vengono riusati dal modello successivo.
 function disposeMaterial(m) {
   if (!m || m === woodMat || m === handleMat) return;
-  if (m.userData && m.userData.__clipClone) { m.dispose(); return; }
   for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'])
     if (m[k]) m[k].dispose();
   m.dispose();
@@ -877,12 +649,8 @@ function clearModel() {
   if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   for (const k of Object.keys(nodes)) delete nodes[k];
-  teardownSplit();
-  killDemoWall();
   leafParts = [];
-  doorKin = null;
-  doorDemoOn = false;
-  doorDemoT = 0;
+  doorTargetAngle = 0;
   doorBtn.hidden = true;
   doorBtn.classList.remove('is-open');
   doorBtn.title = 'Apri la porta / Open the door';
@@ -980,16 +748,6 @@ function loadModel(key) {
       leafParts.forEach((p) => doorPivot.attach(p));
       // 82°: ben aperta ma senza che il bordo libero "incomba" sulla camera
       doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(82);
-      doorKin = {
-        leafW: leafBox.max.x - leafBox.min.x,
-        leafT: leafBox.max.z - leafBox.min.z,
-        sign: hingeRight ? 1 : -1,
-        rest: doorPivot.position.clone(),
-        box: { min: { x: leafBox.min.x }, max: { x: leafBox.max.x } },
-        zc: (leafBox.min.z + leafBox.max.z) / 2,
-      };
-      syncSplit();
-      syncDemoWall();
       doorBtn.hidden = false;
 
       applyEssenza();
@@ -998,11 +756,7 @@ function loadModel(key) {
       if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
       loaderEl.classList.add('is-hidden');
       refreshUI();
-      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello,
-        anim: () => ({ on: doorDemoOn, t: doorDemoT, rot: doorPivot && doorPivot.rotation.y,
-                       x: doorPivot && doorPivot.position.x,
-                       rotL: twinL ? twinL.rotation.y : null, rotR: twinR ? twinR.rotation.y : null,
-                       fold: foldPivot ? foldPivot.rotation.y : null }) };
+      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello };
     },
     (ev) => {
       if (ev.total) loaderFill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
@@ -1198,7 +952,6 @@ function setAmbiente(nome) {
   controls.maxPolarAngle = Math.PI * (room ? 0.5 : 0.55);
   document.querySelectorAll('[data-ambiente]').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.ambiente === nome));
-  syncDemoWall();
 }
 
 /* ============================================================
@@ -1213,32 +966,10 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-const demoClock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   controls.update();
-  const dt = Math.min(demoClock.getDelta(), 0.1);
-  if (doorPivot && doorKin) {
-    const meta = poseApertura(doorDemoOn ? (doorDemoT += dt) : 0);
-    const lerp = doorDemoOn ? 0.16 : 0.07;
-    if (twinL) {
-      // due ante in controsenso: la destra e specchiata, quindi lo stesso
-      // angolo la fa girare dall'altra parte. A libro: la prima meta gira,
-      // la seconda si ripiega a circa il doppio sul bordo comune.
-      const apri = doorDemoOn ? Math.abs(meta.ang) : 0;
-      const verso = doorKin.sign > 0 ? 1 : -1;
-      twinL.rotation.y += (verso * apri * (foldPivot ? 1 : 0.6) - twinL.rotation.y) * lerp;
-      if (twinR) twinR.rotation.y += (verso * apri - twinR.rotation.y) * lerp;
-      if (foldPivot) {
-        foldPivot.rotation.y += (-verso * 1.55 * apri - foldPivot.rotation.y) * lerp;
-        foldPivot.userData.hold.position.z = Math.abs(foldPivot.rotation.y) / 2.2 * doorKin.leafT * 1.15;
-      }
-      updateClipPlanes();
-    } else {
-      doorPivot.rotation.y += (meta.ang - doorPivot.rotation.y) * lerp;
-      const tx = doorKin.rest.x + (doorDemoOn ? meta.dx : 0);
-      doorPivot.position.x += (tx - doorPivot.position.x) * lerp;
-    }
-    syncClipMats();
+  if (doorPivot) {
+    doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
   }
   renderer.render(scene, camera);
 });
@@ -1745,13 +1476,16 @@ function renderVisoreCopri() {
 // Schemi animati: il movimento è ciò che distingue queste opzioni, e in un
 // menu a tendina non si vede. I file stanno in assets/aperture.
 function refreshAnim() {
-  // il movimento lo dimostra la porta vera nel visore
-  doorDemoT = 0;
-  syncSplit();
-  syncDemoWall();
+  document.getElementById('anteAnim').src =
+    `assets/aperture/${state.ante === 2 ? 'due_ante' : 'battente'}.svg`;
+  document.getElementById('aperturaAnim').src =
     `assets/aperture/${state.apertura}.svg`;
   // anche il fisso ha il suo schema: fermo e senza traccia, cosi si vede che
   // quei 250 € comprano un vano chiuso e non un'anta che si apre
+  const conSopraluce = state.sopraluce !== 'no';
+  document.getElementById('sopraluceAnimBox').hidden = !conSopraluce;
+  if (conSopraluce) document.getElementById('sopraluceAnim').src =
+    `assets/aperture/sopraluce_${state.sopraluce}.svg`;
 
   document.getElementById('cerniereAnim').src =
     `assets/aperture/${state.cerniere === 'scomparsa' ? 'cerniera_3d' : 'cerniera_anuba'}.svg`;
