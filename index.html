@@ -8,19 +8,46 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=4">
+<link rel="stylesheet" href="css/home.css?v=6">
 </head>
 <body>
 
-<main class="home">
+<!-- ==================== COPERTINA ==================== -->
+<section class="copertina">
 
-  <header class="intro">
+  <div class="lastre">
+    <figure class="lastra lastra--grande">
+      <img src="assets/copertina/nebraska.webp"
+           srcset="assets/copertina/nebraska-sm.webp 760w, assets/copertina/nebraska.webp 1500w"
+           sizes="(max-width: 900px) 100vw, 58vw"
+           alt="Porta Nebraska in rovere, vetrata con traversi, in un soggiorno"
+           width="1500" height="1000" fetchpriority="high">
+      <figcaption>Nebraska · rovere</figcaption>
+    </figure>
+    <figure class="lastra">
+      <img src="assets/copertina/ragusa.webp"
+           srcset="assets/copertina/ragusa-sm.webp 760w, assets/copertina/ragusa.webp 1500w"
+           sizes="(max-width: 900px) 100vw, 42vw"
+           alt="Porta Ragusa in rovere, cieca con bugne, in un ingresso"
+           width="1500" height="1000" loading="lazy">
+      <figcaption>Ragusa · rovere</figcaption>
+    </figure>
+  </div>
+
+  <div class="velo" aria-hidden="true"></div>
+
+  <div class="insegna">
     <img class="marchio" src="assets/logo_toscocornici_chiaro.png"
-         alt="Toscocornici — Le porte secondo noi">
+         alt="Toscocornici — Le porte secondo noi" width="1254" height="240">
     <h1>Da dove vuoi <em>cominciare?</em></h1>
     <p class="sottotitolo">Tre strade per arrivare alla stessa cosa: la tua porta,
       con il suo prezzo e il modulo pronto per la fabbrica.</p>
-  </header>
+  </div>
+
+</section>
+
+<!-- ==================== LE TRE STRADE ==================== -->
+<main class="home">
 
   <div class="scelte">
 
@@ -45,7 +72,7 @@
     <a class="scelta scelta--via" href="configuratore.html">
       <div class="figura">
         <img src="assets/home/listino.webp" alt="Porta della collezione a listino"
-             width="197" height="460">
+             width="197" height="460" loading="lazy">
       </div>
       <div class="testo">
         <p class="occhiello">Collezione <span class="en">/ Collection</span></p>
