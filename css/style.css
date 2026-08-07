@@ -492,6 +492,23 @@ body {
 /* chi ha chiesto meno movimento non lo subisce */
 @media (prefers-reduced-motion: reduce) { .anim { display: none; } }
 
+/* schema statico: sezione del telaio. Non si muove, quindi resta anche a
+   chi ha chiesto meno movimento. */
+.schema {
+  margin: 10px 0 0;
+  padding: 8px 10px 7px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+}
+.schema img { display: block; width: 100%; max-width: 330px; margin: 0 auto; }
+.schema figcaption {
+  margin-top: 6px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--ink-soft, #8d7d6a);
+}
+
 /* misure della scheda tecnica, un blocco per configurazione */
 .mis-grid {
   display: grid;

@@ -1518,6 +1518,8 @@ function refreshUI() {
     ? 'Il telaio standard copre muri fino a 108 mm.'
     : `Allargato ${allargatoExtra(state.muro, state.allargato).label}: + ${eur.format(allargatoExtra(state.muro, state.allargato).extra)}.`;
 
+  document.getElementById('telaioSchema').src = `assets/telai/${state.telaio}.svg`;
+
   document.getElementById('telaioNote').textContent =
     state.telaio === 'alpha_comp_sp' ? `Con il complanare a spingere il fermaporta a pavimento è obbligatorio: + ${eur.format(FERMAPORTA)} (voce 74).` : '';
 
