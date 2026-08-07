@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
+import { mostraFerramenta } from './ferramenta.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
@@ -1487,14 +1488,15 @@ function refreshAnim() {
   if (conSopraluce) mostraApertura(document.getElementById('sopraluceAnim'),
                                    `sopraluce_${state.sopraluce}`);
 
-  document.getElementById('cerniereAnim').src =
-    `assets/aperture/${state.cerniere === 'scomparsa' ? 'cerniera_3d' : 'cerniera_anuba'}.svg`;
+  mostraFerramenta(document.getElementById('cerniereAnim'),
+                   state.cerniere === 'scomparsa' ? 'scomparsa3d' : 'anuba');
+  mostraFerramenta(document.getElementById('cilindroAnim'), 'cilindro');
 
   // accessori: si mostra lo schema dell'ultimo acceso, uno alla volta
   const conSchema = ['riscontro', 'paraspiffero'];
   const acceso = conSchema.find((a) => state.acc[a]) || (state.nottolino ? 'nottolino' : null);
   document.getElementById('accAnimBox').hidden = !acceso;
-  if (acceso) document.getElementById('accAnim').src = `assets/aperture/${acceso}.svg`;
+  if (acceso) mostraFerramenta(document.getElementById('accAnim'), acceso);
 }
 
 function refreshUI() {

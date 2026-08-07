@@ -21,7 +21,7 @@ const ANG = 82, VIEW = 28, TILT = 0.32, DUR = 5.5;
 const cosV = Math.cos(VIEW * Math.PI / 180);
 const sinV = Math.sin(VIEW * Math.PI / 180);
 
-const proj = (x, y, z) => {
+export const proj = (x, y, z) => {
   const dp = x * sinV + z * cosV;
   return [x * cosV - z * sinV, -y + dp * TILT, dp];
 };
@@ -37,7 +37,7 @@ const T_WOOD  = { front: 'var(--f-wood)',  back: 'var(--f-wood)',
 const T_GLASS = { front: 'var(--f-glass)', back: 'var(--f-glass)',
                   edge: 'var(--f-edge)',   top: 'var(--f-edge)' };
 
-function pushSolid(list, o, u, v, w, tone) {
+export function pushSolid(list, o, u, v, w, tone) {
   const P = (a, b, c) => [o[0] + u[0]*a + v[0]*b + w[0]*c,
                           o[1] + u[1]*a + v[1]*b + w[1]*c,
                           o[2] + u[2]*a + v[2]*b + w[2]*c];
@@ -45,10 +45,14 @@ function pushSolid(list, o, u, v, w, tone) {
              P(0,0,1), P(1,0,1), P(1,1,1), P(0,1,1)];
   const facce = [[[0,1,2,3],'back'], [[4,5,6,7],'front'], [[1,5,6,2],'edge'],
                  [[0,4,7,3],'edge'], [[3,2,6,7],'top'], [[0,1,5,4],'top']];
+  // Si tiene la faccia se sta DAVANTI al centro del solido. Il verso di
+  // percorrenza non serve: dipende da come sono orientati i tre vettori
+  // della scatola, e con la terna opposta scartava le due facce grandi.
+  const cz = p.reduce((s2, a) => s2 + proj(a[0], a[1], a[2])[2], 0) / 8;
   for (const [idx, kind] of facce) {
     const q = idx.map((n) => { const a = p[n]; return proj(a[0], a[1], a[2]); });
-    const area = (q[1][0]-q[0][0])*(q[2][1]-q[0][1]) - (q[2][0]-q[0][0])*(q[1][1]-q[0][1]);
-    if (area <= 0) continue;                       // faccia che guarda via
+    const fz = (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4;
+    if (fz <= cz) continue;                        // faccia che guarda via
     list.push({
       d: 'M' + q.map((a) => a[0].toFixed(1) + ' ' + a[1].toFixed(1)).join(' L') + 'Z',
       z: (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4,
@@ -57,7 +61,7 @@ function pushSolid(list, o, u, v, w, tone) {
   }
 }
 
-function pushQuad(list, pts, fill, opts) {
+export function pushQuad(list, pts, fill, opts) {
   opts = opts || {};
   const q = pts.map((P) => proj(P[0], P[1], P[2]));
   const area = (q[1][0]-q[0][0])*(q[2][1]-q[0][1]) - (q[2][0]-q[0][0])*(q[1][1]-q[0][1]);
@@ -340,7 +344,7 @@ function disegna(svg, tipo, u) {
 }
 
 /* ---- un solo ciclo per tutti gli schemi visibili ------------------- */
-const attivi = [];          // { svg, tipo }
+const attivi = [];          // { svg, draw }
 const fermo = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let t = 0, last = performance.now(), avviato = false;
 
@@ -348,16 +352,21 @@ function loop(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
   t = (t + dt / DUR) % 1;
-  for (const a of attivi) if (a.svg.isConnected) disegna(a.svg, a.tipo, t);
+  for (const a of attivi) if (a.svg.isConnected) a.draw(t);
   requestAnimationFrame(loop);
+}
+
+/** Iscrive un <svg> al ciclo comune. draw(u) ridisegna il fotogramma. */
+export function registra(svg, draw) {
+  if (!svg) return;
+  let a = attivi.find((x) => x.svg === svg);
+  if (!a) { a = { svg, draw }; attivi.push(a); }
+  a.draw = draw;
+  draw(fermo ? 0.5 : t);                    // fermo: si mostra a meta' corsa
+  if (!fermo && !avviato) { avviato = true; requestAnimationFrame(loop); }
 }
 
 /** Mostra un'apertura in un <svg> della pagina. */
 export function mostraApertura(svg, tipo) {
-  if (!svg) return;
-  let a = attivi.find((x) => x.svg === svg);
-  if (!a) { a = { svg, tipo }; attivi.push(a); }
-  a.tipo = tipo;
-  disegna(svg, tipo, fermo ? 0.5 : t);      // fermo: si mostra aperta
-  if (!fermo && !avviato) { avviato = true; requestAnimationFrame(loop); }
+  registra(svg, (u) => disegna(svg, tipo, u));
 }
