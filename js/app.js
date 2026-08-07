@@ -686,6 +686,7 @@ function syncSplit() {
     foldPivot.userData.plane = new THREE.Plane();
     cloneLeafInto(holdF, foldPivot.userData.plane);
     foldPivot.add(holdF);
+    foldPivot.userData.hold = holdF;
     twinL.add(foldPivot);
   } else {
     // meta destra: SPECCHIATA, cardine sul montante destro
@@ -729,6 +730,90 @@ function syncClipMats() {
     mat.roughnessMap = base.roughnessMap; mat.aoMap = base.aoMap;
     mat.color.copy(base.color); mat.roughness = base.roughness;
   }
+}
+
+/* -- muro dimostrativo: mostra DOVE va l'anta ----------------------------
+   Scomparsa: tasca DENTRO il muro, l'anta ci sparisce in mezzo.
+   Esterno muro / MAGIC: anta davanti al muro, col binario in vista
+   (e la mantovana a coprirlo, quando c'e). Interno telaio: cassonetto
+   di legno chiaro al posto del muro. Battenti: semplice parete forata. */
+let demoWall = null;
+let wallMatA = null, wallMatB = null, wallMatC = null;
+
+function killDemoWall() {
+  if (!demoWall) return;
+  demoWall.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+  scene.remove(demoWall);
+  demoWall = null;
+}
+
+function syncDemoWall() {
+  killDemoWall();
+  if (!doorKin || !doorDims || state.ambiente !== 'galleria') {
+    if (doorKin && doorPivot) doorPivot.position.z = doorKin.rest.z;
+    return;
+  }
+  if (!wallMatA) {
+    wallMatA = new THREE.MeshStandardMaterial({ color: 0xe9e2d3, roughness: 0.96 });
+    wallMatB = new THREE.MeshStandardMaterial({ color: 0xd9d0bd, roughness: 0.9 });
+    wallMatC = new THREE.MeshStandardMaterial({ color: 0xcbb691, roughness: 0.7 });
+  }
+  const k = doorKin, ap = state.apertura;
+  const pocket = ap === 'scomparsa';
+  const cassette = ap === 'int_telaio';
+  const external = ap === 'est_muro' || ap === 'est_muro_m' || ap === 'magic';
+  const T = Math.max(k.leafT * 2.6, 0.12);
+  const segW = k.leafW * 1.22;
+  const hMuro = doorDims.h;
+  const yC = doorDims.floorY + hMuro / 2;
+  const xEdge = doorDims.w / 2;
+  demoWall = new THREE.Group();
+
+  const slab = (w, h, d, x, y, z, m) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    b.position.set(x, y, z);
+    b.castShadow = b.receiveShadow = true;
+    demoWall.add(b);
+    return b;
+  };
+
+  // fascia sopra la porta
+  slab(doorDims.w + 2 * segW, 0.42, T, 0, doorDims.floorY + hMuro + 0.21, k.zc, wallMatA);
+
+  const lato = (dir) => {
+    const x = dir * (xEdge + segW / 2);
+    const conTasca = (pocket || cassette) && dir === k.sign;
+    if (!conTasca) { slab(segW, hMuro, T, x, yC, k.zc, wallMatA); return; }
+    // tasca: due lastre con l'intercapedine dove scorre l'anta
+    const gap = k.leafT * 1.7;
+    const tSlab = (T - gap) / 2;
+    const m = cassette ? wallMatC : wallMatA;
+    slab(segW, hMuro, tSlab, x, yC, k.zc + gap / 2 + tSlab / 2, m);
+    slab(segW, hMuro, tSlab, x, yC, k.zc - gap / 2 - tSlab / 2, m);
+    // il fondo della tasca, per non vedere attraverso
+    slab(0.06, hMuro, gap, dir * (xEdge + segW - 0.03), yC, k.zc, wallMatB);
+  };
+  lato(1); lato(-1);
+
+  if (external) {
+    // binario davanti al muro, dal lato dove corre l'anta
+    const zTrack = k.zc + T / 2 + k.leafT * 0.75;
+    const lTrack = k.leafW * (ap === 'magic' ? 1.8 : 2.25);
+    const xTrack = k.sign * k.leafW * (ap === 'magic' ? 0.35 : 0.55);
+    const yTrack = doorDims.floorY + hMuro + 0.10;
+    if (ap === 'est_muro_m') {
+      slab(lTrack, 0.30, k.leafT * 1.9, xTrack, yTrack, zTrack, wallMatB);   // mantovana
+    } else {
+      slab(lTrack, 0.07, k.leafT * 0.8, xTrack, yTrack, zTrack, wallMatC);   // guida a filo
+    }
+  }
+  scene.add(demoWall);
+
+  // esterno muro: l'anta vive DAVANTI alla parete, sul binario
+  const off = external ? T / 2 + k.leafT * 0.75 : 0;
+  doorPivot.position.z = k.rest.z + off;
+  if (twinL) twinL.position.z = k.zc + off;
+  if (twinR) twinR.position.z = k.zc + off;
 }
 
 /* -- il movimento di ogni apertura, come corsa nel tempo ----------------- */
@@ -793,6 +878,7 @@ function clearModel() {
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   for (const k of Object.keys(nodes)) delete nodes[k];
   teardownSplit();
+  killDemoWall();
   leafParts = [];
   doorKin = null;
   doorDemoOn = false;
@@ -896,12 +982,14 @@ function loadModel(key) {
       doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(82);
       doorKin = {
         leafW: leafBox.max.x - leafBox.min.x,
+        leafT: leafBox.max.z - leafBox.min.z,
         sign: hingeRight ? 1 : -1,
         rest: doorPivot.position.clone(),
         box: { min: { x: leafBox.min.x }, max: { x: leafBox.max.x } },
         zc: (leafBox.min.z + leafBox.max.z) / 2,
       };
       syncSplit();
+      syncDemoWall();
       doorBtn.hidden = false;
 
       applyEssenza();
@@ -1110,6 +1198,7 @@ function setAmbiente(nome) {
   controls.maxPolarAngle = Math.PI * (room ? 0.5 : 0.55);
   document.querySelectorAll('[data-ambiente]').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.ambiente === nome));
+  syncDemoWall();
 }
 
 /* ============================================================
@@ -1139,7 +1228,10 @@ renderer.setAnimationLoop(() => {
       const verso = doorKin.sign > 0 ? 1 : -1;
       twinL.rotation.y += (verso * apri * (foldPivot ? 1 : 0.6) - twinL.rotation.y) * lerp;
       if (twinR) twinR.rotation.y += (verso * apri - twinR.rotation.y) * lerp;
-      if (foldPivot) foldPivot.rotation.y += (-verso * 1.9 * apri - foldPivot.rotation.y) * lerp;
+      if (foldPivot) {
+        foldPivot.rotation.y += (-verso * 1.55 * apri - foldPivot.rotation.y) * lerp;
+        foldPivot.userData.hold.position.z = Math.abs(foldPivot.rotation.y) / 2.2 * doorKin.leafT * 1.15;
+      }
       updateClipPlanes();
     } else {
       doorPivot.rotation.y += (meta.ang - doorPivot.rotation.y) * lerp;
@@ -1656,6 +1748,7 @@ function refreshAnim() {
   // il movimento lo dimostra la porta vera nel visore
   doorDemoT = 0;
   syncSplit();
+  syncDemoWall();
     `assets/aperture/${state.apertura}.svg`;
   // anche il fisso ha il suo schema: fermo e senza traccia, cosi si vede che
   // quei 250 € comprano un vano chiuso e non un'anta che si apre
