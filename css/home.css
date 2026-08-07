@@ -71,10 +71,13 @@ body::before {
 .copertina {
   position: relative;
   z-index: 1;
-  /* la proporzione e' quella del render: cosi non si taglia niente.
-     Il tetto in vh evita che su schermi larghissimi diventi smisurata. */
+  /* La proporzione e' quella del render, cosi non si taglia niente.
+     width:100% e' obbligatorio: con aspect-ratio, quando max-height
+     stringe l'altezza il browser stringe ANCHE la larghezza per tenere
+     il rapporto, e restava mezza pagina di buio a destra. */
+  width: 100%;
   aspect-ratio: 3 / 2;
-  max-height: 88vh;
+  max-height: 92vh;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
