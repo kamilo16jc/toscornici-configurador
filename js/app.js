@@ -279,6 +279,23 @@ const ACCESSORI = [
   { id: 'imballo',     label: 'Imballo con porta montata su telaio', extra: 15 },
 ];
 
+// Coprifili previsti da ogni telaio (listino pagg. 48–50). Non sono uguali
+// sui due lati, e il COMPLANARE SPINGERE li scambia.
+const TELAIO_COPRI = {
+  std:           'Liscio listellare 90/70 compreso',
+  alpha:         'Coprifili piatti — 70 interno, 90 esterno',
+  alpha_comp:    'Coprifili piatti — 70 interno, 90 esterno',
+  alpha_comp_sp: 'Coprifili piatti — 70 esterno, 90 interno',
+  design:        'Coprifili piatti — 90 esterno, 70 interno',
+  design_comp:   'Coprifili piatti — 90 esterno, 70 interno',
+  passaggio90:   'Coprifili lisci 90 mm sui due lati',
+  r10:           'Coprifili esclusi',
+  r10b:          'Coprifili esclusi',
+  moderno:       'Coprifili esclusi',
+  madonna:       'Da coprifilare o sagomato, 44×79',
+  madonna_mod:   'Profilo squadrato, 44×79',
+};
+
 // Telai ad arco e curvi (voci 41, 43, 45): il telaio di passaggio non è
 // compreso nel prezzo della porta ad arco, si ordina a parte.
 const TELAIO_FORMA = { arco_ts: 750, arco_sr: 1000, curva: 1500 };
@@ -1514,11 +1531,24 @@ function refreshUI() {
 
   const allPills = document.getElementById('allargatoPills');
   allPills.hidden = state.muro <= 108;
+  // l'allargato ha la sua sezione di listino, una per tipo
+  const allFig = document.getElementById('allargatoFig');
+  allFig.hidden = allPills.hidden;
+  if (!allFig.hidden)
+    document.getElementById('allargatoSchema').src =
+      `assets/telai/allargato_${state.allargato}.png`;
   document.getElementById('muroNote').textContent = state.muro <= 108
     ? 'Il telaio standard copre muri fino a 108 mm.'
     : `Allargato ${allargatoExtra(state.muro, state.allargato).label}: + ${eur.format(allargatoExtra(state.muro, state.allargato).extra)}.`;
 
-  document.getElementById('telaioSchema').src = `assets/telai/${state.telaio}.svg`;
+  // le sezioni sono ritagliate dal listino (pagg. 48–50): sono i disegni di
+  // fabbrica. Lo standard non ce l'ha, e l'unico ridisegnato da noi.
+  const sch = document.getElementById('telaioSchema');
+  sch.src = `assets/telai/${state.telaio}.${state.telaio === 'std' ? 'svg' : 'png'}`;
+  document.getElementById('telaioSchemaNota').textContent =
+    (TELAIO_COPRI[state.telaio] || '') + (state.telaio === 'std'
+      ? ' · schema nostro, il listino non lo disegna'
+      : ' · sezione dal listino');
 
   document.getElementById('telaioNote').textContent =
     state.telaio === 'alpha_comp_sp' ? `Con il complanare a spingere il fermaporta a pavimento è obbligatorio: + ${eur.format(FERMAPORTA)} (voce 74).` : '';
