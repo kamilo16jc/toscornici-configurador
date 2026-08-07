@@ -1536,7 +1536,7 @@ function refreshUI() {
   allFig.hidden = allPills.hidden;
   if (!allFig.hidden)
     document.getElementById('allargatoSchema').src =
-      `assets/telai/allargato_${state.allargato}.png`;
+      `assets/telai/allargato_${state.allargato}.svg`;
   document.getElementById('muroNote').textContent = state.muro <= 108
     ? 'Il telaio standard copre muri fino a 108 mm.'
     : `Allargato ${allargatoExtra(state.muro, state.allargato).label}: + ${eur.format(allargatoExtra(state.muro, state.allargato).extra)}.`;
@@ -1544,7 +1544,7 @@ function refreshUI() {
   // le sezioni sono ritagliate dal listino (pagg. 48–50): sono i disegni di
   // fabbrica. Lo standard non ce l'ha, e l'unico ridisegnato da noi.
   const sch = document.getElementById('telaioSchema');
-  sch.src = `assets/telai/${state.telaio}.${state.telaio === 'std' ? 'svg' : 'png'}`;
+  sch.src = `assets/telai/${state.telaio}.svg`;
   document.getElementById('telaioSchemaNota').textContent =
     (TELAIO_COPRI[state.telaio] || '') + (state.telaio === 'std'
       ? ' · schema nostro, il listino non lo disegna'
