@@ -1480,10 +1480,11 @@ function refreshAnim() {
     `assets/aperture/${state.ante === 2 ? 'due_ante' : 'battente'}.svg`;
   document.getElementById('aperturaAnim').src =
     `assets/aperture/${state.apertura}.svg`;
-  // il sopraluce fisso non si muove: niente schema
-  const conMoto = state.sopraluce === 'apribile' || state.sopraluce === 'wasistas';
-  document.getElementById('sopraluceAnimBox').hidden = !conMoto;
-  if (conMoto) document.getElementById('sopraluceAnim').src =
+  // anche il fisso ha il suo schema: fermo e senza traccia, cosi si vede che
+  // quei 250 € comprano un vano chiuso e non un'anta che si apre
+  const conSopraluce = state.sopraluce !== 'no';
+  document.getElementById('sopraluceAnimBox').hidden = !conSopraluce;
+  if (conSopraluce) document.getElementById('sopraluceAnim').src =
     `assets/aperture/sopraluce_${state.sopraluce}.svg`;
 
   document.getElementById('cerniereAnim').src =
