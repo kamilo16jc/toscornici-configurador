@@ -71,7 +71,10 @@ body::before {
 .copertina {
   position: relative;
   z-index: 1;
-  min-height: 62vh;
+  /* la proporzione e' quella del render: cosi non si taglia niente.
+     Il tetto in vh evita che su schermi larghissimi diventi smisurata. */
+  aspect-ratio: 3 / 2;
+  max-height: 88vh;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -100,11 +103,11 @@ body::before {
   object-fit: cover;
   object-position: 58% center;
   filter: brightness(0.98) saturate(1.05);
-  transform: scale(1.03);
-  transition: transform 6s ease-out;
+  transform: scale(1);
+  transition: transform 7s ease-out;
 }
 
-.lastra.is-attiva img { transform: scale(1.075); }
+.lastra.is-attiva img { transform: scale(1.035); }
 
 .lastra figcaption {
   position: absolute;
@@ -258,7 +261,7 @@ body::before {
   align-items: flex-end;
   justify-content: center;
   gap: 10px;
-  height: 268px;
+  height: 400px;
   padding: 22px 20px 0;
   /* la porta sta in una nicchia appena illuminata da sotto */
   background:
@@ -276,12 +279,11 @@ body::before {
 }
 
 /* la scheda del listino porta una foto d'ambiente: riempie tutto il riquadro */
-.figura--foto { padding: 0; align-items: stretch; }
+.figura--foto { padding: 14px 14px 0; align-items: center; }
 .figura--foto img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 38%;
+  object-fit: contain;   /* la porta si vede tutta, dall'architrave al pavimento */
   filter: brightness(0.94) saturate(1.04);
   transition: transform .5s ease;
 }
@@ -380,9 +382,14 @@ body::before {
 /* ---------- schermi stretti ---------- */
 @media (max-width: 900px) {
   .home { padding: 34px 20px 32px; gap: 30px; }
-  .copertina { min-height: 74vh; }
-  .segnaposti { left: 20px; bottom: 16px; }
-  .insegna { padding: 0 20px 40px; }
+  /* in verticale una 3:2 e' bassa: il titolo scende sotto la foto */
+  .copertina { aspect-ratio: auto; max-height: none; display: block; }
+  .lastre { position: relative; aspect-ratio: 3 / 2; }
+  .lastra { position: absolute; }
+  .segnaposti { left: 20px; bottom: auto; top: calc(66.6vw - 26px); }
+  .insegna { padding: 26px 20px 30px; }
+  .velo { inset: 0 0 auto; height: 66.6vw; }
+  .figura { height: 320px; }
   .velo { background:
     linear-gradient(180deg, rgba(16,13,10,.55) 0%, rgba(16,13,10,.25) 30%,
                     rgba(16,13,10,.85) 72%, var(--night) 100%); }
