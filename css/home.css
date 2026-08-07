@@ -8,21 +8,19 @@
    ============================================================ */
 
 :root {
-  /* notte calda: bruno scuro, mai grigio */
-  --night: #100d0a;
-  --night-2: #171310;
-  --panel-bg: #1c1713;
-  --panel-lift: #221c17;
-
+  /* la stessa del configuratore: avorio caldo, espresso, ottone */
   --ivory: #f4efe6;
-  --ivory-soft: #cbc0b0;
+  --ivory-deep: #ece5d8;
+  --espresso: #2b211a;
+  --espresso-soft: #4a3c30;
   --taupe: #8d7d6a;
+  --brass: #a8843c;
+  --brass-bright: #e8c47c;   /* solo per il neon sopra la foto */
+  --panel-bg: #faf7f0;
+  --panel-lift: #f3ede1;
 
-  --brass: #c9a45a;
-  --brass-bright: #e8c47c;
-
-  --hairline: rgba(244, 239, 230, 0.13);
-  --hairline-soft: rgba(244, 239, 230, 0.07);
+  --hairline: rgba(43, 33, 26, 0.14);
+  --hairline-soft: rgba(43, 33, 26, 0.07);
 
   --serif: "Cormorant Garamond", Georgia, serif;
   --sans: "Jost", "Segoe UI", sans-serif;
@@ -33,22 +31,11 @@
 body {
   min-height: 100vh;
   font-family: var(--sans);
-  color: var(--ivory);
-  background: var(--night);
-  -webkit-font-smoothing: antialiased;
-}
-
-/* il neon illumina la parete dietro di se */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  color: var(--espresso);
   background:
-    radial-gradient(ellipse 70% 42% at 26% 16%, rgba(201, 164, 90, 0.16) 0%, transparent 62%),
-    radial-gradient(ellipse 120% 70% at 50% 0%, rgba(232, 196, 124, 0.07) 0%, transparent 58%),
-    linear-gradient(180deg, var(--night-2) 0%, var(--night) 58%, #0b0907 100%);
+    radial-gradient(ellipse 120% 80% at 50% 100%, #fbf8f2 0%, transparent 60%),
+    linear-gradient(180deg, var(--ivory) 0%, var(--ivory-deep) 100%);
+  -webkit-font-smoothing: antialiased;
 }
 
 .en { color: var(--taupe); font-weight: 300; }
@@ -86,7 +73,7 @@ body::before {
 
 /* una stanza per volta: le foto stanno impilate e si scambiano
    sfumando. Il lieve ingrandimento tiene viva l'immagine ferma. */
-.lastre { position: absolute; inset: 0; background: var(--night); }
+.lastre { position: absolute; inset: 0; background: var(--ivory-deep); }
 
 .lastra {
   position: absolute;
@@ -128,7 +115,7 @@ body::before {
 /* i segnaposti: quante stanze ci sono e a quale siamo */
 .segnaposti {
   position: absolute;
-  left: 32px;
+  left: 48px;
   bottom: 22px;
   z-index: 4;
   display: flex;
@@ -146,6 +133,7 @@ body::before {
 }
 
 .segnaposto.is-attivo { width: 46px; background: var(--brass-bright); }
+.figura--foto img { filter: brightness(1) saturate(1.02); }
 .segnaposto:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
 
 /* il buio della pagina risale sulle foto e regge il titolo */
@@ -153,26 +141,23 @@ body::before {
   position: absolute;
   inset: 0;
   z-index: 2;
-  /* il buio si concentra dove poggia il testo — angolo in basso a sinistra —
-     e lascia respirare le due stanze. Prima copriva tutto e le spegneva. */
+  /* il buio serve solo all'angolo dove poggia il titolo: e' una
+     vignettatura, non piu' una notte stesa su tutta la foto */
   background:
-    linear-gradient(180deg, rgba(16, 13, 10, 0.52) 0%, rgba(16, 13, 10, 0.02) 26%,
-                    rgba(16, 13, 10, 0.06) 46%, rgba(16, 13, 10, 0.62) 82%,
-                    var(--night) 100%),
-    linear-gradient(101deg, rgba(16, 13, 10, 0.86) 0%, rgba(16, 13, 10, 0.42) 26%,
-                    rgba(16, 13, 10, 0.06) 52%, rgba(16, 13, 10, 0) 66%);
+    linear-gradient(76deg, rgba(22, 17, 13, 0.88) 0%, rgba(22, 17, 13, 0.62) 18%,
+                    rgba(22, 17, 13, 0.22) 38%, rgba(22, 17, 13, 0) 56%),
+    linear-gradient(180deg, rgba(22, 17, 13, 0.34) 0%, rgba(22, 17, 13, 0) 24%,
+                    rgba(22, 17, 13, 0) 58%, rgba(22, 17, 13, 0.46) 100%);
 }
 
 .insegna {
   position: relative;
   z-index: 3;
   width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px 46px;
+  padding: 0 40px 34px 48px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .marchio {
@@ -217,11 +202,11 @@ body::before {
 }
 
 .sottotitolo {
-  max-width: 54ch;
+  max-width: 46ch;
   font-size: 15px;
   font-weight: 300;
   line-height: 1.62;
-  color: var(--ivory-soft);
+  color: rgba(244, 239, 230, 0.82);
 }
 
 /* ---------- le tre schede ---------- */
@@ -250,13 +235,12 @@ body::before {
 .scelta--via:focus-visible {
   border-color: var(--brass);
   transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, .5),
-              0 0 26px rgba(201, 164, 90, .14);
+  box-shadow: 0 14px 30px rgba(43, 33, 26, .10);
   outline: none;
 }
 .scelta--via:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 
-.scelta--attesa { opacity: .58; }
+.scelta--attesa { opacity: .72; }
 
 /* ---------- figura ---------- */
 .figura {
@@ -268,8 +252,8 @@ body::before {
   padding: 22px 20px 0;
   /* la porta sta in una nicchia appena illuminata da sotto */
   background:
-    radial-gradient(ellipse 85% 55% at 50% 100%, rgba(201, 164, 90, 0.10) 0%, transparent 72%),
-    linear-gradient(180deg, #100d0a 0%, var(--panel-lift) 100%);
+    radial-gradient(ellipse 90% 60% at 50% 100%, #e6ddcc 0%, transparent 70%),
+    linear-gradient(180deg, #fdfbf7 0%, var(--panel-lift) 100%);
   border-bottom: 1px solid var(--hairline-soft);
 }
 
@@ -278,7 +262,7 @@ body::before {
   width: auto;
   object-fit: contain;
   object-position: bottom;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, .55));
+  filter: drop-shadow(0 8px 14px rgba(43, 33, 26, .13));
 }
 
 /* la scheda del listino porta una foto d'ambiente: riempie tutto il riquadro */
@@ -303,7 +287,7 @@ body::before {
   fill: none;
   stroke: var(--taupe);
   stroke-width: 3;
-  opacity: .5;
+  opacity: .38;
 }
 .figura--vuota svg path { stroke-width: 2.4; opacity: .8; }
 
@@ -329,14 +313,13 @@ body::before {
   font-size: 27px;
   font-weight: 500;
   line-height: 1.12;
-  color: #f8f3e9;
 }
 
 .desc {
   font-size: 13.5px;
   font-weight: 300;
   line-height: 1.62;
-  color: var(--ivory-soft);
+  color: var(--espresso-soft);
   flex: 1;
 }
 
@@ -348,12 +331,12 @@ body::before {
   padding-top: 6px;
 }
 
-.azione { color: var(--ivory); }
+.azione { color: var(--espresso); }
 
 .azione::after {
   content: "→";
   margin-left: 9px;
-  color: var(--brass-bright);
+  color: var(--brass);
   transition: margin-left .22s ease;
   display: inline-block;
 }
@@ -385,19 +368,25 @@ body::before {
 /* ---------- schermi stretti ---------- */
 @media (max-width: 900px) {
   .home { padding: 34px 20px 32px; gap: 30px; }
-  /* in verticale una 3:2 e' bassa: il titolo scende sotto la foto */
+
+  /* In verticale una 3:2 e' troppo bassa per reggere il titolo sopra:
+     la foto resta intera e il titolo scende sull'avorio, dove va scritto
+     in espresso — il neon vive solo sopra la fotografia. */
   .copertina { aspect-ratio: auto; max-height: none; display: block; }
   .lastre { position: relative; aspect-ratio: 3 / 2; }
   .lastra { position: absolute; }
+  .velo { inset: 0 0 auto; height: 66.6vw;
+    background: linear-gradient(180deg, rgba(22,17,13,.34) 0%, rgba(22,17,13,0) 30%,
+                                rgba(22,17,13,0) 62%, rgba(22,17,13,.42) 100%); }
   .segnaposti { left: 20px; bottom: auto; top: calc(66.6vw - 26px); }
-  .insegna { padding: 26px 20px 30px; }
-  .velo { inset: 0 0 auto; height: 66.6vw; }
-  .figura { height: 320px; }
-  .velo { background:
-    linear-gradient(180deg, rgba(16,13,10,.55) 0%, rgba(16,13,10,.25) 30%,
-                    rgba(16,13,10,.85) 72%, var(--night) 100%); }
+
+  .insegna { padding: 26px 20px 4px; }
+  .insegna h1 { color: var(--espresso); text-shadow: none; }
+  .insegna h1 em { color: var(--brass); text-shadow: none; animation: none; }
+  .sottotitolo { color: var(--espresso-soft); max-width: none; }
+
   .scelte { grid-template-columns: 1fr; }
-  .figura { height: 226px; }
+  .figura { height: 320px; }
   .scelta--attesa { opacity: 1; }        /* in colonna l'opacita' confonde */
   .scelta--attesa .figura { opacity: .6; }
   .scelta--attesa .testo { opacity: .72; }
