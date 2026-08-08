@@ -338,6 +338,11 @@ img { display: block; max-width: 100%; }
 /* ---------- la finestrella dell'essenza ---------- */
 .scheda {
   width: min(560px, calc(100vw - 32px));
+  /* il margine automatico e' quello che centra un dialog: il reset
+     '* { margin: 0 }' gliel'aveva tolto e si apriva nell'angolo */
+  margin: auto;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
   padding: 0;
   border: 0;
   background: var(--crema-chiara);
