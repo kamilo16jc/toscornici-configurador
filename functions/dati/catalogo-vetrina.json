@@ -1,0 +1,266 @@
+{
+ "nebraska": {
+  "nome": "Nebraska",
+  "linea": "100",
+  "descrizione": "Tutta vetrata, con arco ribassato",
+  "immagine": "assets/modelli/nebraska.webp"
+ },
+ "genova": {
+  "nome": "Genova",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, un riquadro",
+  "immagine": "assets/modelli/genova.webp"
+ },
+ "carrara": {
+  "nome": "Carrara",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, un riquadro",
+  "immagine": "assets/modelli/carrara.webp"
+ },
+ "cortina": {
+  "nome": "Cortina",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, un riquadro",
+  "immagine": "assets/modelli/cortina.webp"
+ },
+ "imperia": {
+  "nome": "Imperia",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, un riquadro",
+  "immagine": "assets/modelli/imperia.webp"
+ },
+ "catania": {
+  "nome": "Catania",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, due riquadri affiancati",
+  "immagine": "assets/modelli/catania.webp"
+ },
+ "barletta": {
+  "nome": "Barletta",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, due riquadri affiancati",
+  "immagine": "assets/modelli/barletta.webp"
+ },
+ "taormina": {
+  "nome": "Taormina",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata",
+  "immagine": "assets/modelli/taormina.webp"
+ },
+ "pausania": {
+  "nome": "Pausania",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata",
+  "immagine": "assets/modelli/pausania.webp"
+ },
+ "savona": {
+  "nome": "Savona",
+  "linea": "Base",
+  "descrizione": "Vetrata nella meta' alta, un riquadro",
+  "immagine": "assets/modelli/savona.webp"
+ },
+ "piacenza": {
+  "nome": "Piacenza",
+  "linea": "Base",
+  "descrizione": "Cieca, riquadri a griglia",
+  "immagine": "assets/modelli/piacenza.webp"
+ },
+ "pienza": {
+  "nome": "Pienza",
+  "linea": "Base",
+  "descrizione": "Cieca, due riquadri sovrapposti",
+  "immagine": "assets/modelli/pienza.webp"
+ },
+ "siena": {
+  "nome": "Siena",
+  "linea": "Base",
+  "descrizione": "Cieca, due riquadri sovrapposti",
+  "immagine": "assets/modelli/siena.webp"
+ },
+ "venezia": {
+  "nome": "Venezia",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata",
+  "immagine": "assets/modelli/venezia.webp"
+ },
+ "pisa": {
+  "nome": "Pisa",
+  "linea": "Base",
+  "descrizione": "Cieca, piu' riquadri",
+  "immagine": "assets/modelli/pisa.webp"
+ },
+ "roma": {
+  "nome": "Roma",
+  "linea": "Base",
+  "descrizione": "Cieca, riquadri a griglia",
+  "immagine": "assets/modelli/roma.webp"
+ },
+ "ragusa": {
+  "nome": "Ragusa",
+  "linea": "Base",
+  "descrizione": "Cieca, piu' riquadri",
+  "immagine": "assets/modelli/ragusa.webp"
+ },
+ "enna": {
+  "nome": "Enna",
+  "linea": "Base",
+  "descrizione": "Cieca, riquadri a griglia",
+  "immagine": "assets/modelli/enna.webp"
+ },
+ "faenza": {
+  "nome": "Faenza",
+  "linea": "Base",
+  "descrizione": "Cieca, piu' riquadri",
+  "immagine": "assets/modelli/faenza.webp"
+ },
+ "mantova": {
+  "nome": "Mantova",
+  "linea": "Base",
+  "descrizione": "Cieca, piu' riquadri",
+  "immagine": "assets/modelli/mantova.webp"
+ },
+ "latina": {
+  "nome": "Latina",
+  "linea": "Base",
+  "descrizione": "Cieca, piu' riquadri",
+  "immagine": "assets/modelli/latina.webp"
+ },
+ "country": {
+  "nome": "Country",
+  "linea": "Base",
+  "descrizione": "Cieca, due riquadri sovrapposti",
+  "immagine": "assets/modelli/country.webp"
+ },
+ "puglia": {
+  "nome": "Puglia",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata, un riquadro",
+  "immagine": "assets/modelli/puglia.webp"
+ },
+ "campania": {
+  "nome": "Campania",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata",
+  "immagine": "assets/modelli/campania.webp"
+ },
+ "philadelphia": {
+  "nome": "Philadelphia",
+  "linea": "100",
+  "descrizione": "Vetrata nella meta' alta, due riquadri affiancati",
+  "immagine": "assets/modelli/philadelphia.webp"
+ },
+ "toscana": {
+  "nome": "Toscana",
+  "linea": "Base",
+  "descrizione": "Cieca, un riquadro",
+  "immagine": "assets/modelli/toscana.webp"
+ },
+ "sicilia": {
+  "nome": "Sicilia",
+  "linea": "Base",
+  "descrizione": "Tutta vetrata",
+  "immagine": "assets/modelli/sicilia.webp"
+ },
+ "emilia": {
+  "nome": "Emilia",
+  "linea": "Base",
+  "descrizione": "Cieca, due riquadri affiancati",
+  "immagine": "assets/modelli/emilia.webp"
+ },
+ "nevada": {
+  "nome": "Nevada",
+  "linea": "100",
+  "descrizione": "Cieca, un riquadro, con arco ribassato",
+  "immagine": "assets/modelli/nevada.webp"
+ },
+ "alaska": {
+  "nome": "Alaska",
+  "linea": "100",
+  "descrizione": "Tutta vetrata, con arco ribassato",
+  "immagine": "assets/modelli/alaska.webp"
+ },
+ "newengland": {
+  "nome": "New England",
+  "linea": "100-C",
+  "descrizione": "Cieca, un riquadro, con arco a tutto sesto",
+  "immagine": "assets/modelli/newengland.webp"
+ },
+ "manchester": {
+  "nome": "Manchester",
+  "linea": "100-C",
+  "descrizione": "Tutta vetrata, con arco a tutto sesto",
+  "immagine": "assets/modelli/manchester.webp"
+ },
+ "tamigi": {
+  "nome": "Tamigi",
+  "linea": "100-C",
+  "descrizione": "Tutta vetrata, con arco a tutto sesto",
+  "immagine": "assets/modelli/tamigi.webp"
+ },
+ "timesquare": {
+  "nome": "Time Square",
+  "linea": "100-C",
+  "descrizione": "Vetrata nella meta' alta, un riquadro, con arco a tutto sesto",
+  "immagine": "assets/modelli/timesquare.webp"
+ },
+ "cambridge": {
+  "nome": "Cambridge",
+  "linea": "100-C",
+  "descrizione": "Vetrata nella meta' alta, un riquadro, con arco a tutto sesto",
+  "immagine": "assets/modelli/cambridge.webp"
+ },
+ "canterbury": {
+  "nome": "Canterbury",
+  "linea": "100-C",
+  "descrizione": "Cieca, un riquadro sopra due, con arco a tutto sesto",
+  "immagine": "assets/modelli/canterbury.webp"
+ },
+ "windsor": {
+  "nome": "Windsor",
+  "linea": "100-C",
+  "descrizione": "Cieca, piu' riquadri, con arco a tutto sesto",
+  "immagine": "assets/modelli/windsor.webp"
+ },
+ "london": {
+  "nome": "London",
+  "linea": "100-C",
+  "descrizione": "Cieca, piu' riquadri, con arco a tutto sesto",
+  "immagine": "assets/modelli/london.webp"
+ },
+ "liverpool": {
+  "nome": "Liverpool",
+  "linea": "100-C",
+  "descrizione": "Tutta vetrata, con arco a tutto sesto",
+  "immagine": "assets/modelli/liverpool.webp"
+ },
+ "oldcity": {
+  "nome": "Old City",
+  "linea": "100-C",
+  "descrizione": "Vetrata nella meta' alta, due riquadri affiancati, con arco a tutto sesto",
+  "immagine": "assets/modelli/oldcity.webp"
+ },
+ "oxford": {
+  "nome": "Oxford",
+  "linea": "100-C",
+  "descrizione": "Vetrata nella meta' alta, un riquadro, con arco a tutto sesto",
+  "immagine": "assets/modelli/oxford.webp"
+ },
+ "virginia": {
+  "nome": "Virginia",
+  "linea": "100",
+  "descrizione": "Cieca, un riquadro sopra due, con arco ribassato",
+  "immagine": "assets/modelli/virginia.webp"
+ },
+ "newyork": {
+  "nome": "New York",
+  "linea": "100",
+  "descrizione": "Vetrata nella meta' alta, un riquadro, con arco ribassato",
+  "immagine": "assets/modelli/newyork.webp"
+ },
+ "luisiana": {
+  "nome": "Luisiana",
+  "linea": "100",
+  "descrizione": "Vetrata nella meta' alta, un riquadro, con arco ribassato",
+  "immagine": "assets/modelli/luisiana.webp"
+ }
+}

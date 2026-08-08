@@ -1,0 +1,11 @@
+rules_version = '2';
+// Le immagini generate le scrive solo la funzione. La lettura resta
+// chiusa: quando servira' mostrarle, si aprira' la sola cartella dei
+// render, non tutto il secchio.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

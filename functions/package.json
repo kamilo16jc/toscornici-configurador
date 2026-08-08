@@ -1,0 +1,18 @@
+{
+  "name": "toscocornici-funzioni",
+  "description": "L'assistente: legge la foto del cliente e propone i modelli del catalogo che le somigliano.",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "prova": "node accoppia.prova.js",
+    "serve": "firebase emulators:start --only functions"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.0",
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

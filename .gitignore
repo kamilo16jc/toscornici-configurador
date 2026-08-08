@@ -14,3 +14,7 @@ token
 # cache di Python
 __pycache__/
 *.pyc
+
+# dipendenze delle funzioni
+functions/node_modules/
+functions/.env*

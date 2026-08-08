@@ -1,0 +1,164 @@
+{
+  "_nota": "La ficha del mapa profundo. Se rellena una vez por modelo desde su render frontal, y es TAMBIEN la ficha que la IA rellena leyendo la foto del cliente. Que sean la misma es lo que permite comparar por codigo en vez de por conversacion.",
+  "_regla": "Solo entran campos visibles en la foto de un cliente: torcida, con mala luz, hecha con un movil. Si un campo no se puede leer asi, no sirve para emparejar y no entra.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vetro",
+    "testa",
+    "riquadri_numero",
+    "riquadri_disposizione",
+    "riquadri_forma",
+    "modanatura",
+    "traversa",
+    "superficie",
+    "riquadri_proporzione"
+  ],
+  "properties": {
+    "vetro": {
+      "type": "string",
+      "enum": [
+        "nessuno",
+        "parziale_alto",
+        "totale"
+      ],
+      "description": "Quanto vetro ha l'anta. 'parziale_alto' = vetro solo nella meta' superiore, il resto legno. 'totale' = vetro su quasi tutta l'anta."
+    },
+    "testa": {
+      "type": "string",
+      "enum": [
+        "dritta",
+        "arco_tondo",
+        "arco_ribassato"
+      ],
+      "description": "Il profilo in cima al disegno (non della porta, che e' sempre dritta): 'arco_tondo' = semicerchio pieno, 'arco_ribassato' = arco schiacciato."
+    },
+    "riquadri_numero": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 12,
+      "description": "Quanti pannelli incorniciati si contano sull'anta. Il vetro non conta come riquadro."
+    },
+    "riquadri_disposizione": {
+      "type": "string",
+      "enum": [
+        "nessuno",
+        "uno_solo",
+        "due_sovrapposti",
+        "due_affiancati",
+        "uno_sopra_due",
+        "due_sopra_uno",
+        "griglia",
+        "altro"
+      ],
+      "description": "Come sono disposti. E' il campo che separa di piu': 'due_sovrapposti' (uno sopra l'altro, divisione orizzontale) contro 'due_affiancati' (fianco a fianco, divisione verticale) distingue porte che tutti gli altri campi confondono."
+    },
+    "riquadri_forma": {
+      "type": "string",
+      "enum": [
+        "rettangolare",
+        "quadrato",
+        "arco_in_cima",
+        "sagomato",
+        "rombo"
+      ],
+      "description": "La forma del singolo riquadro. 'sagomato' = bordo mosso, non rettilineo."
+    },
+    "modanatura": {
+      "type": "string",
+      "enum": [
+        "piatta",
+        "smussata",
+        "rilievo",
+        "gola",
+        "non_leggibile"
+      ],
+      "description": "Il profilo della cornice attorno al riquadro. 'piatta' = nessun rilievo apprezzabile, 'smussata' = bordo inclinato, 'rilievo' = il pannello sporge, 'gola' = profilo concavo modanato. Se la foto e' troppo scura o piccola: 'non_leggibile' -- meglio ammetterlo che tirare a indovinare."
+    },
+    "traversa": {
+      "type": "string",
+      "enum": [
+        "assente",
+        "a_filo",
+        "in_rilievo"
+      ],
+      "description": "Il regolo orizzontale che divide i riquadri. 'a_filo' = allineato alla superficie, 'in_rilievo' = sporge visibilmente. Distingue Country da Pienza, che per tutto il resto sono uguali."
+    },
+    "superficie": {
+      "type": "string",
+      "enum": [
+        "liscia",
+        "pannelli",
+        "incisa"
+      ],
+      "description": "L'aspetto generale: 'liscia' = piana senza disegno, 'pannelli' = riquadri incorniciati, 'incisa' = disegno pantografato inciso senza cornice in rilievo."
+    },
+    "vetro_lastre": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 30,
+      "description": "Quanti vetri separati si contano. 0 se non c'e' vetro."
+    },
+    "vetro_griglia": {
+      "type": "string",
+      "enum": [
+        "nessuna",
+        "lastra_intera",
+        "barre_orizzontali",
+        "barre_verticali",
+        "quadretti",
+        "centrale_grande_con_contorno",
+        "ventaglio_ad_arco",
+        "quadretti_piu_arco"
+      ],
+      "description": "Il disegno dei regoli che dividono il vetro. 'ventaglio_ad_arco' = raggi che partono da un mozzo nella parte curva. 'centrale_grande_con_contorno' = un vetro grande al centro circondato da vetri piu' piccoli lungo il perimetro: NON e' una griglia a quadretti uguali."
+    },
+    "vetro_griglia_colonne": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8,
+      "description": "Se la griglia e' a quadretti: quante colonne. 0 se non applicabile."
+    },
+    "vetro_griglia_righe": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8,
+      "description": "Se la griglia e' a quadretti: quante righe. 0 se non applicabile."
+    },
+    "fiducia": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "bassa"
+      ],
+      "description": "Quanto e' leggibile l'immagine. Su una foto storta, sfocata o parziale va dichiarata 'bassa': serve al codice per non pesare troppo una lettura incerta."
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Una riga su qualcosa di caratteristico che i campi sopra non catturano. Non e' usata per il confronto: serve a chi legge la scheda."
+    },
+    "riquadri_proporzione": {
+      "type": "string",
+      "enum": [
+        "non_applicabile",
+        "uguali",
+        "superiore_piu_alto",
+        "inferiore_piu_alto"
+      ],
+      "description": "Quando ci sono due riquadri sovrapposti: quale dei due e' piu' alto. E' l'unica cosa che distingue certe porte altrimenti identiche. 'non_applicabile' se i riquadri non sono sovrapposti o se ce n'e' uno solo."
+    },
+    "vetro_bordo_alto": {
+      "type": "string",
+      "enum": [
+        "non_applicabile",
+        "dritto",
+        "arco_tondo",
+        "arco_ribassato",
+        "sagomato"
+      ],
+      "description": "Il profilo del bordo SUPERIORE DEL VETRO — non della porta, che e' sempre dritta. Un vetro rettangolare ha bordo 'dritto'; se la parte alta del vetro e' curva, dillo qui. 'non_applicabile' se non c'e' vetro."
+    }
+  }
+}

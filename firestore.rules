@@ -1,0 +1,12 @@
+rules_version = '2';
+// Chiuso a chiave. Il cliente non parla mai con Firestore direttamente:
+// ci scrive solo la funzione, che gira con le sue credenziali e non
+// passa da queste regole. Aprire un varco "per comodita'" qui vuol dire
+// aprirlo a chiunque abbia la configurazione, che sta nel browser.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
