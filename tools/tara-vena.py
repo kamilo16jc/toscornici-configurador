@@ -1,36 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-Tara la forza della vena nelle texture del legno.
+Prepara le texture del legno: colore, luce e forza della vena.
 
 PERCHE'
-Le quattro texture d'essenza sono fotografie di piallacci a fiamma
-larga: bellissime da vicino, ma su una porta il disegno e' cosi' grosso
-e contrastato da coprire lo spigolo dei riquadri. E il riquadro non e'
-un dettaglio estetico: e' il campo su cui si regge tutto
-l'accoppiamento dell'assistente.
+Le quattro foto d'essenza sono piallacci fotografati in condizioni
+diverse, e come stanno non sono materiali: sono immagini. Il pino era
+arancione e col rosso bruciato, il toulipier cosi' chiaro e piatto da
+sembrare una lastra luminosa. Qui si portano tutte a valori misurabili.
 
-Misurato sul modello Country, smorzando l'albedo verso il suo colore
-medio: al 100% lo spigolo sparisce, al 25% il legno torna piatto, al
-40% la vena si vede e il riquadro si legge -- ed e' li' che il rovere
-arriva a uno scarto di 10.5. Quello, non il 40%, e' il numero buono.
+I DUE BERSAGLI
 
-La prima versione smorzava tutte del 40% uguale, ed era sbagliata: le
-quattro foto partono da contrasti diversissimi (rovere 26, toulipier 8),
-cosi' il rovere veniva bene e le altre tre finivano piatte, con la stessa
-aria di plastica che si voleva togliere. Adesso il bersaglio e' il
-livello di contrasto, e la forza si calcola per ogni essenza.
+1. Il colore. Si confronta con l'aspetto vero del legno:
+       pino chiaro   tinta 38-42 gradi, saturazione 0.25-0.35
+       toulipier     tinta 40-50 gradi, saturazione 0.15-0.25
+   Il pino stava a 29 gradi con saturazione 0.63 -- il doppio del vero,
+   ed e' quello che lo faceva arancione. Con luce 0.93 aveva anche il
+   14.5% dei pixel col rosso a fondo scala: li' la vena non e' scura,
+   e' proprio cancellata, e nessun ritocco la riporta indietro. Si puo'
+   solo togliere il rosso di troppo e lasciare che la vena venga dal
+   verde e dal blu, che non sono bruciati.
+
+2. Il contrasto. Non una frazione uguale per tutte -- quello era
+   l'errore della prima versione -- ma un LIVELLO. 10.5 e' lo scarto a
+   cui il rovere, misurato su Country, mostrava la vena senza coprire
+   lo spigolo del riquadro. Chi sta sopra si smorza, chi sta sotto si
+   allarga: il toulipier a 8.1 era troppo piatto, non troppo forte.
+
+Rovere e castagno non si toccano nel colore: vanno gia' bene.
 
 COSA FA
 Salva l'originale una volta sola come albedo-originale.jpg e riscrive
-albedo.jpg smorzato. E' idempotente e reversibile: rilanciarlo riparte
-sempre dall'originale, e un bersaglio altissimo le riporta com'erano.
+albedo.jpg. E' idempotente: rilanciarlo riparte sempre dall'originale.
 
 USO
-    python tools/tara-vena.py           # porta tutte a BERSAGLIO
-    python tools/tara-vena.py 14        # vena piu' marcata
-    python tools/tara-vena.py 999       # torna agli originali
+    python tools/tara-vena.py           # applica la tabella
+    python tools/tara-vena.py 13        # vena piu' marcata per tutte
+    python tools/tara-vena.py --crudo   # rimette gli originali
 """
 
+import colorsys
 import os
 import shutil
 import sys
@@ -40,56 +48,108 @@ from PIL import Image, ImageStat
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = os.path.join(REPO, 'assets', 'textures')
 
-# Il bersaglio NON e' una frazione uguale per tutte: e' un LIVELLO di
-# contrasto. Le quattro foto partono da contrasti diversissimi -- il
-# rovere ha lo scarto 26, il toulipier 8 -- e smorzarle tutte del 40%
-# lasciava il rovere giusto e appiattiva le altre tre, che tornavano
-# ad avere l'aria di plastica che si voleva togliere.
-#
-# 10.5 e' lo scarto a cui e' finito il rovere quando, misurando su
-# Country, la vena si vedeva e lo spigolo del riquadro tornava a
-# leggersi. Quello e' il livello buono, e ci si porta ogni essenza.
-#
-# Chi parte gia' sotto (il toulipier e' un legno chiaro e poco venato)
-# si lascia com'e': la forza non sale mai sopra 1.
+# Lo scarto quadratico a cui portare la vena di ogni essenza.
 BERSAGLIO = 10.5
 
-# I laccati usano 'universal', che e' gia' quasi piatto: non si tocca.
+# Correzione di colore, per essenza. 'tinta' e' in gradi da sommare,
+# 'saturazione' e 'luce' sono moltiplicatori. Assente = non si tocca.
+CORREZIONI = {
+    'rovere': {},
+    'castagno': {},
+    # 29 -> 40 gradi, saturazione 0.63 -> ~0.30, e giu' la luce per
+    # togliere il rosso da fondo scala
+    'pino': {'tinta': 11, 'saturazione': 0.48, 'luce': 0.88},
+    # la tinta va bene; era troppo chiaro e troppo carico
+    'toulipier': {'saturazione': 0.60, 'luce': 0.90},
+}
+
 ESSENZE = ['rovere', 'castagno', 'toulipier', 'pino']
 
 
-def tara(essenza, bersaglio):
+def misura(im):
+    r, g, b = im.resize((1, 1), Image.LANCZOS).getpixel((0, 0))
+    h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    return h * 360, s, v, ImageStat.Stat(im.convert('L')).stddev[0]
+
+
+def bruciato(im):
+    """Percentuale di pixel col rosso a fondo scala."""
+    h = im.split()[0].histogram()
+    return 100.0 * sum(h[250:]) / (im.width * im.height)
+
+
+def correggi_colore(im, c):
+    if not c:
+        return im
+    hsv = im.convert('HSV')
+    H, S, V = hsv.split()
+    if c.get('tinta'):
+        passo = round(c['tinta'] * 255 / 360)      # HSV di PIL sta su 0-255
+        H = H.point(lambda v: (v + passo) % 256)
+    if c.get('saturazione'):
+        S = S.point(lambda v: min(255, round(v * c['saturazione'])))
+    if c.get('luce'):
+        V = V.point(lambda v: min(255, round(v * c['luce'])))
+    return Image.merge('HSV', (H, S, V)).convert('RGB')
+
+
+def tara_contrasto(im, bersaglio):
+    """Porta lo scarto al bersaglio, in su o in giu'.
+
+    Smorzare verso il colore medio scala lo scarto in modo lineare, e
+    Image.blend accetta anche pesi sopra 1: la stessa formula serve sia
+    ad attenuare una vena troppo forte sia ad aprirne una troppo piatta.
+    """
+    scarto = ImageStat.Stat(im.convert('L')).stddev[0]
+    if scarto < 0.5:
+        return im, 1.0
+    forza = bersaglio / scarto
+    medio = im.resize((1, 1), Image.LANCZOS).getpixel((0, 0))
+    piatta = Image.new('RGB', im.size, medio)
+    return Image.blend(piatta, im, forza), forza
+
+
+def prepara(essenza, bersaglio, crudo=False):
     cartella = os.path.join(BASE, essenza)
     vivo = os.path.join(cartella, 'albedo.jpg')
     orig = os.path.join(cartella, 'albedo-originale.jpg')
     if not os.path.exists(vivo) and not os.path.exists(orig):
         return '%-11s manca albedo.jpg' % essenza
-    # la prima volta si mette da parte l'originale
     if not os.path.exists(orig):
         shutil.copy2(vivo, orig)
 
     im = Image.open(orig).convert('RGB')
-    partenza = ImageStat.Stat(im.convert('L')).stddev[0]
-    # smorzare verso il colore medio scala lo scarto in modo lineare:
-    # per arrivare al bersaglio basta il rapporto fra i due
-    forza = 1.0 if partenza <= bersaglio else bersaglio / partenza
+    if crudo:
+        shutil.copy2(orig, vivo)
+        h, s, v, sc = misura(im)
+        return ('%-11s rimesso l\'originale  tinta %3.0f  sat %.2f  '
+                'luce %.2f  scarto %4.1f' % (essenza, h, s, v, sc))
 
-    medio = im.resize((1, 1), Image.LANCZOS).getpixel((0, 0))
-    piatta = Image.new('RGB', im.size, medio)
-    fuori = Image.blend(piatta, im, forza)
-    fuori.save(vivo, 'JPEG', quality=92, subsampling=0)
-    arrivo = ImageStat.Stat(Image.open(vivo).convert('L')).stddev[0]
-    return ('%-11s scarto %5.1f -> %5.1f   vena al %3d%%%s'
-            % (essenza, partenza, arrivo, round(forza * 100),
-               '   (gia\' sotto il bersaglio: lasciata com\'e\')'
-               if forza == 1.0 else ''))
+    h0, s0, v0, sc0 = misura(im)
+    br0 = bruciato(im)
+    im = correggi_colore(im, CORREZIONI.get(essenza))
+    im, forza = tara_contrasto(im, bersaglio)
+    im.save(vivo, 'JPEG', quality=92, subsampling=0)
+
+    fin = Image.open(vivo).convert('RGB')
+    h1, s1, v1, sc1 = misura(fin)
+    br1 = bruciato(fin)
+    riga = ('%-11s tinta %3.0f->%3.0f  sat %.2f->%.2f  luce %.2f->%.2f  '
+            'scarto %4.1f->%4.1f  (vena al %d%%)'
+            % (essenza, h0, h1, s0, s1, v0, v1, sc0, sc1, round(forza * 100)))
+    if br0 > 1 or br1 > 1:
+        riga += '\n              rosso bruciato %.1f%% -> %.1f%%' % (br0, br1)
+    return riga
 
 
 def main():
-    bersaglio = float(sys.argv[1]) if len(sys.argv) > 1 else BERSAGLIO
-    print('Porto ogni essenza a uno scarto di %.1f' % bersaglio)
+    crudo = '--crudo' in sys.argv
+    resto = [a for a in sys.argv[1:] if not a.startswith('--')]
+    bersaglio = float(resto[0]) if resto else BERSAGLIO
+    print('Rimetto gli originali.' if crudo
+          else 'Coloro e porto ogni essenza a uno scarto di %.1f' % bersaglio)
     for e in ESSENZE:
-        print('  ' + tara(e, bersaglio))
+        print('  ' + prepara(e, bersaglio, crudo))
     print('')
     print('  Gli originali restano in albedo-originale.jpg.')
 
