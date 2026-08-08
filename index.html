@@ -150,23 +150,27 @@
 
   </div>
 
-  <div class="dentro">
-    <article class="assistente">
-      <div class="assistente-figura" aria-hidden="true">
-        <img src="assets/home/ia1.webp" alt="" width="197" height="460" loading="lazy">
-        <img src="assets/home/ia2.webp" alt="" width="197" height="460" loading="lazy">
-        <img src="assets/home/ia3.webp" alt="" width="197" height="460" loading="lazy">
-      </div>
+  <!-- l'assistente: una fascia a tutta larghezza, il velo da sinistra
+       come in copertina, cosi' l'ingresso illuminato resta in chiaro -->
+  <section class="assistente">
+    <img class="assistente-foto"
+         src="assets/home/assistente.webp"
+         srcset="assets/home/assistente-sm.webp 900w, assets/home/assistente.webp 1920w"
+         sizes="100vw"
+         alt="Casa al tramonto, con la porta d’ingresso illuminata"
+         width="1920" height="768" loading="lazy">
+    <div class="assistente-velo" aria-hidden="true"></div>
+    <div class="dentro">
       <div class="assistente-testo">
-        <p class="occhiello occhiello--scuro">Assistente</p>
+        <p class="occhiello">Assistente</p>
         <h3>Non sai da quale cominciare?</h3>
         <p>Racconta com’è la porta che hai in mente, o carica la foto di una
           che ti piace: ti propongo i modelli del catalogo che le somigliano e ti porto
           al configuratore giusto, già impostato.</p>
-        <p class="stato">In costruzione</p>
+        <p class="stato stato--chiaro">In costruzione</p>
       </div>
-    </article>
-  </div>
+    </div>
+  </section>
 
 </main>
 
