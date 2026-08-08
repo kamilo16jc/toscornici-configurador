@@ -18,3 +18,9 @@ __pycache__/
 # dipendenze delle funzioni
 functions/node_modules/
 functions/.env*
+
+# ritagli ad alta definizione: 118 MB rigenerabili in tre minuti con
+# tools/ritaglia-porte.py. La sorgente vera sono i modelli 3D.
+recortes-3d/
+tools/_prova_replicate/
+functions/dati/modelli/

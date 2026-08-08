@@ -263,3 +263,8 @@ exports.assistente = onRequest(
     }
   },
 );
+
+// La prova di Replicate ha girato ed e' stata cancellata: era un
+// endpoint che spendeva soldi con un chiavistello debole. Il codice
+// resta in prova-replicate.js, con dentro le istruzioni per rimetterla
+// in piedi -- ma NON si esporta, se no il prossimo deploy la ricrea.
