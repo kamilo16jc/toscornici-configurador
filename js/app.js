@@ -663,7 +663,14 @@ function clearModel() {
   }
 }
 
+// Ogni caricamento prende un numero. La guardia confrontava la chiave del
+// modello: due caricamenti della stessa porta la passavano tutti e due e
+// finivano tutti e due in scena, uno sopra l'altro. Col numero ne arriva
+// in scena soltanto l'ultimo partito.
+let numeroCarico = 0;
+
 function loadModel(key) {
+  const mio = ++numeroCarico;
   currentModelKey = key;
   const def = MODELLI[key];
   clearModel();
@@ -673,7 +680,12 @@ function loadModel(key) {
   gltfLoader.load(
     def.file,
     (gltf) => {
-      if (currentModelKey !== key) return; // il modello è cambiato nel frattempo
+      if (mio !== numeroCarico) {
+        // sorpassato da un caricamento piu' recente: si butta, se no
+        // resta appeso in memoria senza che nessuno lo veda
+        disposeSubtree(gltf.scene);
+        return;
+      }
       model = gltf.scene;
 
       // i GLB sono in millimetri → normalizza a metri
@@ -1988,9 +2000,16 @@ document.getElementById('doneStampa')?.addEventListener('click', () => {
 
 window.__pdf = { buildBlocco, datiPreventivo, stampaPreventivo, documentoPreventivo }; // hook di verifica
 
-// cambiando lingua il pannello va ridisegnato: le etichette generate dal
-// copione non le tocca il dizionario, che lavora solo sul documento
-document.addEventListener('linguacambiata', () => { try { setModello(state.modello); } catch (e) { /* non ancora pronto */ } });
+// Cambiando lingua si riscrivono le etichette, non si ricarica la porta:
+// la geometria non parla italiano. Chiamare setModello qui faceva ripartire
+// il caricamento del GLB, e in avvio ne faceva partire due insieme.
+document.addEventListener('linguacambiata', () => {
+  try {
+    const def = MODELLI[state.modello];
+    panelSubEl.textContent = (window.lingua && window.lingua() === 'en') ? def.descEn : def.descIt;
+    refreshUI();
+  } catch (e) { /* il pannello non c'e' ancora */ }
+});
 
 /* ============================================================
    AVVIO
