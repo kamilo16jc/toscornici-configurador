@@ -112,6 +112,32 @@ img { display: block; max-width: 100%; }
 }
 .menu a:hover, .menu a:focus-visible { color: var(--oro); }
 
+/* ---------- la scelta della lingua ----------
+   Due sigle, non un menu a tendina: le lingue sono due e si vedono
+   tutte e due. Quella attiva e' piena, l'altra e' un invito. */
+.lingue {
+  display: flex;
+  flex: none;
+  margin-left: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.lingua-scelta {
+  padding: 7px 11px;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.62);
+  font-family: var(--testo);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+}
+.lingua-scelta:hover { color: #fff; }
+.lingua-scelta.is-attiva { background: var(--terra); color: #fff; }
+.lingua-scelta:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+
 /* ---------- bottoni ---------- */
 .bottone {
   display: inline-flex;
@@ -599,6 +625,7 @@ a.pannello:hover .quadro { background: var(--terra-viva); transform: translate(3
 /* ---------- schermi stretti ---------- */
 @media (max-width: 1000px) {
   .menu { display: none; }
+  .lingue { margin-left: auto; }
   .testata .dentro { justify-content: space-between; }
   .marchio { margin-right: auto; }
 }

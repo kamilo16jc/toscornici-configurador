@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo configuratore.html e la pagina si rompe -->
-<link rel="stylesheet" href="css/style.css?v=35">
+<link rel="stylesheet" href="css/style.css?v=36">
 <script type="importmap">
 {
   "imports": {
@@ -65,10 +65,14 @@
   <aside class="panel">
     <header class="panel-header">
       <div class="panel-testa">
-        <p class="panel-kicker">Configuratore · <span class="en">Configurator</span></p>
-        <a class="torna" href="index.html" title="Torna alla schermata d'ingresso">
+        <p class="panel-kicker" data-t="conf_occhiello">Configuratore</p>
+        <div class="lingue lingue--chiare" role="group" aria-label="Lingua / Language">
+          <button class="lingua-scelta" type="button" data-lingua="it" aria-pressed="true">IT</button>
+          <button class="lingua-scelta" type="button" data-lingua="en" aria-pressed="false">EN</button>
+        </div>
+        <a class="torna" href="index.html" data-t-tit="torna_tit">
           <span class="torna-freccia" aria-hidden="true">←</span>
-          <span>Menu</span>
+          <span data-t="torna_menu">Menu</span>
         </a>
       </div>
       <h1 id="panelTitle">Liverpool&nbsp;100-C</h1>
@@ -77,42 +81,42 @@
 
     <!-- Modello -->
     <section class="section">
-      <h2 class="section-title"><span class="num">01</span> Modello <span class="en">/ Model</span></h2>
+      <h2 class="section-title"><span class="num">01</span> <span data-t="sez_modello">Modello</span></h2>
       <select class="model-select" id="modelloSelect" aria-label="Modello / Model"></select>
     </section>
 
     <!-- Essenza -->
     <section class="section">
-      <h2 class="section-title"><span class="num">02</span> Essenza <span class="en">/ Wood finish</span></h2>
+      <h2 class="section-title"><span class="num">02</span> <span data-t="sez_essenza">Essenza</span></h2>
       <div class="swatches" id="swatches"><!-- essenze generate dal catalogo --></div>
-      <p class="lacc-title">Colore laccato — su qualsiasi essenza <span class="en">/ Lacquered colour (optional)</span></p>
+      <p class="lacc-title" data-t="lacc_titolo">Colore laccato — su qualsiasi essenza</p>
       <div class="laccati" id="laccati"><!-- colori generati dal catalogo --></div>
     </section>
 
     <!-- Finitura -->
     <section class="section">
-      <h2 class="section-title"><span class="num">03</span> Finitura <span class="en">/ Finish</span></h2>
+      <h2 class="section-title"><span class="num">03</span> <span data-t="sez_finitura">Finitura</span></h2>
       <div class="pills" id="pills">
-        <button class="pill" data-finitura="grezza">Grezza <span class="en">Raw</span></button>
-        <button class="pill is-active" data-finitura="verniciata">Verniciata <span class="en">Painted</span></button>
+        <button class="pill" data-finitura="grezza" data-t="fin_grezza">Grezza</button>
+        <button class="pill is-active" data-finitura="verniciata" data-t="fin_verniciata">Verniciata</button>
       </div>
       <p class="pill-note" id="pillNote"></p>
     </section>
 
     <!-- Misure -->
     <section class="section">
-      <h2 class="section-title"><span class="num">04</span> Misure luce <span class="en">/ Opening size</span></h2>
+      <h2 class="section-title"><span class="num">04</span> <span data-t="sez_misure">Misure luce</span></h2>
       <div class="measures">
-        <label class="measure">Larghezza <span class="en">mm</span>
+        <label class="measure"><span data-t="mis_largh">Larghezza</span> <span class="en">mm</span>
           <input type="number" id="mW" value="900" min="500" max="1400" step="10">
         </label>
-        <label class="measure">Altezza <span class="en">mm</span>
+        <label class="measure"><span data-t="mis_alt">Altezza</span> <span class="en">mm</span>
           <input type="number" id="mH" value="2100" min="1700" max="2800" step="10">
         </label>
       </div>
       <div class="pills" id="antePills">
-        <button class="pill is-active" data-ante="1">1 anta</button>
-        <button class="pill" data-ante="2">2 ante <span class="en">+100%</span></button>
+        <button class="pill is-active" data-ante="1" data-t="ante_1">1 anta</button>
+        <button class="pill" data-ante="2"><span data-t="ante_2">2 ante</span> <span class="en">+100%</span></button>
       </div>
       <!-- schema animato: pianta vista dall'alto -->
       <figure class="anim"><svg id="anteAnim" role="img" aria-label="Schema del movimento"></svg></figure>
@@ -121,15 +125,15 @@
 
     <!-- Muro e allargato -->
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> Muro e allargato <span class="en">/ Wall</span></h2>
+      <h2 class="section-title"><span class="num">05</span> <span data-t="sez_muro">Muro e allargato</span></h2>
       <div class="measures">
-        <label class="measure">Spessore muro <span class="en">mm</span>
+        <label class="measure"><span data-t="muro_spess">Spessore muro</span> <span class="en">mm</span>
           <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
         </label>
       </div>
       <div class="pills" id="allargatoPills" hidden>
-        <button class="pill is-active" data-allargato="integrale">Integrale</button>
-        <button class="pill" data-allargato="imbottino">Con imbottino</button>
+        <button class="pill is-active" data-allargato="integrale" data-t="all_integrale">Integrale</button>
+        <button class="pill" data-allargato="imbottino" data-t="all_imbottino">Con imbottino</button>
       </div>
       <figure class="schema" id="allargatoFig" hidden>
         <img id="allargatoSchema" src="" alt="Sezione dell’allargato">
@@ -140,7 +144,7 @@
 
     <!-- Telaio -->
     <section class="section">
-      <h2 class="section-title"><span class="num">06</span> Telaio <span class="en">/ Frame profile</span></h2>
+      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_telaio">Telaio</span></h2>
       <select class="model-select" id="telaioSelect" aria-label="Telaio"></select>
       <figure class="schema">
         <img id="telaioSchema" src="assets/telai/std.svg" alt="Sezione del telaio">
@@ -151,14 +155,14 @@
 
     <!-- Coprifili -->
     <section class="section">
-      <h2 class="section-title"><span class="num">07</span> Coprifili <span class="en">/ Architraves</span></h2>
+      <h2 class="section-title"><span class="num">07</span> <span data-t="sez_coprifili">Coprifili</span></h2>
       <div class="maniglie-grid" id="copriGrid"><!-- generato dal listino --></div>
       <p class="pill-note" id="copriNote">Il coprifilo è un pezzo indipendente dall'anta: il listino lo produce solo in frassino, toulipier e pino. Liscio listellare (90/70) compreso nel prezzo. Con la lente sulla scheda si vede il profilo in grande e si sceglie legno e misura.</p>
     </section>
 
     <!-- Apertura e forma -->
     <section class="section">
-      <h2 class="section-title"><span class="num">08</span> Apertura e forma <span class="en">/ Opening</span></h2>
+      <h2 class="section-title"><span class="num">08</span> <span data-t="sez_apertura">Apertura e forma</span></h2>
       <select class="model-select" id="aperturaSelect" aria-label="Apertura"></select>
       <figure class="anim"><svg id="aperturaAnim" role="img" aria-label="Schema del movimento"></svg></figure>
       <select class="model-select" id="formaSelect" aria-label="Forma"></select>
@@ -170,15 +174,15 @@
       <!-- il sopraluce si vede di taglio: il cardine alto o basso e' la differenza -->
       <figure class="anim" id="sopraluceAnimBox" hidden><svg id="sopraluceAnim" role="img" aria-label="Schema del sopraluce"></svg></figure>
       <div class="pills" id="manoPills">
-        <button class="pill is-active" data-mano="dx">Mano DX <span class="en">spinge a destra</span></button>
-        <button class="pill" data-mano="sx">Mano SX <span class="en">spinge a sinistra</span></button>
+        <button class="pill is-active" data-mano="dx"><span data-t="mano_dx">Mano DX</span> <span class="en" data-t="mano_dx_sub">spinge a destra</span></button>
+        <button class="pill" data-mano="sx"><span data-t="mano_sx">Mano SX</span> <span class="en" data-t="mano_sx_sub">spinge a sinistra</span></button>
       </div>
       <p class="pill-note" id="aperturaNote"></p>
     </section>
 
     <!-- Capitello -->
     <section class="section">
-      <h2 class="section-title"><span class="num">09</span> Capitello <span class="en">/ Pediment</span></h2>
+      <h2 class="section-title"><span class="num">09</span> <span data-t="sez_capitello">Capitello</span></h2>
       <select class="model-select" id="capitelloSelect" aria-label="Capitello"></select>
       <div class="pills" id="capLatiPills">
         <button class="pill is-active" data-lati="1">1 lato</button>
@@ -194,7 +198,7 @@
 
     <!-- Ferramenta -->
     <section class="section">
-      <h2 class="section-title"><span class="num">10</span> Ferramenta <span class="en">/ Hardware extras</span></h2>
+      <h2 class="section-title"><span class="num">10</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
       <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
       <div class="pills" id="serrExtraPills">
         <button class="pill" data-nottolino="1">Predisp. nottolino <span class="en">+€10</span></button>
@@ -211,55 +215,55 @@
         <button class="pill" data-cerniere="scomparsa">A scomparsa 3D <span class="en">+€50</span></button>
         <button class="pill" data-orocern="1" hidden>Scomparsa oro <span class="en">+€20</span></button>
       </div>
-      <p class="lacc-title">Accessori <span class="en">/ Accessories</span></p>
+      <p class="lacc-title" data-t="acc_titolo">Accessori</p>
       <div class="pills" id="accPills"><!-- generato da ACCESSORI --></div>
-      <p class="lacc-title">Modello maniglia — inventario fabbrica <span class="en">/ Handle model</span></p>
+      <p class="lacc-title" data-t="man_titolo">Modello maniglia — inventario fabbrica</p>
       <div class="maniglie-grid" id="manigliaGrid"><!-- generato da MANIGLIE_MOD --></div>
     </section>
 
     <!-- Maniglia -->
     <section class="section">
-      <h2 class="section-title"><span class="num">11</span> Finitura maniglia <span class="en">/ Hardware finish</span></h2>
+      <h2 class="section-title"><span class="num">11</span> <span data-t="sez_finmaniglia">Finitura maniglia</span></h2>
       <div class="metals" id="maniglie">
         <button class="metal is-active" data-maniglia="ottone">
           <span class="metal-chip chip-ottone"></span>
-          <span class="metal-label">Ottone <span class="en">Brass</span></span>
+          <span class="metal-label" data-t="met_ottone">Ottone</span>
         </button>
         <button class="metal" data-maniglia="nero">
           <span class="metal-chip chip-nero"></span>
-          <span class="metal-label">Nero opaco <span class="en">Matte black</span></span>
+          <span class="metal-label" data-t="met_nero">Nero opaco</span>
         </button>
         <button class="metal" data-maniglia="cromo">
           <span class="metal-chip chip-cromo"></span>
-          <span class="metal-label">Cromo <span class="en">Chrome</span></span>
+          <span class="metal-label" data-t="met_cromo">Cromo</span>
         </button>
       </div>
     </section>
 
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">12</span> Ambiente <span class="en">/ Setting</span></h2>
+      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_ambiente">Ambiente</span></h2>
       <div class="pills pills-grid" id="ambienti">
-        <button class="pill is-active" data-ambiente="galleria">Galleria <span class="en">Showroom</span></button>
-        <button class="pill" data-ambiente="ingresso">Ingresso <span class="en">Entrance</span></button>
-        <button class="pill" data-ambiente="soggiorno">Soggiorno <span class="en">Living room</span></button>
-        <button class="pill" data-ambiente="studio">Studio <span class="en">Study</span></button>
+        <button class="pill is-active" data-ambiente="galleria" data-t="amb_galleria">Galleria</button>
+        <button class="pill" data-ambiente="ingresso" data-t="amb_ingresso">Ingresso</button>
+        <button class="pill" data-ambiente="soggiorno" data-t="amb_soggiorno">Soggiorno</button>
+        <button class="pill" data-ambiente="studio" data-t="amb_studio">Studio</button>
       </div>
     </section>
 
     <!-- Riepilogo -->
     <footer class="summary">
       <div class="summary-row">
-        <span class="summary-label" id="summaryLabel">Porta completa · <span class="en">Complete door</span></span>
+        <span class="summary-label" id="summaryLabel" data-t="riep_porta">Porta completa</span>
         <span class="summary-config" id="summaryConfig">—</span>
       </div>
       <div class="breakdown" id="breakdown"><!-- righe del preventivo --></div>
       <div class="summary-total">
-        <span class="total-label">Totale <span class="en">Total</span></span>
+        <span class="total-label" data-t="riep_totale">Totale</span>
         <span class="total-value" id="totalValue">€ 0,00</span>
       </div>
-      <p class="summary-vat">IVA esclusa · Prezzi di listino 2026 — <span class="en">VAT excluded · 2026 list prices</span></p>
-      <button class="cta" id="cta">Richiedi preventivo — <span class="en">Request a quote</span></button>
+      <p class="summary-vat" data-t="riep_iva">IVA esclusa · prezzi di listino 2026</p>
+      <button class="cta" id="cta" data-t="cta_preventivo">Richiedi preventivo</button>
     </footer>
   </aside>
 
@@ -269,7 +273,7 @@
 <div class="modal" id="manModal" hidden>
   <div class="modal-panel visore-panel">
     <button class="visore-x" id="manVisoreX" aria-label="Chiudi">×</button>
-    <p class="panel-kicker">Maniglia · <span class="en">Handle</span></p>
+    <p class="panel-kicker" data-t="vis_maniglia">Maniglia</p>
     <h2 class="modal-title" id="manVisoreTitolo"></h2>
     <div class="visore-fig" id="manVisoreFig"></div>
     <p class="visore-lab">Misure</p>
@@ -287,7 +291,7 @@
 <div class="modal" id="copriModal" hidden>
   <div class="modal-panel visore-panel">
     <button class="visore-x" id="copriVisoreX" aria-label="Chiudi">×</button>
-    <p class="panel-kicker">Coprifilo · <span class="en">Architrave</span></p>
+    <p class="panel-kicker" data-t="vis_coprifilo">Coprifilo</p>
     <h2 class="modal-title" id="copriVisoreTitolo"></h2>
     <div class="visore-fig" id="copriVisoreFig"></div>
     <p class="visore-lab">Legno</p>
@@ -305,8 +309,8 @@
 <div class="modal" id="quoteModal" hidden>
   <div class="modal-panel">
     <div id="quoteFormView">
-      <p class="panel-kicker">Richiesta preventivo · <span class="en">Request a quote</span></p>
-      <h2 class="modal-title">I tuoi dati <span class="en">/ Your details</span></h2>
+      <p class="panel-kicker" data-t="prev_occhiello">Richiesta preventivo</p>
+      <h2 class="modal-title" data-t="prev_titolo">I tuoi dati</h2>
       <form id="quoteForm">
         <div class="form-grid">
           <label>Nome e cognome *<input required name="nome" type="text" autocomplete="name" placeholder="Mario Rossi"></label>
@@ -317,30 +321,31 @@
           <label>Città *<input required name="citta" type="text" placeholder="Firenze"></label>
           <label>CAP<input name="cap" type="text" inputmode="numeric" placeholder="50100"></label>
           <label>Provincia<input name="provincia" type="text" placeholder="FI"></label>
-          <label class="span2">Note per il produttore <span class="en">/ Notes</span><textarea name="note" rows="3" placeholder="Consegna, misure particolari, senso di apertura…"></textarea></label>
+          <label class="span2"><span data-t="prev_note">Note per il produttore</span><textarea name="note" rows="3" data-t-ph="prev_note_ph" placeholder="Consegna, misure particolari, senso di apertura…"></textarea></label>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" id="quoteCancel">Annulla</button>
-          <button type="submit" class="cta cta-compact">Genera PDF e invia — <span class="en">Send</span></button>
+          <button type="submit" class="cta cta-compact" data-t="prev_invia">Genera PDF e invia</button>
         </div>
       </form>
     </div>
     <div id="quoteDoneView" hidden>
-      <p class="panel-kicker">Preventivo inviato · <span class="en">Quote sent</span></p>
+      <p class="panel-kicker" data-t="prev_inviato">Preventivo inviato</p>
       <h2 class="modal-title done-check">✓</h2>
       <p class="done-ref" id="doneRef">—</p>
       <p class="done-text" id="doneFiles">—</p>
-      <p class="done-text">Allega il <b>blocco ordine</b> alla mail per <b>ordini@toscocornici.it</b> dopo averlo controllato.<br>
-      <span class="en">(Demo: invio simulato — i PDF sono reali e completi.)</span></p>
+      <p class="done-text"><span data-t="done_allega">Allega il <b>blocco ordine</b> alla mail per <b>ordini@toscocornici.it</b> dopo averlo controllato.</span><br>
+      <span class="en" data-t="demo_nota">(Demo: invio simulato — i PDF sono reali e completi.)</span></p>
       <div class="modal-actions">
-        <button type="button" class="cta cta-compact" id="doneStampa">Riapri il preventivo</button>
-        <button type="button" class="cta cta-compact cta-ghost" id="quoteClose">Chiudi — Close</button>
+        <button type="button" class="cta cta-compact" id="doneStampa" data-t="done_riapri">Riapri il preventivo</button>
+        <button type="button" class="cta cta-compact cta-ghost" id="quoteClose" data-t="chiudi">Chiudi</button>
       </div>
     </div>
   </div>
 </div>
 
+<script src="js/lingua.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=34"></script>
+<script type="module" src="js/app.js?v=35"></script>
 </body>
 </html>

@@ -8,19 +8,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=22">
+<link rel="stylesheet" href="css/home.css?v=23">
+<script src="js/lingua.js?v=1"></script>
 <link rel="stylesheet" href="css/assistente.css?v=5">
 </head>
 <body class="pagina-assistente">
 
-<a class="salta" href="#dialogo">Vai alla conversazione</a>
+<a class="salta" href="#dialogo" data-t="salta_ass">Vai alla conversazione</a>
 
 <!-- ==================== BARRA FISSA ==================== -->
 <header class="barra">
   <div class="striscia">
     <div class="dentro">
-      <p>Porte in legno massello · su misura, dalla fabbrica</p>
-      <p>L’assistente restringe il catalogo: la scelta resta tua</p>
+      <p data-t="striscia_1">Porte in legno massello · su misura, dalla fabbrica</p>
+      <p data-t="striscia_ass">L’assistente restringe il catalogo: la scelta resta tua</p>
     </div>
   </div>
 
@@ -32,11 +33,16 @@
       </a>
 
       <nav class="menu" aria-label="Principale">
-        <a href="index.html#collezioni">Collezioni</a>
-        <a href="configuratore.html">Listino</a>
-        <a href="index.html#collezioni">Pantografato</a>
-        <a href="assistente.html" aria-current="page">Assistente</a>
+        <a href="index.html#collezioni" data-t="menu_collezioni">Collezioni</a>
+        <a href="configuratore.html" data-t="menu_listino">Listino</a>
+        <a href="index.html#collezioni" data-t="menu_panto">Pantografato</a>
+        <a href="assistente.html" aria-current="page" data-t="menu_assistente">Assistente</a>
       </nav>
+
+      <div class="lingue" role="group" aria-label="Lingua / Language">
+        <button class="lingua-scelta" type="button" data-lingua="it" aria-pressed="true">IT</button>
+        <button class="lingua-scelta" type="button" data-lingua="en" aria-pressed="false">EN</button>
+      </div>
 
       <a class="bottone bottone--pieno" href="configuratore.html">
         Apri il configuratore <span aria-hidden="true">↗</span>
@@ -53,10 +59,9 @@
          Sta in cima e non sparisce: sono i due modi di cominciare,
          e chi torna indietro deve ritrovarli. -->
     <section class="avvio" id="avvio">
-      <p class="occhiello occhiello--scuro">Assistente</p>
-      <h1>Che porta hai in mente?</h1>
-      <p class="avvio-testo">Il catalogo ha 44 modelli. Dimmi com’è la tua e te ne
-        lascio tre da guardare, invece di quarantaquattro.</p>
+      <p class="occhiello occhiello--scuro" data-t="ass_occhiello">Assistente</p>
+      <h1 data-t="ass_h1">Che porta hai in mente?</h1>
+      <p class="avvio-testo" data-t="ass_intro">Il catalogo ha 44 modelli.</p>
 
       <div class="strade">
         <button class="strada" type="button" data-strada="foto">
@@ -69,9 +74,8 @@
             </svg>
           </span>
           <span class="strada-testo">
-            <b>Ho una foto</b>
-            <small>Una porta che ti piace, vista da qualche parte. Guardo com’è fatta
-              e cerco le somiglianze nel catalogo.</small>
+            <b data-t="ass_foto_t">Ho una foto</b>
+            <small data-t="ass_foto_d">Una porta che ti piace.</small>
           </span>
         </button>
 
@@ -84,18 +88,13 @@
             </svg>
           </span>
           <span class="strada-testo">
-            <b>Te la racconto</b>
-            <small>Con vetro o cieca, liscia o con le bugne, dritta o ad arco.
-              Poche domande e ci arriviamo.</small>
+            <b data-t="ass_racc_t">Te la racconto</b>
+            <small data-t="ass_racc_d">Con vetro o cieca.</small>
           </span>
         </button>
       </div>
 
-      <p class="avviso-onesto">
-        <span aria-hidden="true">·</span> Di 44 modelli, venti si riconoscono a colpo
-        d’occhio; gli altri si somigliano fra loro. Per questo l’assistente propone
-        <b>una rosa di modelli</b> e non un nome solo.
-      </p>
+      <p class="avviso-onesto" data-t="ass_avviso">Di 44 modelli, venti si riconoscono.</p>
     </section>
 
 
@@ -119,7 +118,7 @@
       </div>
 
       <div class="riga">
-        <label class="graffetta" title="Allega una foto">
+        <label class="graffetta" data-t-tit="ass_graffetta">
           <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/heic" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -128,7 +127,7 @@
           <span class="sr">Allega una foto</span>
         </label>
 
-        <textarea id="campo" rows="1" placeholder="Scrivi com’è la porta, o allega una foto…"
+        <textarea id="campo" rows="1" data-t-ph="ass_campo" placeholder="Scrivi com’è la porta, o allega una foto…"
                   aria-label="Messaggio"></textarea>
 
         <button class="invia" type="submit" id="invia" aria-label="Invia" disabled>
@@ -139,9 +138,7 @@
         </button>
       </div>
 
-      <p class="scrivania-nota">
-        Le foto restano nel tuo browser finché non le mandi. JPG, PNG o WebP, fino a 8 MB.
-      </p>
+      <p class="scrivania-nota" data-t="ass_nota">Le foto restano nel tuo browser.</p>
     </form>
 
   </div>
@@ -153,7 +150,7 @@
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M16 22V7M10 13l6-6 6 6"/><path d="M5 21v4a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2v-4"/>
       </svg>
-      <p>Lascia qui la foto</p>
+      <p data-t="ass_lascia">Lascia qui la foto</p>
     </div>
   </div>
 </main>

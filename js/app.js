@@ -1624,7 +1624,8 @@ function setModello(key) {
     : `${def.label} <span>${def.linea}</span>`;
   if (captionLineEl) captionLineEl.textContent = def.sub;
   panelTitleEl.textContent = def.linea === 'Base' ? def.label : `${def.label} ${def.linea}`;
-  panelSubEl.innerHTML = `${def.descIt} — <span class="en">${def.descEn}</span>`;
+  // il catalogo porta gia' le due descrizioni: si prende quella scelta
+  panelSubEl.textContent = (window.lingua && window.lingua() === 'en') ? def.descEn : def.descIt;
   modelloSelect.value = key;
   refreshUI();
   loadModel(key);
@@ -1986,6 +1987,10 @@ document.getElementById('doneStampa')?.addEventListener('click', () => {
 });
 
 window.__pdf = { buildBlocco, datiPreventivo, stampaPreventivo, documentoPreventivo }; // hook di verifica
+
+// cambiando lingua il pannello va ridisegnato: le etichette generate dal
+// copione non le tocca il dizionario, che lavora solo sul documento
+document.addEventListener('linguacambiata', () => { try { setModello(state.modello); } catch (e) { /* non ancora pronto */ } });
 
 /* ============================================================
    AVVIO

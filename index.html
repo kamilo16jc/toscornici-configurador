@@ -8,19 +8,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=22">
+<link rel="stylesheet" href="css/home.css?v=23">
+<script src="js/lingua.js?v=1"></script>
 </head>
 <body>
 
-<a class="salta" href="#collezioni">Vai alle collezioni</a>
+<a class="salta" href="#collezioni" data-t="salta">Vai alle collezioni</a>
 
 <!-- ==================== BARRA FISSA ==================== -->
 <header class="barra">
 
   <div class="striscia">
     <div class="dentro">
-      <p>Porte in legno massello · su misura, dalla fabbrica</p>
-      <p>Listino · prezzi di fabbrica, IVA e trasporto esclusi</p>
+      <p data-t="striscia_1">Porte in legno massello · su misura, dalla fabbrica</p>
+      <p data-t="striscia_2">Listino · prezzi di fabbrica, IVA e trasporto esclusi</p>
     </div>
   </div>
 
@@ -32,14 +33,21 @@
       </a>
 
       <nav class="menu" aria-label="Principale">
-        <a href="#collezioni">Collezioni</a>
-        <a href="configuratore.html">Listino</a>
-        <a href="#collezioni">Pantografato</a>
-        <a href="assistente.html">Assistente</a>
+        <a href="#collezioni" data-t="menu_collezioni">Collezioni</a>
+        <a href="configuratore.html" data-t="menu_listino">Listino</a>
+        <a href="#collezioni" data-t="menu_panto">Pantografato</a>
+        <a href="assistente.html" data-t="menu_assistente">Assistente</a>
       </nav>
 
+      <!-- la scelta della lingua: sta accanto al bottone, non nel menu,
+           perche' non e' una pagina ma un modo di leggerle tutte -->
+      <div class="lingue" role="group" aria-label="Lingua / Language">
+        <button class="lingua-scelta" type="button" data-lingua="it" aria-pressed="true">IT</button>
+        <button class="lingua-scelta" type="button" data-lingua="en" aria-pressed="false">EN</button>
+      </div>
+
       <a class="bottone bottone--pieno" href="configuratore.html">
-        Apri il configuratore <span aria-hidden="true">↗</span>
+        <span data-t="apri_conf">Apri il configuratore</span> <span aria-hidden="true">↗</span>
       </a>
     </div>
   </div>
@@ -56,7 +64,7 @@
            sizes="100vw"
            alt="Porta Nebraska in rovere, vetrata con traversi, in un soggiorno"
            width="1500" height="1000" fetchpriority="high">
-      <figcaption>Nebraska · rovere</figcaption>
+      <figcaption data-t="lastra_1">Nebraska · rovere</figcaption>
     </figure>
     <figure class="lastra">
       <img src="assets/copertina/ragusa.webp"
@@ -64,7 +72,7 @@
            sizes="100vw"
            alt="Porta Ragusa in rovere, cieca con bugne, in un ingresso"
            width="1500" height="1000" loading="lazy">
-      <figcaption>Ragusa · rovere</figcaption>
+      <figcaption data-t="lastra_2">Ragusa · rovere</figcaption>
     </figure>
     <figure class="lastra lastra--centro">
       <img src="assets/copertina/pantografato.webp"
@@ -72,7 +80,7 @@
            sizes="100vw"
            alt="Porta pantografata laccata bianca, col disegno inciso sul pannello, in un soggiorno"
            width="1500" height="1000" loading="lazy">
-      <figcaption>Pantografato · laccato bianco</figcaption>
+      <figcaption data-t="lastra_3">Pantografato · laccato bianco</figcaption>
     </figure>
   </div>
 
@@ -80,13 +88,11 @@
 
   <div class="insegna">
     <div class="dentro">
-      <p class="occhiello">Configuratore porte</p>
-      <h1>La tua porta su misura—<br>e il prezzo mentre la scegli.</h1>
-      <p class="sottotitolo">Quarantaquattro modelli a listino, con essenze, laccati,
-        coprifili, maniglie e capitelli. Il preventivo si aggiorna a ogni scelta e il
-        modulo d'ordine esce pronto per la fabbrica.</p>
+      <p class="occhiello" data-t="cop_occhiello">Configuratore porte</p>
+      <h1 data-t="cop_titolo">La tua porta su misura—<br>e il prezzo mentre la scegli.</h1>
+      <p class="sottotitolo" data-t="cop_testo">Quarantaquattro modelli a listino.</p>
       <a class="bottone bottone--pieno bottone--grande" href="configuratore.html">
-        Apri il configuratore <span aria-hidden="true">↗</span>
+        <span data-t="apri_conf">Apri il configuratore</span> <span aria-hidden="true">↗</span>
       </a>
       <div class="segnaposti" id="segnaposti" role="tablist" aria-label="Immagini di copertina"></div>
     </div>
@@ -100,8 +106,8 @@
   <div class="dentro">
     <div class="apertura">
       <div>
-        <p class="occhiello occhiello--scuro">Le collezioni</p>
-        <h2>Due cataloghi,<br>due configuratori</h2>
+        <p class="occhiello occhiello--scuro" data-t="col_occhiello">Le collezioni</p>
+        <h2 data-t="col_titolo">Due cataloghi,<br>due configuratori</h2>
       </div>
       <div class="apertura-destra">
         <!-- un albero per essenza: la chioma ha il tono del suo legno -->
@@ -110,31 +116,28 @@
                 style="--tono: #a86948; --scuro: #67401f"
                 aria-label="Rovere — scheda dell’essenza">
           <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path d="M60 98C50 92 40 88 30 86M60 98c10-6 20-10 30-12" fill="none" stroke="var(--scuro)" stroke-width="2.4" stroke-linecap="round"/><path class="tronco" d="M52.5 140.0C52.5 117.0 54.4 117.0 55.0 94.0L65.0 94.0C65.6 117.0 67.5 117.0 67.5 140.0Z"/><path class="chioma" d="M109.3 60.0A10.9 10.9 0 0 1 109.2 76.1A13.0 13.0 0 0 1 96.0 90.0A16.5 16.5 0 0 1 73.1 98.0A18.0 18.0 0 0 1 46.7 97.9A16.5 16.5 0 0 1 23.9 89.9A13.0 13.0 0 0 1 10.7 76.0A10.9 10.9 0 0 1 10.8 59.9A13.0 13.0 0 0 1 24.0 46.0A16.5 16.5 0 0 1 46.9 38.0A18.0 18.0 0 0 1 73.3 38.1A16.5 16.5 0 0 1 96.1 46.1A13.0 13.0 0 0 1 109.3 60.0Z"/></svg>
-          <span class="albero-nome">Rovere</span>
+          <span class="albero-nome" data-t="ess_rovere">Rovere</span>
         </button>
         <button class="albero" type="button" data-legno="castagno"
                 style="--tono: #a2805a; --scuro: #5f4a30"
                 aria-label="Castagno — scheda dell’essenza">
           <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path class="tronco" d="M55.0 140.0C55.0 118.0 55.9 118.0 56.5 96.0L63.5 96.0C64.1 118.0 65.0 118.0 65.0 140.0Z"/><path class="chioma" d="M72.7 17.0A15.6 15.6 0 0 1 89.4 34.2A17.5 17.5 0 0 1 94.9 60.5A17.2 17.2 0 0 1 87.1 85.8A15.2 15.2 0 0 1 68.9 100.5A14.1 14.1 0 0 1 47.3 99.0A15.6 15.6 0 0 1 30.6 81.8A17.5 17.5 0 0 1 25.1 55.5A17.2 17.2 0 0 1 32.9 30.2A15.2 15.2 0 0 1 51.1 15.5A14.1 14.1 0 0 1 72.7 17.0Z"/></svg>
-          <span class="albero-nome">Castagno</span>
+          <span class="albero-nome" data-t="ess_castagno">Castagno</span>
         </button>
         <button class="albero" type="button" data-legno="toulipier"
                 style="--tono: #cdaf7b; --scuro: #7a6844"
                 aria-label="Toulipier — scheda dell’essenza">
           <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path class="tronco" d="M56.0 140.0C56.0 119.0 56.4 119.0 57.0 98.0L63.0 98.0C63.6 119.0 64.0 119.0 64.0 140.0Z"/><path class="chioma" d="M60.0 5.0A11.8 11.8 0 0 1 74.8 16.5A19.0 19.0 0 0 1 82.7 45.5A20.9 20.9 0 0 1 79.9 78.5A15.5 15.5 0 0 1 67.8 100.1A9.9 9.9 0 0 1 52.1 100.0A15.6 15.6 0 0 1 40.1 78.5A20.9 20.9 0 0 1 37.4 45.5A18.9 18.9 0 0 1 45.2 16.4A11.8 11.8 0 0 1 60.0 5.0Z"/></svg>
-          <span class="albero-nome">Toulipier</span>
+          <span class="albero-nome" data-t="ess_toulipier">Toulipier</span>
         </button>
         <button class="albero" type="button" data-legno="pino"
                 style="--tono: #e8a05c; --scuro: #8a5f31"
                 aria-label="Pino — scheda dell’essenza">
           <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path d="M60 82C50 74 40 66 28 58M60 82C60 72 60 62 60 50M60 82C70 74 80 66 92 58" fill="none" stroke="var(--scuro)" stroke-width="2.4" stroke-linecap="round"/><path class="tronco" d="M55.5 140.0C55.5 109.0 58.9 109.0 59.5 78.0L64.5 78.0C65.1 109.0 64.5 109.0 64.5 140.0Z"/><path class="chioma" d="M60.0 27.0A18.9 18.9 0 0 1 90.9 30.5A11.4 11.4 0 0 1 107.3 39.4A7.1 7.1 0 0 1 101.6 49.5A15.9 15.9 0 0 1 76.4 56.1A20.0 20.0 0 0 1 43.5 56.1A15.9 15.9 0 0 1 18.4 49.5A7.1 7.1 0 0 1 12.7 39.4A11.4 11.4 0 0 1 29.2 30.5A18.9 18.9 0 0 1 60.0 27.0Z"/></svg>
-          <span class="albero-nome">Pino</span>
+          <span class="albero-nome" data-t="ess_pino">Pino</span>
         </button>
         </div>
-        <p class="apertura-testo">Il massello a listino e il pantografato hanno prezzi e
-          lavorazioni diversi: ognuno ha il suo configuratore, con le voci che gli
-          appartengono. <button class="richiamo" type="button" data-legno="rovere">Le
-          quattro essenze</button> valgono per entrambi.</p>
+        <p class="apertura-testo" data-t="col_testo">Il massello a listino e il pantografato hanno prezzi diversi.</p>
       </div>
     </div>
   </div>
@@ -151,10 +154,9 @@
       <div class="pannello-velo" aria-hidden="true"></div>
       <div class="pannello-testo">
         <div>
-          <p class="occhiello">Configuratore</p>
-          <h3>Listino</h3>
-          <p class="pannello-desc">Essenze, laccati, coprifili, maniglie e capitelli.
-            Prezzo che si aggiorna mentre scegli.</p>
+          <p class="occhiello" data-t="conf_occhiello">Configuratore</p>
+          <h3 data-t="pan_listino_titolo">Listino</h3>
+          <p class="pannello-desc" data-t="pan_listino_testo">Essenze, laccati, coprifili.</p>
         </div>
         <span class="quadro" aria-hidden="true">↗</span>
       </div>
@@ -169,12 +171,11 @@
       <div class="pannello-velo" aria-hidden="true"></div>
       <div class="pannello-testo">
         <div>
-          <p class="occhiello">Configuratore</p>
-          <h3>Pantografato</h3>
-          <p class="pannello-desc">I modelli sono in lavorazione. Avranno un
-            configuratore loro, con le voci di questa collezione.</p>
+          <p class="occhiello" data-t="conf_occhiello">Configuratore</p>
+          <h3 data-t="pan_panto_titolo">Pantografato</h3>
+          <p class="pannello-desc" data-t="pan_panto_testo">I modelli sono in lavorazione.</p>
         </div>
-        <span class="stato">In arrivo</span>
+        <span class="stato" data-t="stato_arrivo">In arrivo</span>
       </div>
     </article>
 
@@ -192,13 +193,11 @@
     <div class="assistente-velo" aria-hidden="true"></div>
     <div class="dentro">
       <div class="assistente-testo">
-        <p class="occhiello">Assistente</p>
-        <h3>Non sai da quale cominciare?</h3>
-        <p>Racconta com’è la porta che hai in mente, o carica la foto di una
-          che ti piace: ti propongo i modelli del catalogo che le somigliano e ti porto
-          al configuratore giusto, già impostato.</p>
+        <p class="occhiello" data-t="ass_occhiello">Assistente</p>
+        <h3 data-t="ass_titolo">Non sai da quale cominciare?</h3>
+        <p data-t="ass_testo">Racconta com’è la porta.</p>
         <a class="bottone bottone--pieno" href="assistente.html">
-          Parla con l’assistente <span aria-hidden="true">↗</span>
+          <span data-t="ass_bottone">Parla con l’assistente</span> <span aria-hidden="true">↗</span>
         </a>
       </div>
     </div>
@@ -223,8 +222,8 @@
 
 <footer class="piede">
   <div class="dentro">
-    <p>Toscocornici · Le porte secondo noi</p>
-    <p>Listino — prezzi di fabbrica, IVA e trasporto esclusi.</p>
+    <p data-t="piede_1">Toscocornici · Le porte secondo noi</p>
+    <p data-t="piede_2">Listino — prezzi di fabbrica, IVA e trasporto esclusi.</p>
   </div>
 </footer>
 
