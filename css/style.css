@@ -1,20 +1,33 @@
 /* ============================================================
-   TOSCORNICI · Configuratore Porte — California 100
-   Palette: avorio caldo, espresso, ottone
+   TOSCOCORNICI · Configuratore Porte
+   Stessa veste della schermata d'ingresso: verde-nero, terracotta,
+   crema, Barlow e Barlow Condensed. I nomi delle variabili restano
+   quelli di prima: cambia il valore, non le mille regole che li usano.
    ============================================================ */
 
 :root {
-  --ivory: #f4efe6;
-  --ivory-deep: #ece5d8;
-  --espresso: #2b211a;
-  --espresso-soft: #4a3c30;
-  --taupe: #8d7d6a;
-  --brass: #a8843c;
-  --brass-bright: #c19a4b;
-  --hairline: rgba(43, 33, 26, 0.14);
-  --panel-bg: #faf7f0;
-  --serif: "Cormorant Garamond", Georgia, serif;
-  --sans: "Jost", "Segoe UI", sans-serif;
+  --ivory: #eee9df;          /* fondo delle sezioni */
+  --ivory-deep: #e4ddcf;
+  --espresso: #1b211d;       /* testo */
+  --espresso-soft: #55605a;
+  --taupe: #7d867f;
+  --brass: #a9472f;          /* accento: era ottone, ora terracotta */
+  --brass-bright: #c2543a;
+  --hairline: rgba(27, 33, 29, 0.16);
+  --panel-bg: #f8f5ef;       /* pannello di destra */
+
+  /* verde della barra e del visore scuro */
+  --verde: #202822;
+  --verde-cupo: #151a17;
+
+  /* usate ovunque come fallback, non erano mai state dichiarate */
+  --ink: #1b211d;
+  --ink-soft: #55605a;
+  --gold: #a9472f;
+  --sabbia: #d8cdbb;
+
+  --serif: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --sans: "Barlow", "Segoe UI", sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -50,8 +63,8 @@ body {
 .viewer {
   position: relative;
   background:
-    radial-gradient(ellipse 120% 90% at 50% 105%, #d9cfbd 0%, transparent 55%),
-    linear-gradient(175deg, #f6f1e8 0%, #eee7d9 60%, #e4dac7 100%);
+    radial-gradient(ellipse 120% 90% at 50% 105%, #d9d2c2 0%, transparent 55%),
+    linear-gradient(175deg, #f6f3ec 0%, #ebe6da 60%, #ded7c8 100%);
   overflow: hidden;
 }
 
@@ -64,8 +77,8 @@ body {
   opacity: 0;
   transition: opacity 0.9s ease;
   background:
-    radial-gradient(ellipse 120% 90% at 50% 105%, #57462f 0%, transparent 55%),
-    linear-gradient(175deg, #3d3126 0%, #2e2419 60%, #221a10 100%);
+    radial-gradient(ellipse 120% 90% at 50% 105%, #33413a 0%, transparent 55%),
+    linear-gradient(175deg, #2a342d 0%, var(--verde) 60%, var(--verde-cupo) 100%);
 }
 
 .viewer.is-dark::before { opacity: 1; }
@@ -75,9 +88,12 @@ body {
 .viewer.is-dark .caption-model,
 .viewer.is-dark .brand-name { color: var(--ivory); }
 
-.viewer.is-dark .caption-line { color: rgba(244, 239, 230, 0.65); }
+.viewer.is-dark .caption-line { color: rgba(238, 233, 223, 0.7); }
+/* la targa del logo e' nera: sul fondo scuro va schiarita */
+.viewer.is-dark .brand-logo { filter: invert(1) brightness(1.6)
+  drop-shadow(0 2px 6px rgba(0, 0, 0, .45)); }
 
-.viewer.is-dark .viewer-hint { color: rgba(244, 239, 230, 0.45); }
+.viewer.is-dark .viewer-hint { color: rgba(238, 233, 223, 0.5); }
 
 .caption-model, .brand-name, .caption-line, .viewer-hint {
   transition: color 0.9s ease;
@@ -148,16 +164,14 @@ body {
 
 .caption-model {
   font-family: var(--serif);
-  font-size: clamp(44px, 5.5vw, 76px);
-  font-weight: 400;
-  line-height: 0.95;
-  letter-spacing: 0.01em;
+  font-size: clamp(36px, 4.2vw, 62px);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
-.caption-model span {
-  font-style: italic;
-  color: var(--brass);
-}
+.caption-model span { color: var(--brass); }
 
 .caption-line {
   margin-top: 10px;
@@ -282,9 +296,11 @@ body {
 
 .panel-header h1 {
   font-family: var(--serif);
-  font-size: 42px;
-  font-weight: 500;
-  line-height: 1;
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
 }
 
 .panel-sub {
@@ -367,8 +383,8 @@ body {
   font-family: inherit;
   transition: border-color .15s, transform .15s;
 }
-.man-card:hover { transform: translateY(-2px); border-color: #c9b48a; }
-.man-card.is-active { border: 1.5px solid var(--gold, #a8843c); }
+.man-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+.man-card.is-active { border: 1.5px solid var(--gold); }
 .man-photo {
   width: 100%;
   aspect-ratio: 3 / 2;
@@ -379,7 +395,7 @@ body {
   background: #fff;
 }
 .man-photo img { width: 100%; height: 100%; object-fit: contain; }
-.man-photo--none { color: #b9ac97; font-size: 22px; }
+.man-photo--none { color: var(--taupe); font-size: 22px; }
 .man-label {
   font-size: 10.5px;
   font-weight: 600;
@@ -387,7 +403,7 @@ body {
 }
 .man-extra {
   font-size: 9.5px;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
 }
 
 /* lente sulla scheda coprifilo: appare all'hover, discreta */
@@ -400,7 +416,7 @@ body {
   place-items: center;
   width: 22px;
   height: 22px;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
   background: rgba(255, 255, 255, .82);
   border: 1px solid var(--hairline);
   opacity: 0;
@@ -408,7 +424,7 @@ body {
 }
 .man-card:hover .man-zoom,
 .man-zoom:focus-visible { opacity: 1; }
-.man-zoom:hover { color: var(--gold, #a8843c); border-color: #c9b48a; }
+.man-zoom:hover { color: var(--gold); border-color: var(--gold); }
 /* su touch non c'è hover: la lente resta sempre visibile */
 @media (hover: none) { .man-zoom { opacity: 1; } }
 
@@ -422,12 +438,12 @@ body {
   height: 30px;
   font-size: 22px;
   line-height: 1;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
   background: none;
   border: 0;
   cursor: pointer;
 }
-.visore-x:hover { color: var(--gold, #a8843c); }
+.visore-x:hover { color: var(--gold); }
 .visore-fig {
   display: grid;
   place-items: center;
@@ -438,14 +454,14 @@ body {
   border: 1px solid var(--hairline);
 }
 .visore-fig img { width: 100%; max-height: 300px; object-fit: contain; }
-.visore-nofoto { font-size: 12px; color: var(--ink-soft, #8d7d6a); }
+.visore-nofoto { font-size: 12px; color: var(--ink-soft); }
 .visore-lab {
   margin: 16px 0 6px;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
 }
 .misura-list { display: flex; flex-direction: column; gap: 6px; }
 .misura-row {
@@ -462,23 +478,23 @@ body {
   font-family: inherit;
   transition: border-color .15s;
 }
-.misura-row:hover { border-color: #c9b48a; }
-.misura-row.is-active { border: 1.5px solid var(--gold, #a8843c); }
+.misura-row:hover { border-color: var(--gold); }
+.misura-row.is-active { border: 1.5px solid var(--gold); }
 .misura-mis { grid-area: mis; font-size: 13px; font-weight: 600; }
-.misura-cod { grid-area: cod; font-size: 10.5px; color: var(--ink-soft, #8d7d6a); }
+.misura-cod { grid-area: cod; font-size: 10.5px; color: var(--ink-soft); }
 .misura-src {
   grid-area: src;
   font-size: 9px;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: #b9ac97;
+  color: var(--taupe);
 }
 .misura-p { grid-area: p; font-size: 13px; font-weight: 600; }
 .visore-nota {
   margin-top: 14px;
   font-size: 11px;
   line-height: 1.5;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
 }
 
 /* schema animato del movimento (pianta o sezione) */
@@ -499,7 +515,7 @@ body {
   --f-frame: #fbf7ee; --f-jamb: #e8dcc7; --f-wall: #e6ded0;
   --f-rec: #f2ead9;   --f-wood: #e6d2ae; --f-glass: #eef2f0;
   --floor: rgba(43, 33, 26, .07);
-  --ink: var(--espresso); --taupe: var(--taupe);
+  --ink: var(--espresso);
 }
 
 /* schema statico: sezione del telaio. Non si muove, quindi resta anche a
@@ -516,7 +532,7 @@ body {
   font-size: 9.5px;
   line-height: 1.4;
   text-align: center;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
 }
 
 /* misure della scheda tecnica, un blocco per configurazione */
@@ -532,7 +548,7 @@ body {
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--gold, #a8843c);
+  color: var(--gold);
 }
 .mis-riga {
   display: flex;
@@ -540,7 +556,7 @@ body {
   gap: 10px;
   margin: 0 0 2px;
   font-size: 10.5px;
-  color: var(--ink-soft, #8d7d6a);
+  color: var(--ink-soft);
 }
 .mis-riga b { color: var(--ink, #2b211a); font-weight: 600; }
 
@@ -564,8 +580,8 @@ body {
   font-family: inherit;
   transition: border-color .15s;
 }
-.fin-card:hover { border-color: #c9b48a; }
-.fin-card.is-active { border: 1.5px solid var(--gold, #a8843c); }
+.fin-card:hover { border-color: var(--gold); }
+.fin-card.is-active { border: 1.5px solid var(--gold); }
 .fin-camp {
   grid-area: camp;
   width: 34px;
@@ -575,7 +591,7 @@ body {
 }
 .fin-camp img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fin-cod { grid-area: cod; font-size: 11px; font-weight: 600; letter-spacing: .05em; }
-.fin-lab { grid-area: lab; font-size: 9px; line-height: 1.3; color: var(--ink-soft, #8d7d6a); }
+.fin-lab { grid-area: lab; font-size: 9px; line-height: 1.3; color: var(--ink-soft); }
 
 /* chip "legno a vista": nessun colore, si vede la venatura */
 .lacc-chip--none {
@@ -675,7 +691,7 @@ body {
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid var(--hairline);
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23a8843c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 14px center;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23a9472f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 14px center;
   font-family: var(--serif);
   font-size: 18px;
   font-weight: 500;
@@ -1106,16 +1122,16 @@ body {
    EXTRA LISTINO — misure, allargato, coprifili, ferramenta
    ============================================================ */
 .measures { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.measure { display: block; font-size: 12px; letter-spacing: .04em; color: #8d7d6a; }
+.measure { display: block; font-size: 12px; letter-spacing: .04em; color: var(--ink-soft); }
 .measure input {
   width: 100%; margin-top: 6px; padding: 11px 12px;
   border: 1px solid #ddd2c1; background: #fdfbf7; color: #2b211a;
   font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500;
 }
-.measure input:focus { outline: none; border-color: #a8843c; }
+.measure input:focus { outline: none; border-color: var(--gold); }
 .model-select + .model-select { margin-top: 8px; }
 #telaioSelect, #copriSelect { margin-top: 2px; }
-.pill-note.warn { color: #a8552e; }
+.pill-note.warn { color: var(--brass-bright); }
 
 /* riepilogo a righe */
 .breakdown { margin: 10px 0 4px; max-height: 150px; overflow-y: auto; }
@@ -1125,60 +1141,59 @@ body {
   font-size: 12.5px; color: #2b211a;
 }
 .bk-row:last-child { border-bottom: none; }
-.bk-k small { display: block; color: #8d7d6a; font-size: 10.5px; margin-top: 1px; }
+.bk-k small { display: block; color: var(--ink-soft); font-size: 10.5px; margin-top: 1px; }
 .bk-v { white-space: nowrap; font-weight: 500; }
-.bk-warn { color: #a8552e; font-size: 12.5px; }
-.total-value.is-prev { font-size: 20px; letter-spacing: .06em; color: #a8552e; }
+.bk-warn { color: var(--brass-bright); font-size: 12.5px; }
+.total-value.is-prev { font-size: 20px; letter-spacing: .06em; color: var(--brass-bright); }
 .cta:disabled { opacity: .45; cursor: not-allowed; }
 
 /* ============================================================
-   >>> INIZIO TEMA TOSCOCORNICI.IT (proposta A+B) <<<
-   Palette e titoli allineati al sito ufficiale toscocornici.it:
-   bianco, grigi neutri, greige #ada18b, nero targa, Montserrat.
-   REVERSIBILE: per tornare al tema avorio/ottone originale basta
-   eliminare questo blocco intero — nessuna regola sopra è stata
-   modificata (le vecchie variabili restano definite in :root).
+   >>> VESTE ALLINEATA ALLA SCHERMATA D'INGRESSO <<<
+   Verde-nero, terracotta, crema, Barlow e Barlow Condensed. Sostituisce
+   il tema grigio neutro che stava qui: erano due :root a contendersi le
+   stesse variabili, e vinceva questo per ordine di cascata.
    ============================================================ */
 
-:root {
-  --ivory: #f7f6f4;          /* prima: #f4efe6 (avorio caldo) */
-  --ivory-deep: #edecec;     /* prima: #ece5d8 */
-  --espresso: #222222;       /* prima: #2b211a (espresso) */
-  --espresso-soft: #454545;  /* prima: #4a3c30 */
-  --taupe: #666666;          /* prima: #8d7d6a (taupe caldo) */
-  --brass: #ada18b;          /* prima: #a8843c — greige ufficiale del sito */
-  --brass-bright: #c2b7a2;   /* prima: #c19a4b */
-  --hairline: rgba(34, 34, 34, 0.14);
-  --panel-bg: #ffffff;       /* prima: #faf7f0 */
-}
-
-/* sfondo del viewer: neutro chiaro come il catalogo web (era avorio) */
+/* il visore chiaro resta crema, come le sezioni dell'ingresso */
 .viewer {
   background:
-    radial-gradient(ellipse 120% 90% at 50% 105%, #e3e1dd 0%, transparent 55%),
-    linear-gradient(175deg, #fafaf9 0%, #f1f0ee 60%, #e8e6e2 100%);
+    radial-gradient(ellipse 120% 90% at 50% 105%, #ded7c8 0%, transparent 55%),
+    linear-gradient(175deg, #f6f3ec 0%, #ebe6da 60%, #e2dbcd 100%);
 }
 
-/* titoli di sezione: Montserrat 700 MAIUSCOLO — come i titolari del sito */
+/* titoli di sezione in condensato maiuscolo, come i titolari dell'ingresso */
 .section-title {
-  font-family: "Montserrat", var(--sans);
+  font-family: var(--serif);
   font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.11em;
-  color: #222222;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--espresso);
 }
-.section-title .en { font-family: var(--sans); font-weight: 300; }
+.section-title .en {
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.section-title .num { color: var(--brass); }
 
-/* CTA e stati attivi: nero targa, eco del logo ufficiale */
-.cta { background: #111111; }
-.cta:hover { background: var(--brass); }
-.pill.is-active { background: #111111; }
+/* CTA e stati attivi in terracotta, come i bottoni dell'ingresso */
+.cta {
+  background: var(--brass);
+  font-family: var(--sans);
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+.cta:hover { background: var(--brass-bright); }
+.pill.is-active { background: var(--brass); border-color: var(--brass); }
 
-/* campi su fondo bianco: bordi neutri */
+/* campi: fondo appena piu' chiaro del pannello, bordo sabbia */
 .measure input, .model-select, select, textarea, input[type="text"],
 input[type="email"], input[type="tel"], input[type="number"] {
-  background: #fbfbfa;
-  border-color: #d9d5cd;
+  background: #fdfcf9;
+  border-color: var(--sabbia);
 }
 
 /* logo nuovo = testo nero senza targa: niente fascia scura (lo
