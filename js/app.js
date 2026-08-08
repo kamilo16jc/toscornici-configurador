@@ -1681,43 +1681,6 @@ const quoteForm = document.getElementById('quoteForm');
 const quoteFormView = document.getElementById('quoteFormView');
 const quoteDoneView = document.getElementById('quoteDoneView');
 
-// scatto dedicato per il PDF: solo la porta su bianco,
-// inquadratura frontale con margine calcolato
-function captureRender() {
-  const hiddenGroups = [];
-  for (const g of Object.values(ambienti)) {
-    if (g.visible) { g.visible = false; hiddenGroups.push(g); }
-  }
-
-  const prevSize = new THREE.Vector2();
-  renderer.getSize(prevSize);
-  const cw = 900, ch = 1200;
-  renderer.setSize(cw, ch, false);
-
-  const h = doorDims ? doorDims.h : 2;
-  const fov = 35;
-  const cam = new THREE.PerspectiveCamera(fov, cw / ch, 0.05, 60);
-  const dist = (h * 0.59) / Math.tan(THREE.MathUtils.degToRad(fov / 2));
-  cam.position.set(0, 0, dist);
-  cam.lookAt(0, 0, 0);
-  renderer.render(scene, cam);
-
-  const src = renderer.domElement;
-  const c = document.createElement('canvas');
-  c.width = src.width;
-  c.height = src.height;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(src, 0, 0);
-
-  renderer.setSize(prevSize.x, prevSize.y, false);
-  hiddenGroups.forEach((g) => { g.visible = true; });
-  renderer.render(scene, camera);
-
-  return { dataURL: c.toDataURL('image/jpeg', 0.85), w: c.width, h: c.height };
-}
-
 /* ------------------------------------------------------------
    I dati che il documento del cliente si aspetta. Qui si legge lo
    stato, di la' si impagina: chi cambia il listino non deve entrare
@@ -1788,10 +1751,11 @@ function datiPreventivo(cliente, rif) {
     qty,
     note: cliente.note || '',
     fuoriListino: prev.suPreventivo ? prev.motivo : '',
-    // finche' l'assistente non genera il render, la porta la fa il 3D:
-    // e' un oggetto su fondo chiaro, non una scena, e va contenuto
-    immagine: null,
-    scena: false,
+    // Finche' l'assistente non genera il render della configurazione,
+    // il foglio 2 porta sempre questa scena. Lo scatto del 3D era
+    // peggio: una porta che galleggia su bianco a tutta pagina.
+    immagine: 'assets/collezioni/listino.webp',
+    scena: true,
     fogli: prev.righe.length > 12 ? 3 : 2,
   };
 }
@@ -1996,9 +1960,6 @@ quoteForm.addEventListener('submit', async (e) => {
   const rif = `TC-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
   const dati = datiPreventivo(cliente, rif);
-  // provvisorio: il render lo generera' l'assistente. Intanto la porta
-  // la fa il 3D, e il foglio la tratta da oggetto invece che da scena.
-  try { dati.immagine = captureRender().dataURL; } catch (e) { /* si stampa senza */ }
 
   // il modulo di fabbrica resta un PDF scaricato: e' jsPDF sopra la
   // scansione del TL_2018, con le caselle calibrate al punto

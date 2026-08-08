@@ -214,23 +214,34 @@ ${restoVoci.length ? `
 }
 
 /* ------------------------------------------------------------
-   Apre il documento e chiama la stampa.
+   Mostra il documento e chiama la stampa.
 
-   Va in un iframe nascosto, non in una finestra nuova: cosi' non
-   c'e' blocco dei popup di mezzo. Prima di stampare si aspettano
-   i caratteri e le immagini — senza, Chrome stampa il foglio con
-   le sostitutive e il disegno salta.
+   Il primo tentativo metteva il documento in un iframe nascosto
+   (0x0, visibility:hidden) e chiamava print() li' dentro: Chrome un
+   telaio che non disegna non lo sa stampare, e la chiamata ricadeva
+   sul documento di sopra. Usciva un PDF di cinque pagine del
+   configuratore, senza una riga di testo.
+
+   Quindi il telaio si vede davvero: sta in un velo a tutto schermo,
+   con la sua misura. Il cliente vede il preventivo prima di salvarlo,
+   e non c'e' di mezzo il blocco dei popup di una finestra nuova.
    ------------------------------------------------------------ */
 export async function stampaPreventivo(dati) {
-  const vecchio = document.getElementById('telaioStampa');
-  if (vecchio) vecchio.remove();
+  chiudiPreventivo();
 
-  const frame = document.createElement('iframe');
-  frame.id = 'telaioStampa';
-  frame.setAttribute('aria-hidden', 'true');
-  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-  document.body.appendChild(frame);
+  const velo = document.createElement('div');
+  velo.id = 'veloStampa';
+  velo.className = 'velo-stampa';
+  velo.innerHTML = `
+    <button type="button" class="velo-chiudi" aria-label="Chiudi il preventivo">&#215;</button>
+    <iframe id="telaioStampa" title="Preventivo"></iframe>`;
+  document.body.appendChild(velo);
 
+  velo.querySelector('.velo-chiudi').addEventListener('click', chiudiPreventivo);
+  velo.addEventListener('click', (e) => { if (e.target === velo) chiudiPreventivo(); });
+  document.addEventListener('keydown', chiudiConEsc);
+
+  const frame = velo.querySelector('#telaioStampa');
   const doc = frame.contentDocument;
   doc.open();
   doc.write(documentoPreventivo(dati));
@@ -249,7 +260,21 @@ export async function stampaPreventivo(dati) {
       : new Promise((ok) => { i.onload = i.onerror = ok; }))));
   } catch (e) { /* se i caratteri non arrivano si stampa comunque */ }
 
+  // un giro di disegno prima di stampare: il telaio deve aver messo
+  // giu' le pagine, se no la stampa parte su un foglio vuoto
+  await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+
   fin.focus();
   fin.print();
   return frame;
+}
+
+function chiudiConEsc(e) {
+  if (e.key === 'Escape') chiudiPreventivo();
+}
+
+export function chiudiPreventivo() {
+  const velo = document.getElementById('veloStampa');
+  if (velo) velo.remove();
+  document.removeEventListener('keydown', chiudiConEsc);
 }
