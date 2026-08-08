@@ -38,7 +38,9 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={'width': 1560, 'height': 1020}, device_scale_factor=1)
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.goto('http://localhost:8137/?shot=1', wait_until='networkidle')
+    # la radice adesso e' la schermata d'ingresso, non il configuratore:
+    # senza il percorso esplicito si aspetta un #loader che li' non esiste
+    pg.goto('http://localhost:8137/configuratore.html?shot=1', wait_until='networkidle')
     pg.wait_for_selector('#loader.is-hidden', timeout=60000)
     # via l'interfaccia: nella foto deve restare solo la porta
     pg.add_style_tag(content='.viewer-brand,.viewer-caption,.viewer-hint,'
