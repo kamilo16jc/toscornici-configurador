@@ -2015,9 +2015,19 @@ document.addEventListener('linguacambiata', () => {
    AVVIO
    ============================================================ */
 
+// L'assistente manda qui con ?modello=<id>: chi arriva da una scheda
+// deve trovare QUELLA porta, non quella di partenza. L'id si verifica
+// contro il catalogo — un indirizzo storto o vecchio non deve rompere
+// l'avvio, si ignora e si parte dal modello di sempre.
+(function daIndirizzo() {
+  const chiesto = new URLSearchParams(location.search).get('modello');
+  if (chiesto && Object.hasOwn(MODELLI, chiesto)) state.modello = chiesto;
+}());
+
 renderModelli();
 renderEssenze();
 renderExtras();
 setManiglia(state.maniglia);
-refreshUI();
-loadModel(state.modello);
+// setModello, non loadModel: cosi' intestazioni, tendina e viewer
+// partono d'accordo anche quando il modello arriva dall'indirizzo.
+setModello(state.modello);

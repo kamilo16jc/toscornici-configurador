@@ -405,3 +405,18 @@
   .scheda-porta figure { flex: none; width: 96px; padding: 8px; }
   .messaggio-corpo { font-size: 14.5px; }
 }
+
+/* quanto somiglia, sull'angolo dello scatto: e' un'informazione utile
+   (90% e 60% non sono la stessa proposta) ma non deve gridare */
+.scheda-porta figure { position: relative; }
+.vicinanza {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  background: rgba(21, 26, 23, 0.72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}

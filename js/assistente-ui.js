@@ -102,17 +102,17 @@
       b.type = 'button';
       b.className = 'scheda-porta';
       b.dataset.modello = m.id;
+      var quanto = m.vicinanza !== undefined
+        ? '<span class="vicinanza">' + m.vicinanza + '%</span>' : '';
       b.innerHTML =
-        '<figure><img src="' + m.img + '" alt="Porta ' + m.nome + '" loading="lazy"></figure>' +
+        '<figure><img src="' + m.img + '" alt="Porta ' + m.nome + '" loading="lazy">' + quanto + '</figure>' +
         '<div class="porta-scheda-dati">' +
           '<b>' + m.nome + '</b>' +
-          '<small>Linea ' + m.linea + ' · ' + m.dice + '</small>' +
+          '<small>' + (m.linea ? 'Linea ' + m.linea + ' · ' : '') + m.dice + '</small>' +
           '<span class="scheda-apri">Aprila nel configuratore →</span>' +
         '</div>';
-      // il collegamento profondo non c'e' ancora: per ora si apre il
-      // configuratore e basta, senza il modello gia' scelto
       b.addEventListener('click', function () {
-        window.location.href = 'configuratore.html';
+        window.location.href = m.link || ('configuratore.html?modello=' + encodeURIComponent(m.id));
       });
       griglia.appendChild(b);
     });
@@ -147,14 +147,29 @@
     };
   }
 
-  function rispondi(testo, conFoto) {
+  function mostra(attesa, r) {
+    attesa.remove();
+    var m = messaggio('assistente', r.testo);
+    if (r.rosa) m.querySelector('.messaggio-corpo').appendChild(rosa(r.rosa));
+    scendi();
+  }
+
+  function rispondi(testo, fileFoto) {
     var attesa = pensa();
+
+    // Con una foto si va al servizio vero: legge l'immagine e il codice
+    // la confronta con le 44 schede della mappa.
+    if (fileFoto && window.assistenteServizio) {
+      window.assistenteServizio.cercaDaFoto(fileFoto, {
+        lingua: (window.lingua && window.lingua()) || 'it',
+        numeroMessaggi: conversazione.querySelectorAll('.messaggio--cliente').length,
+      }).then(function (r) { mostra(attesa, r); });
+      return;
+    }
+
+    // A parole il servizio non c'e' ancora: resta il copione, e lo dice.
     window.setTimeout(function () {
-      var r = rispondiFinta(testo, conFoto);
-      attesa.remove();
-      var m = messaggio('assistente', r.testo);
-      if (r.rosa) m.querySelector('.messaggio-corpo').appendChild(rosa(r.rosa));
-      scendi();
+      mostra(attesa, rispondiFinta(testo, false));
     }, 900);
   }
 
@@ -271,7 +286,7 @@
     }
     messaggio('cliente', corpo);
 
-    var avevaFoto = !!foto;
+    var fileFoto = foto ? foto.file : null;
     // l'anteprima resta viva nel messaggio: si stacca, non si revoca
     foto = null;
     fileInput.value = '';
@@ -280,7 +295,7 @@
     cresci();
     aggiornaInvia();
 
-    rispondi(testo, avevaFoto);
+    rispondi(testo, fileFoto);
   });
 
   /* ---------- le due strade ---------- */
@@ -308,9 +323,9 @@
   messaggio('assistente',
     '<p>Ciao. Dimmi com’è la porta che cerchi e ti mostro i modelli del ' +
     'catalogo che le somigliano.</p>' +
-    '<p><b>Attenzione:</b> per ora rispondo con un esempio fisso — il ' +
-    'riconoscimento vero non è ancora collegato. Questa è la pagina, ' +
-    'non ancora l’assistente.</p>');
+    '<p>Con una <b>foto</b> guardo davvero com’è fatta e cerco le somiglianze. ' +
+    'A parole invece rispondo ancora con un esempio fisso: quel pezzo non è ' +
+    'collegato.</p>');
 
   aggiornaInvia();
 }());
