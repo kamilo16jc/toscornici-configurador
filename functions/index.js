@@ -107,7 +107,10 @@ Guarda con attenzione questi, che sono quelli che contano:
 - riquadri_numero: quanti pannelli incorniciati. Il vetro non conta.
 - vetro: quanto vetro c'e', e dove.
 
-Se nella foto non c'e' nessuna porta, mettі fiducia 'bassa' e riquadri a 0.`;
+Il campo 'soggetto' viene prima di tutti: se nell'immagine non c'e' una
+porta — un animale, una persona, un mobile, un logo, un campione di
+legno — scrivi 'non_e_una_porta' e non sforzarti di riempire il resto
+con valori plausibili. Non e' un fallimento: e' la risposta giusta.`;
 
 async function leggiFoto(client, base64, tipo) {
   const r = await client.messages.create({
@@ -202,6 +205,25 @@ exports.assistente = onRequest(
     try {
       const client = new Anthropic({ apiKey: CHIAVE_ANTHROPIC.value() });
       const { scheda, uso } = await leggiFoto(client, base64, tipo);
+
+      // Il portone: se non c'e' una porta non si accoppia nemmeno.
+      // Senza questo controllo l'accoppiatore riceveva una scheda di
+      // valori inventati e la trattava come una lettura buona: un gatto
+      // faceva 72% e usciva con tre porte proposte. Il punteggio non
+      // poteva accorgersene — dice quanto concordano i campi letti, non
+      // se valeva la pena leggerli.
+      if (scheda.soggetto === 'non_e_una_porta') {
+        logger.info('non e\' una porta', { note: scheda.note || null });
+        return res.json({
+          trovato: false,
+          motivo: 'non_e_una_porta',
+          lettura: scheda,
+          testo: lingua === 'en'
+            ? 'I can’t see a door in this photo. Send me one showing the door you like and I’ll look for it in the catalogue.'
+            : 'In questa foto non vedo una porta. Mandamene una con la porta che ti piace e la cerco in catalogo.',
+        });
+      }
+
       const esito = rosa(scheda, MAPPA);
 
       logger.info('lettura', {
@@ -226,7 +248,10 @@ exports.assistente = onRequest(
         trovato: true,
         lettura: scheda,
         modelli: vetrina(esito.modelli),
-        incerta: scheda.fiducia === 'bassa',
+        // mezza porta e' come una foto sfocata: si propone lo stesso, ma
+        // dicendo che si e' visto poco. La misura dava il caso peggiore
+        // proprio qui.
+        incerta: scheda.fiducia === 'bassa' || scheda.soggetto === 'porta_parziale',
       });
     } catch (e) {
       if (e.rifiuto) {

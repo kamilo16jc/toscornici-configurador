@@ -4,6 +4,8 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "soggetto",
+    "fiducia",
     "vetro",
     "testa",
     "riquadri_numero",
@@ -15,6 +17,15 @@
     "riquadri_proporzione"
   ],
   "properties": {
+    "soggetto": {
+      "type": "string",
+      "enum": [
+        "porta",
+        "porta_parziale",
+        "non_e_una_porta"
+      ],
+      "description": "PRIMA DI TUTTO: cosa c'e' davvero nell'immagine? 'porta' = si vede un'anta di porta interna, anche storta o in penombra. 'porta_parziale' = c'e' una porta ma se ne vede solo un pezzo (mezza anta, solo il vetro, solo la maniglia da vicino). 'non_e_una_porta' = qualunque altra cosa: una persona, un animale, un mobile, un paesaggio, un logo, un campione di legno, uno schermo. Nel dubbio fra 'porta_parziale' e 'non_e_una_porta', scegli 'non_e_una_porta': proporre modelli a chi non ha fotografato una porta e' peggio che chiedergli un'altra foto. Gli altri campi si compilano solo se qui hai messo 'porta' o 'porta_parziale'."
+    },
     "vetro": {
       "type": "string",
       "enum": [
