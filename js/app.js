@@ -576,7 +576,13 @@ function setManiglia(k) {
 function applyMaterialLook() {
   const lacc = isLaccato();
   const raw = !lacc && state.finitura === 'grezza';
-  const base = new THREE.Color(lacc ? LACCATI[state.colore].color : ESSENZE[state.essenza].color);
+  // Col laccato la tinta la mette il colore, perche' sotto c'e' un albedo
+  // neutro. Col legno a vista invece il colore ce l'ha gia' la texture:
+  // moltiplicarlo ancora per la tinta dell'essenza la scurirebbe due
+  // volte. Quindi bianco, e parla la vena.
+  const base = lacc
+    ? new THREE.Color(LACCATI[state.colore].color)
+    : new THREE.Color(0xffffff);
   if (raw) base.multiplyScalar(0.88);
   woodMat.color.copy(base);
   woodMat.roughness = lacc ? 0.42 : (raw ? 1 : 0.62);
@@ -587,7 +593,14 @@ function applyMaterialLook() {
 }
 
 function applyEssenza() {
-  const set = loadSet('universal');
+  // Il laccato e' pittura SOPRA il legno: la vena sparisce, e l'albedo
+  // neutro di 'universal' e' quello giusto da tingere di RAL.
+  // Il legno a vista no: li' serve la vena vera dell'essenza. Le quattro
+  // cartelle (rovere, castagno, toulipier, pino) c'erano dal principio
+  // ma non le caricava nessuno -- si dipingeva sempre 'universal' con una
+  // tinta piatta, ed e' per questo che Rovere e Pino sembravano lo stesso
+  // materiale in due colori.
+  const set = loadSet(isLaccato() ? 'universal' : state.essenza);
   woodMat.map = set.map;
   woodMat.normalMap = set.normalMap;
   woodMat.roughnessMap = set.roughnessMap;
