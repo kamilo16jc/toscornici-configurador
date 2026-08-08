@@ -57,7 +57,11 @@ BERSAGLIO = 10.5
 COMPENSA = {
     'rovere': 1.0,
     'castagno': 1.0,
-    'toulipier': 0.80,   # arrivava a 11.4: troppa vena, copriva i riquadri
+    # sceso da 0.80 a 0.71 quando gli si e' abbassata la luce: staccarlo
+    # dal soffitto gli fa guadagnare contrasto da solo (10.3 -> 11.6), e
+    # senza questo si sarebbe mosso anche l'aspetto della vena, che non
+    # era quello che si voleva cambiare
+    'toulipier': 0.71,
     'pino': 1.20,
 }
 
@@ -68,7 +72,12 @@ COMPENSA = {
 # contrasto la bruciava ancora di piu' (18.6%): la strada e' abbassare
 # la luce, che lo stacca dal soffitto E lo avvicina al campione invece
 # di allontanarlo. Nessun colore inventato: si compensa il motore.
-LUCE = {'pino': 0.88}
+# Il toulipier ha lo stesso guaio in piccolo: rendeva a 0.88 contro lo
+# 0.79 del campione, lo scarto piu' largo delle quattro, e a vederlo
+# restava una lastra chiara. Provati quattro valori e misurati: 0.90 lo
+# fa cadere esatto sul campione (0.79, scarto 0.00), sotto diventa piu'
+# scuro del legno vero.
+LUCE = {'pino': 0.88, 'toulipier': 0.90}
 
 ESSENZE = ['rovere', 'castagno', 'toulipier', 'pino']
 
