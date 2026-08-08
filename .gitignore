@@ -10,3 +10,7 @@ token
 .env
 .env.*
 .replicate/
+
+# cache di Python
+__pycache__/
+*.pyc
