@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=16">
+<link rel="stylesheet" href="css/home.css?v=17">
 </head>
 <body>
 
@@ -20,7 +20,7 @@
   <div class="striscia">
     <div class="dentro">
       <p>Porte in legno massello · su misura, dalla fabbrica</p>
-      <p>Listino 2025 · prezzi di fabbrica, IVA e trasporto esclusi</p>
+      <p>Listino · prezzi di fabbrica, IVA e trasporto esclusi</p>
     </div>
   </div>
 
@@ -33,7 +33,7 @@
 
       <nav class="menu" aria-label="Principale">
         <a href="#collezioni">Collezioni</a>
-        <a href="configuratore.html">Listino 2025</a>
+        <a href="configuratore.html">Listino</a>
         <a href="#collezioni">Pantografato</a>
         <a href="#collezioni">Assistente</a>
       </nav>
@@ -96,79 +96,84 @@
 
 <!-- ==================== LE COLLEZIONI ==================== -->
 <main class="collezioni" id="collezioni">
-  <div class="dentro">
 
+  <div class="dentro">
     <div class="apertura">
       <div>
-        <p class="occhiello occhiello--scuro">Da dove cominciare</p>
-        <h2>Listino, pantografato<br>o te lo trovo io</h2>
+        <p class="occhiello occhiello--scuro">Le collezioni</p>
+        <h2>Due cataloghi,<br>due configuratori</h2>
       </div>
-      <p class="apertura-testo">Tre strade per arrivare alla stessa cosa: la tua porta,
-        col suo prezzo e il modulo pronto per l'ordine. Se sai già cosa vuoi, il
-        configuratore è aperto.</p>
+      <p class="apertura-testo">Il massello a listino e il pantografato hanno prezzi e
+        lavorazioni diversi: ognuno ha il suo configuratore, con le voci che gli
+        appartengono.</p>
     </div>
+  </div>
 
-    <div class="scelte">
+  <!-- due pannelli affiancati, uno per collezione -->
+  <div class="bandiera">
 
-      <!-- 1 · listino -->
-      <a class="scelta scelta--via" href="configuratore.html">
-        <div class="figura">
-          <img src="assets/copertina/sicilia.webp"
-               srcset="assets/copertina/sicilia-sm.webp 460w, assets/copertina/sicilia.webp 900w"
-               sizes="(max-width: 900px) 100vw, 380px"
-               alt="Porta Sicilia in rovere, due vetri verticali, in un soggiorno"
-               width="900" height="1350" loading="lazy">
+    <a class="pannello" href="configuratore.html">
+      <img src="assets/collezioni/listino.webp"
+           srcset="assets/collezioni/listino-sm.webp 700w, assets/collezioni/listino.webp 1200w"
+           sizes="(max-width: 820px) 100vw, 50vw"
+           alt="Porta Puglia laccata, col vetro sagomato, in un soggiorno"
+           width="1200" height="800" loading="lazy">
+      <div class="pannello-velo" aria-hidden="true"></div>
+      <div class="pannello-testo">
+        <div>
+          <p class="occhiello">Massello · 44 modelli</p>
+          <h3>Listino</h3>
+          <p class="pannello-desc">Essenze, laccati, coprifili, maniglie e capitelli.
+            Prezzo che si aggiorna mentre scegli.</p>
         </div>
-        <div class="testo">
-          <h3>Listino 2025 <span class="freccia" aria-hidden="true">→</span></h3>
-          <p>I 44 modelli a catalogo, con essenze, laccati, coprifili, maniglie e
-            capitelli. Prezzo che si aggiorna mentre scegli.</p>
-          <p class="azione">Apri il configuratore</p>
-        </div>
-      </a>
+        <span class="quadro" aria-hidden="true">↗</span>
+      </div>
+    </a>
 
-      <!-- 2 · assistente -->
-      <article class="scelta scelta--attesa">
-        <div class="figura figura--trittico">
-          <img src="assets/home/ia1.webp" alt="" width="197" height="460" loading="lazy">
-          <img src="assets/home/ia2.webp" alt="" width="197" height="460" loading="lazy">
-          <img src="assets/home/ia3.webp" alt="" width="197" height="460" loading="lazy">
-        </div>
-        <div class="testo">
-          <h3>Assistente</h3>
-          <p>Racconta com'è la porta che hai in mente, o carica la foto di una che ti
-            piace: ti propongo i modelli che le somigliano.</p>
-          <p class="stato">In costruzione</p>
-        </div>
-      </article>
-
-      <!-- 3 · pantografato -->
-      <article class="scelta scelta--attesa">
-        <div class="figura figura--vuota" aria-hidden="true">
-          <svg viewBox="0 0 197 460" role="img" aria-label="">
-            <rect x="14" y="10" width="169" height="440" rx="2"/>
-            <rect x="34" y="40" width="129" height="170" rx="2"/>
-            <rect x="34" y="248" width="129" height="170" rx="2"/>
-            <path d="M60 90h77M60 120h77M60 150h77M60 298h77M60 328h77M60 358h77"/>
-          </svg>
-        </div>
-        <div class="testo">
+    <article class="pannello pannello--attesa">
+      <img src="assets/collezioni/pantografato.webp"
+           srcset="assets/collezioni/pantografato-sm.webp 700w, assets/collezioni/pantografato.webp 1200w"
+           sizes="(max-width: 820px) 100vw, 50vw"
+           alt="Porta pantografata laccata bianca, col disegno inciso sul pannello"
+           width="1200" height="800" loading="lazy">
+      <div class="pannello-velo" aria-hidden="true"></div>
+      <div class="pannello-testo">
+        <div>
+          <p class="occhiello">Laccato · disegno inciso</p>
           <h3>Pantografato</h3>
-          <p>La collezione col disegno inciso sul pannello. I modelli sono in
-            lavorazione: appena arrivano entrano qui, con lo stesso configuratore.</p>
-          <p class="stato">In arrivo</p>
+          <p class="pannello-desc">I modelli sono in lavorazione. Avranno un
+            configuratore loro, con le voci di questa collezione.</p>
         </div>
-      </article>
-
-    </div>
+        <span class="stato">In arrivo</span>
+      </div>
+    </article>
 
   </div>
+
+  <div class="dentro">
+    <article class="assistente">
+      <div class="assistente-figura" aria-hidden="true">
+        <img src="assets/home/ia1.webp" alt="" width="197" height="460" loading="lazy">
+        <img src="assets/home/ia2.webp" alt="" width="197" height="460" loading="lazy">
+        <img src="assets/home/ia3.webp" alt="" width="197" height="460" loading="lazy">
+      </div>
+      <div class="assistente-testo">
+        <p class="occhiello occhiello--scuro">Assistente</p>
+        <h3>Non sai da quale cominciare?</h3>
+        <p>Racconta com’è la porta che hai in mente, o carica la foto di una
+          che ti piace: ti propongo i modelli del catalogo che le somigliano e ti porto
+          al configuratore giusto, già impostato.</p>
+        <p class="stato">In costruzione</p>
+      </div>
+    </article>
+  </div>
+
 </main>
 
 <footer class="piede">
   <div class="dentro">
     <p>Toscocornici · Le porte secondo noi</p>
-    <p>Listino 2025 — prezzi di fabbrica, IVA e trasporto esclusi.</p>
+    <p>Listino — prezzi di fabbrica, IVA e trasporto esclusi.</p>
   </div>
 </footer>
 
