@@ -270,6 +270,157 @@ img { display: block; max-width: 100%; }
   max-width: 48ch;
 }
 
+
+/* ---------- il bosco: un albero per essenza ----------
+   La chioma porta il tono del suo legno, il tronco la stessa tinta
+   scurita. Messi in fila sono la scala dei colori del catalogo. */
+.apertura-destra { display: flex; flex-direction: column; gap: 22px; }
+
+.bosco {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.albero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px 8px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .25s ease, background .25s ease;
+}
+.albero:hover, .albero:focus-visible {
+  border-color: var(--sabbia);
+  background: rgba(255, 255, 255, 0.5);
+  outline: none;
+}
+
+.albero-disegno { width: 100%; height: auto; max-width: 96px; }
+.albero-disegno .terra { stroke: var(--sabbia); stroke-width: 2; fill: none; }
+.albero-disegno .tronco { fill: var(--scuro); }
+.albero-disegno .chioma {
+  fill: var(--tono);
+  stroke: var(--scuro);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  transform-origin: 60px 140px;
+  transition: transform .35s cubic-bezier(.2, .8, .3, 1);
+}
+.albero:hover .chioma, .albero:focus-visible .chioma { transform: scale(1.05); }
+
+.albero-nome {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inchiostro-soft);
+  transition: color .25s ease;
+}
+.albero:hover .albero-nome { color: var(--terra); }
+
+/* il richiamo dentro al paragrafo: apre la stessa finestrella */
+.richiamo {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--terra);
+  background: none;
+  font: inherit;
+  color: var(--terra);
+  cursor: pointer;
+}
+.richiamo:hover { border-bottom-color: transparent; }
+
+/* ---------- la finestrella dell'essenza ---------- */
+.scheda {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  background: var(--crema-chiara);
+  color: var(--inchiostro);
+  box-shadow: 0 30px 80px rgba(21, 26, 23, 0.45);
+}
+.scheda::backdrop { background: rgba(21, 26, 23, 0.72); }
+
+.scheda-chiudi {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: none;
+  color: var(--inchiostro-soft);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.scheda-chiudi:hover { color: var(--terra); }
+
+.scheda-albero {
+  display: flex;
+  justify-content: center;
+  padding: 26px 0 6px;
+  background: var(--crema);
+}
+.scheda-albero svg { width: 130px; height: auto; }
+
+.scheda-corpo { padding: 22px 28px 28px; }
+
+.scheda-corpo h3 {
+  margin-top: 4px;
+  font-family: var(--condensato);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.scheda-en {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inchiostro-soft);
+}
+
+.scheda-tavola {
+  display: block;
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  margin: 16px 0 14px;
+}
+
+.scheda-testo { font-size: 14.5px; line-height: 1.65; color: var(--inchiostro-soft); }
+
+.scheda-dati {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 22px;
+  margin-top: 16px;
+}
+.scheda-dati > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--sabbia);
+}
+.scheda-dati dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inchiostro-soft);
+}
+.scheda-dati dd { font-size: 13px; font-weight: 500; text-align: right; }
+
 /* ---------- la bandiera: due collezioni affiancate ----------
    A tutta larghezza e senza spazio fra le due: sono due porte dello
    stesso corridoio, non due schede in una griglia. */
@@ -461,6 +612,8 @@ a.pannello:hover .quadro { background: var(--terra-viva); transform: translate(3
           rgba(32, 40, 34, 0.94) 0%, rgba(32, 40, 34, 0.80) 60%,
           rgba(32, 40, 34, 0.55) 100%); }
   .apertura { grid-template-columns: 1fr; gap: 18px; align-items: start; }
+  .bosco { grid-template-columns: repeat(4, 1fr); }
+  .albero-disegno { max-width: 74px; }
   .collezioni { padding: 56px 0 0; }
   .bandiera { grid-template-columns: 1fr; }
   .pannello-testo { padding: 26px 22px 24px; gap: 16px; }

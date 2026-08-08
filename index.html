@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=18">
+<link rel="stylesheet" href="css/home.css?v=20">
 </head>
 <body>
 
@@ -103,9 +103,39 @@
         <p class="occhiello occhiello--scuro">Le collezioni</p>
         <h2>Due cataloghi,<br>due configuratori</h2>
       </div>
-      <p class="apertura-testo">Il massello a listino e il pantografato hanno prezzi e
-        lavorazioni diversi: ognuno ha il suo configuratore, con le voci che gli
-        appartengono.</p>
+      <div class="apertura-destra">
+        <!-- un albero per essenza: la chioma ha il tono del suo legno -->
+        <div class="bosco">
+        <button class="albero" type="button" data-legno="rovere"
+                style="--tono: #a86948; --scuro: #67401f"
+                aria-label="Rovere — scheda dell’essenza">
+          <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path d="M60 98C50 92 40 88 30 86M60 98c10-6 20-10 30-12" fill="none" stroke="var(--scuro)" stroke-width="2.4" stroke-linecap="round"/><path class="tronco" d="M52.5 140.0C52.5 117.0 54.4 117.0 55.0 94.0L65.0 94.0C65.6 117.0 67.5 117.0 67.5 140.0Z"/><path class="chioma" d="M109.3 60.0A10.9 10.9 0 0 1 109.2 76.1A13.0 13.0 0 0 1 96.0 90.0A16.5 16.5 0 0 1 73.1 98.0A18.0 18.0 0 0 1 46.7 97.9A16.5 16.5 0 0 1 23.9 89.9A13.0 13.0 0 0 1 10.7 76.0A10.9 10.9 0 0 1 10.8 59.9A13.0 13.0 0 0 1 24.0 46.0A16.5 16.5 0 0 1 46.9 38.0A18.0 18.0 0 0 1 73.3 38.1A16.5 16.5 0 0 1 96.1 46.1A13.0 13.0 0 0 1 109.3 60.0Z"/></svg>
+          <span class="albero-nome">Rovere</span>
+        </button>
+        <button class="albero" type="button" data-legno="castagno"
+                style="--tono: #a2805a; --scuro: #5f4a30"
+                aria-label="Castagno — scheda dell’essenza">
+          <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path class="tronco" d="M55.0 140.0C55.0 118.0 55.9 118.0 56.5 96.0L63.5 96.0C64.1 118.0 65.0 118.0 65.0 140.0Z"/><path class="chioma" d="M72.7 17.0A15.6 15.6 0 0 1 89.4 34.2A17.5 17.5 0 0 1 94.9 60.5A17.2 17.2 0 0 1 87.1 85.8A15.2 15.2 0 0 1 68.9 100.5A14.1 14.1 0 0 1 47.3 99.0A15.6 15.6 0 0 1 30.6 81.8A17.5 17.5 0 0 1 25.1 55.5A17.2 17.2 0 0 1 32.9 30.2A15.2 15.2 0 0 1 51.1 15.5A14.1 14.1 0 0 1 72.7 17.0Z"/></svg>
+          <span class="albero-nome">Castagno</span>
+        </button>
+        <button class="albero" type="button" data-legno="toulipier"
+                style="--tono: #cdaf7b; --scuro: #7a6844"
+                aria-label="Toulipier — scheda dell’essenza">
+          <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path class="tronco" d="M56.0 140.0C56.0 119.0 56.4 119.0 57.0 98.0L63.0 98.0C63.6 119.0 64.0 119.0 64.0 140.0Z"/><path class="chioma" d="M60.0 5.0A11.8 11.8 0 0 1 74.8 16.5A19.0 19.0 0 0 1 82.7 45.5A20.9 20.9 0 0 1 79.9 78.5A15.5 15.5 0 0 1 67.8 100.1A9.9 9.9 0 0 1 52.1 100.0A15.6 15.6 0 0 1 40.1 78.5A20.9 20.9 0 0 1 37.4 45.5A18.9 18.9 0 0 1 45.2 16.4A11.8 11.8 0 0 1 60.0 5.0Z"/></svg>
+          <span class="albero-nome">Toulipier</span>
+        </button>
+        <button class="albero" type="button" data-legno="pino"
+                style="--tono: #e8a05c; --scuro: #8a5f31"
+                aria-label="Pino — scheda dell’essenza">
+          <svg class="albero-disegno" viewBox="0 0 120 150" role="img" aria-hidden="true"><path class="terra" d="M24 141h72" stroke-linecap="round"/><path d="M60 82C50 74 40 66 28 58M60 82C60 72 60 62 60 50M60 82C70 74 80 66 92 58" fill="none" stroke="var(--scuro)" stroke-width="2.4" stroke-linecap="round"/><path class="tronco" d="M55.5 140.0C55.5 109.0 58.9 109.0 59.5 78.0L64.5 78.0C65.1 109.0 64.5 109.0 64.5 140.0Z"/><path class="chioma" d="M60.0 27.0A18.9 18.9 0 0 1 90.9 30.5A11.4 11.4 0 0 1 107.3 39.4A7.1 7.1 0 0 1 101.6 49.5A15.9 15.9 0 0 1 76.4 56.1A20.0 20.0 0 0 1 43.5 56.1A15.9 15.9 0 0 1 18.4 49.5A7.1 7.1 0 0 1 12.7 39.4A11.4 11.4 0 0 1 29.2 30.5A18.9 18.9 0 0 1 60.0 27.0Z"/></svg>
+          <span class="albero-nome">Pino</span>
+        </button>
+        </div>
+        <p class="apertura-testo">Il massello a listino e il pantografato hanno prezzi e
+          lavorazioni diversi: ognuno ha il suo configuratore, con le voci che gli
+          appartengono. <button class="richiamo" type="button" data-legno="rovere">Le
+          quattro essenze</button> valgono per entrambi.</p>
+      </div>
     </div>
   </div>
 
@@ -174,6 +204,21 @@
 
 </main>
 
+<!-- ==================== SCHEDA DELL'ESSENZA ==================== -->
+<dialog class="scheda" id="schedaLegno" aria-labelledby="schedaNome">
+  <button class="scheda-chiudi" type="button" aria-label="Chiudi">&#215;</button>
+  <div class="scheda-albero" id="schedaAlbero"></div>
+  <div class="scheda-corpo">
+    <p class="occhiello occhiello--scuro" id="schedaBotanico">Quercus robur</p>
+    <h3 id="schedaNome">Rovere</h3>
+    <p class="scheda-en" id="schedaEn">Oak</p>
+    <img class="scheda-tavola" id="schedaTavola" src="" alt="" width="880" height="344">
+    <p class="scheda-testo" id="schedaTesto"></p>
+    <dl class="scheda-dati" id="schedaDati"></dl>
+  </div>
+</dialog>
+
+
 <footer class="piede">
   <div class="dentro">
     <p>Toscocornici · Le porte secondo noi</p>
@@ -226,5 +271,86 @@
 })();
 </script>
 
+
+<script>
+/* ============================================================
+   Le quattro essenze — la finestrella si apre sull'albero
+   ============================================================ */
+(function () {
+  var LEGNI = {
+    rovere: {
+      nome: 'Rovere', en: 'Oak', botanico: 'Quercus robur',
+      testo: 'Il legno dei portoni di sempre. Duro, pesante, con una venatura marcata ' +
+             'attraversata dai raggi midollari — quelle striature lucide che compaiono ' +
+             'quando il tronco viene tagliato per il verso giusto. Accetta bene i toni ' +
+             'scuri: è su questo legno che il noce e il wengé rendono di più.',
+      dati: [['Tono', 'Bruno caldo'], ['Venatura', 'Marcata, con raggi'],
+             ['Durezza', 'Alta'], ['Carattere', 'Il classico']],
+    },
+    castagno: {
+      nome: 'Castagno', en: 'Chestnut', botanico: 'Castanea sativa',
+      testo: 'Il legno di casa nostra: le travi e le porte della campagna toscana sono ' +
+             'quasi sempre castagno. La venatura somiglia a quella del rovere, ma senza ' +
+             'i raggi: il disegno resta più quieto. Con gli anni vira all’ambra, ' +
+             'e la porta invecchia bene invece di scolorire.',
+      dati: [['Tono', 'Bruno dorato'], ['Venatura', 'Netta, senza raggi'],
+             ['Durezza', 'Media'], ['Carattere', 'Invecchia bene']],
+    },
+    toulipier: {
+      nome: 'Toulipier', en: 'Tulipwood', botanico: 'Liriodendron tulipifera',
+      testo: 'Il legno dei laccati. Chiarissimo e quasi senza venatura: la superficie ' +
+             'resta liscia e il colore ci si posa sopra pieno, senza che il disegno del ' +
+             'legno traspaia da sotto. Se la porta la vuoi bianca, avorio o blu notte, ' +
+             'è questa la base che la fabbrica usa.',
+      dati: [['Tono', 'Chiaro, crema'], ['Venatura', 'Quasi assente'],
+             ['Durezza', 'Media'], ['Carattere', 'La base dei laccati']],
+    },
+    pino: {
+      nome: 'Pino', en: 'Pine', botanico: 'Pinus sylvestris',
+      testo: 'Il più leggero e il più economico dei quattro. Chiaro, ambrato, ' +
+             'con i nodi bene in vista: non sono un difetto ma il suo modo di essere, ' +
+             'ed è quello che gli dà l’aria di montagna. Legno tenero: ' +
+             'segna più facilmente degli altri.',
+      dati: [['Tono', 'Chiaro ambrato'], ['Venatura', 'Evidente, con nodi'],
+             ['Durezza', 'Bassa'], ['Carattere', 'Nodi a vista']],
+    },
+  };
+
+  var dlg = document.getElementById('schedaLegno');
+  if (!dlg) return;
+
+  function apri(id) {
+    var L = LEGNI[id];
+    if (!L) return;
+    var bottone = document.querySelector('.albero[data-legno="' + id + '"]');
+    // l’albero della finestrella è lo stesso della fila, in grande
+    var casa = document.getElementById('schedaAlbero');
+    casa.innerHTML = bottone ? bottone.querySelector('svg').outerHTML : '';
+    if (bottone) {
+      casa.style.setProperty('--tono', bottone.style.getPropertyValue('--tono'));
+      casa.style.setProperty('--scuro', bottone.style.getPropertyValue('--scuro'));
+    }
+    document.getElementById('schedaBotanico').textContent = L.botanico;
+    document.getElementById('schedaNome').textContent = L.nome;
+    document.getElementById('schedaEn').textContent = L.en;
+    var tav = document.getElementById('schedaTavola');
+    tav.src = 'assets/essenze/' + id + '.webp';
+    tav.alt = 'Tavola di ' + L.nome.toLowerCase();
+    document.getElementById('schedaTesto').textContent = L.testo;
+    document.getElementById('schedaDati').innerHTML = L.dati.map(function (d) {
+      return '<div><dt>' + d[0] + '</dt><dd>' + d[1] + '</dd></div>';
+    }).join('');
+    dlg.showModal();
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-legno]');
+    if (t) { apri(t.dataset.legno); return; }
+    if (e.target.closest('.scheda-chiudi')) { dlg.close(); return; }
+    // fuori dal riquadro si chiude
+    if (e.target === dlg) dlg.close();
+  });
+})();
+</script>
 </body>
 </html>
