@@ -470,7 +470,13 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
 renderer.toneMapping = THREE.NeutralToneMapping;
-renderer.toneMappingExposure = 1.0;
+// Misurato contro i campioni d'essenza del sito -- che sono la stessa
+// foto della texture, quindi il bersaglio giusto: a esposizione 1.0 la
+// resa usciva piu' chiara del campione di 0.14 su tutte e quattro. Sui
+// legni scuri non si nota; sui due chiari li spingeva contro il bianco,
+// e li' la vena si schiaccia. Il pino perdeva meta' del contrasto.
+// 0.80 riporta lo scostamento medio da 0.12 a 0.06.
+renderer.toneMappingExposure = 0.80;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 viewerEl.appendChild(renderer.domElement);

@@ -1,32 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Prepara le texture del legno: colore, luce e forza della vena.
+Prepara le texture del legno perche' la resa 3D somigli al campione.
 
-PERCHE'
-Le quattro foto d'essenza sono piallacci fotografati in condizioni
-diverse, e come stanno non sono materiali: sono immagini. Il pino era
-arancione e col rosso bruciato, il toulipier cosi' chiaro e piatto da
-sembrare una lastra luminosa. Qui si portano tutte a valori misurabili.
+IL BERSAGLIO
+I campioni d'essenza del sito -- quelli che il cliente guarda per
+scegliere -- sono la STESSA foto delle texture: misurati, coincidono.
+Quindi il bersaglio non e' "il legno vero" preso da una tabella, e' il
+campione. Quello che il cliente sceglie e quello che vede girare nel
+visore devono essere la stessa cosa.
 
-I DUE BERSAGLI
+PROVATO E SCARTATO: correggere il colore delle texture. Il pino sembrava
+troppo arancione e l'avevo portato da 29 a 40 gradi di tinta, verso il
+giallo dei pini veri. Sbagliato: il campione del catalogo E' a 29 gradi
+con saturazione 0.63. Il pino arancione e' il pino che si vende, e
+"correggerlo" faceva mentire il 3D sul prodotto.
 
-1. Il colore. Si confronta con l'aspetto vero del legno:
-       pino chiaro   tinta 38-42 gradi, saturazione 0.25-0.35
-       toulipier     tinta 40-50 gradi, saturazione 0.15-0.25
-   Il pino stava a 29 gradi con saturazione 0.63 -- il doppio del vero,
-   ed e' quello che lo faceva arancione. Con luce 0.93 aveva anche il
-   14.5% dei pixel col rosso a fondo scala: li' la vena non e' scura,
-   e' proprio cancellata, e nessun ritocco la riporta indietro. Si puo'
-   solo togliere il rosso di troppo e lasciare che la vena venga dal
-   verde e dal blu, che non sono bruciati.
-
-2. Il contrasto. Non una frazione uguale per tutte -- quello era
-   l'errore della prima versione -- ma un LIVELLO. 10.5 e' lo scarto a
-   cui il rovere, misurato su Country, mostrava la vena senza coprire
-   lo spigolo del riquadro. Chi sta sopra si smorza, chi sta sotto si
-   allarga: il toulipier a 8.1 era troppo piatto, non troppo forte.
-
-Rovere e castagno non si toccano nel colore: vanno gia' bene.
+QUELLO CHE SI COMPENSA E' IL MOTORE
+Misurando la superficie resa contro il campione, a esposizione 1.0 la
+resa usciva piu' chiara di 0.14 su tutte e quattro. Sui legni scuri non
+si vede; sui due chiari li schiacciava contro il bianco, e li' la vena
+sparisce -- il pino perdeva meta' del contrasto e il toulipier sembrava
+una lastra luminosa. L'esposizione e' scesa a 0.80 in app.js, e qui
+restano le due correzioni che l'esposizione da sola non copre.
 
 COSA FA
 Salva l'originale una volta sola come albedo-originale.jpg e riscrive
@@ -48,20 +43,32 @@ from PIL import Image, ImageStat
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = os.path.join(REPO, 'assets', 'textures')
 
-# Lo scarto quadratico a cui portare la vena di ogni essenza.
+# Lo scarto quadratico a cui portare la vena. Non una frazione uguale
+# per tutte -- le quattro foto partono da 8 a 26 di scarto -- ma un
+# livello: 10.5 e' quello a cui il rovere, misurato su Country, mostra
+# la vena senza coprire lo spigolo dei riquadri.
 BERSAGLIO = 10.5
 
-# Correzione di colore, per essenza. 'tinta' e' in gradi da sommare,
-# 'saturazione' e 'luce' sono moltiplicatori. Assente = non si tocca.
-CORREZIONI = {
-    'rovere': {},
-    'castagno': {},
-    # 29 -> 40 gradi, saturazione 0.63 -> ~0.30, e giu' la luce per
-    # togliere il rosso da fondo scala
-    'pino': {'tinta': 11, 'saturazione': 0.48, 'luce': 0.88},
-    # la tinta va bene; era troppo chiaro e troppo carico
-    'toulipier': {'saturazione': 0.60, 'luce': 0.90},
+# Quanto alzare il contrasto della texture perche' quello RESO finisca
+# sul bersaglio. Misurato a esposizione 0.80, con le texture gia' a
+# 10.5, sullo schermo arrivavano: rovere 8.3, castagno 8.8,
+# toulipier 11.4, pino 6.0. Il rovere e' il riferimento -- e' quello che
+# va bene a vederlo -- e gli altri si portano li'.
+COMPENSA = {
+    'rovere': 1.0,
+    'castagno': 1.0,
+    'toulipier': 0.80,   # arrivava a 11.4: troppa vena, copriva i riquadri
+    'pino': 1.20,
 }
+
+# Il pino ha un guaio che il contrasto da solo non risolve: parte a luce
+# 0.93 col 14.5% dei pixel col rosso a fondo scala, e sullo schermo
+# arriva a 0.96 contro lo 0.92 del campione. Li' la vena non ha piu'
+# spazio verso l'alto, ed e' per questo che non si vedeva. Alzargli il
+# contrasto la bruciava ancora di piu' (18.6%): la strada e' abbassare
+# la luce, che lo stacca dal soffitto E lo avvicina al campione invece
+# di allontanarlo. Nessun colore inventato: si compensa il motore.
+LUCE = {'pino': 0.88}
 
 ESSENZE = ['rovere', 'castagno', 'toulipier', 'pino']
 
@@ -76,21 +83,6 @@ def bruciato(im):
     """Percentuale di pixel col rosso a fondo scala."""
     h = im.split()[0].histogram()
     return 100.0 * sum(h[250:]) / (im.width * im.height)
-
-
-def correggi_colore(im, c):
-    if not c:
-        return im
-    hsv = im.convert('HSV')
-    H, S, V = hsv.split()
-    if c.get('tinta'):
-        passo = round(c['tinta'] * 255 / 360)      # HSV di PIL sta su 0-255
-        H = H.point(lambda v: (v + passo) % 256)
-    if c.get('saturazione'):
-        S = S.point(lambda v: min(255, round(v * c['saturazione'])))
-    if c.get('luce'):
-        V = V.point(lambda v: min(255, round(v * c['luce'])))
-    return Image.merge('HSV', (H, S, V)).convert('RGB')
 
 
 def tara_contrasto(im, bersaglio):
@@ -127,8 +119,13 @@ def prepara(essenza, bersaglio, crudo=False):
 
     h0, s0, v0, sc0 = misura(im)
     br0 = bruciato(im)
-    im = correggi_colore(im, CORREZIONI.get(essenza))
-    im, forza = tara_contrasto(im, bersaglio)
+
+    if essenza in LUCE:
+        H, Sa, V = im.convert('HSV').split()
+        V = V.point(lambda v: min(255, round(v * LUCE[essenza])))
+        im = Image.merge('HSV', (H, Sa, V)).convert('RGB')
+
+    im, forza = tara_contrasto(im, bersaglio * COMPENSA.get(essenza, 1.0))
     im.save(vivo, 'JPEG', quality=92, subsampling=0)
 
     fin = Image.open(vivo).convert('RGB')
@@ -147,7 +144,7 @@ def main():
     resto = [a for a in sys.argv[1:] if not a.startswith('--')]
     bersaglio = float(resto[0]) if resto else BERSAGLIO
     print('Rimetto gli originali.' if crudo
-          else 'Coloro e porto ogni essenza a uno scarto di %.1f' % bersaglio)
+          else 'Porto la vena di ogni essenza a uno scarto di %.1f' % bersaglio)
     for e in ESSENZE:
         print('  ' + prepara(e, bersaglio, crudo))
     print('')
