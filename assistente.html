@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toscocornici · Assistente — trova la tua porta</title>
+<meta name="description" content="Carica la foto di una porta o raccontala a parole: l'assistente ti mostra i modelli del catalogo che le somigliano.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/home.css?v=22">
+<link rel="stylesheet" href="css/assistente.css?v=5">
+</head>
+<body class="pagina-assistente">
+
+<a class="salta" href="#dialogo">Vai alla conversazione</a>
+
+<!-- ==================== BARRA FISSA ==================== -->
+<header class="barra">
+  <div class="striscia">
+    <div class="dentro">
+      <p>Porte in legno massello · su misura, dalla fabbrica</p>
+      <p>L’assistente restringe il catalogo: la scelta resta tua</p>
+    </div>
+  </div>
+
+  <div class="testata">
+    <div class="dentro">
+      <a class="marchio" href="index.html" aria-label="Toscocornici — home">
+        <img src="assets/logo_toscocornici_chiaro.png"
+             alt="Toscocornici — Le porte secondo noi" width="1254" height="240">
+      </a>
+
+      <nav class="menu" aria-label="Principale">
+        <a href="index.html#collezioni">Collezioni</a>
+        <a href="configuratore.html">Listino</a>
+        <a href="index.html#collezioni">Pantografato</a>
+        <a href="assistente.html" aria-current="page">Assistente</a>
+      </nav>
+
+      <a class="bottone bottone--pieno" href="configuratore.html">
+        Apri il configuratore <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+
+<main class="assistente-pagina" id="dialogo">
+  <div class="stanza">
+
+    <!-- ==================== L'AVVIO ====================
+         Sta in cima e non sparisce: sono i due modi di cominciare,
+         e chi torna indietro deve ritrovarli. -->
+    <section class="avvio" id="avvio">
+      <p class="occhiello occhiello--scuro">Assistente</p>
+      <h1>Che porta hai in mente?</h1>
+      <p class="avvio-testo">Il catalogo ha 44 modelli. Dimmi com’è la tua e te ne
+        lascio tre da guardare, invece di quarantaquattro.</p>
+
+      <div class="strade">
+        <button class="strada" type="button" data-strada="foto">
+          <span class="strada-icona" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="7" width="26" height="20" rx="2"/>
+              <path d="M11 7l2-3h6l2 3"/>
+              <circle cx="16" cy="17" r="5.5"/>
+            </svg>
+          </span>
+          <span class="strada-testo">
+            <b>Ho una foto</b>
+            <small>Una porta che ti piace, vista da qualche parte. Guardo com’è fatta
+              e cerco le somiglianze nel catalogo.</small>
+          </span>
+        </button>
+
+        <button class="strada" type="button" data-strada="racconto">
+          <span class="strada-icona" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 8a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H13l-7 5v-5H6a2 2 0 0 1-2-2z"/>
+              <path d="M10.5 12h11M10.5 16.5h7"/>
+            </svg>
+          </span>
+          <span class="strada-testo">
+            <b>Te la racconto</b>
+            <small>Con vetro o cieca, liscia o con le bugne, dritta o ad arco.
+              Poche domande e ci arriviamo.</small>
+          </span>
+        </button>
+      </div>
+
+      <p class="avviso-onesto">
+        <span aria-hidden="true">·</span> Di 44 modelli, venti si riconoscono a colpo
+        d’occhio; gli altri si somigliano fra loro. Per questo l’assistente propone
+        <b>una rosa di modelli</b> e non un nome solo.
+      </p>
+    </section>
+
+
+    <!-- ==================== LA CONVERSAZIONE ==================== -->
+    <section class="conversazione" id="conversazione" aria-live="polite" aria-label="Conversazione">
+      <!-- i messaggi li mette il copione -->
+    </section>
+
+
+    <!-- ==================== LA RIGA PER SCRIVERE ==================== -->
+    <form class="scrivania" id="scrivania" autocomplete="off">
+
+      <!-- l'allegato, quando c'e' -->
+      <div class="allegato" id="allegato" hidden>
+        <img id="allegatoImg" src="" alt="">
+        <div class="allegato-dati">
+          <p class="allegato-nome" id="allegatoNome">—</p>
+          <p class="allegato-peso" id="allegatoPeso">—</p>
+        </div>
+        <button class="allegato-via" type="button" id="allegatoVia" aria-label="Togli la foto">&#215;</button>
+      </div>
+
+      <div class="riga">
+        <label class="graffetta" title="Allega una foto">
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/heic" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.4 3.4 0 0 1 4.8 4.8l-8 8a1.8 1.8 0 0 1-2.5-2.5l7.4-7.4"/>
+          </svg>
+          <span class="sr">Allega una foto</span>
+        </label>
+
+        <textarea id="campo" rows="1" placeholder="Scrivi com’è la porta, o allega una foto…"
+                  aria-label="Messaggio"></textarea>
+
+        <button class="invia" type="submit" id="invia" aria-label="Invia" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12h15M13 6l6 6-6 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="scrivania-nota">
+        Le foto restano nel tuo browser finché non le mandi. JPG, PNG o WebP, fino a 8 MB.
+      </p>
+    </form>
+
+  </div>
+
+  <!-- il velo che compare trascinando una foto sulla pagina -->
+  <div class="pioggia" id="pioggia" hidden>
+    <div class="pioggia-riquadro">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16 22V7M10 13l6-6 6 6"/><path d="M5 21v4a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2v-4"/>
+      </svg>
+      <p>Lascia qui la foto</p>
+    </div>
+  </div>
+</main>
+
+<script src="js/assistente-ui.js?v=4"></script>
+</body>
+</html>

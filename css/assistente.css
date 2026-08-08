@@ -1,0 +1,407 @@
+/* ============================================================
+   ASSISTENTE — la parte grafica
+   ------------------------------------------------------------
+   Stessa veste dell'ingresso: verde, terracotta, crema, Barlow e
+   Barlow Condensed. Qui c'e' solo il guscio — la conversazione si
+   muove, la foto si allega, le schede compaiono — ma dietro non
+   c'e' ancora nessuna intelligenza: le risposte sono finte e lo
+   dicono. La logica arriva dopo.
+   ============================================================ */
+
+/* hidden deve vincere: qui sotto ci sono elementi dichiarati flex e
+   grid, e senza questa riga l'attributo non nasconde piu' niente */
+[hidden] { display: none !important; }
+
+.pagina-assistente { background: var(--crema); }
+
+.assistente-pagina {
+  position: relative;
+  min-height: calc(100vh - 104px);
+  padding: 46px 0 0;
+}
+
+.stanza {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 24px 220px;   /* sotto ci passa la scrivania, che e' fissa */
+}
+
+/* ---------- l'avvio ---------- */
+.avvio { margin-bottom: 34px; }
+
+.avvio h1 {
+  margin-top: 8px;
+  font-family: var(--condensato);
+  font-size: clamp(34px, 4.4vw, 56px);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.avvio-testo {
+  max-width: 46ch;
+  margin-top: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--inchiostro-soft);
+}
+
+.strade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.strada {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 20px 20px 21px;
+  text-align: left;
+  background: var(--crema-chiara);
+  border: 1px solid var(--sabbia);
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .22s ease, background .22s ease, transform .22s ease;
+}
+.strada:hover, .strada:focus-visible {
+  border-color: var(--terra);
+  background: #fff;
+  transform: translateY(-2px);
+  outline: none;
+}
+.strada.is-scelta { border-color: var(--terra); background: #fff; }
+
+.strada-icona {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--terra);
+  background: rgba(169, 71, 47, 0.09);
+}
+.strada-icona svg { width: 23px; height: 23px; }
+
+.strada-testo b {
+  display: block;
+  font-family: var(--condensato);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.strada-testo small {
+  display: block;
+  margin-top: 5px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--inchiostro-soft);
+}
+
+/* il limite vero, detto in faccia invece che nascosto nelle note */
+.avviso-onesto {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: rgba(169, 71, 47, 0.06);
+  border-left: 3px solid var(--terra);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--inchiostro-soft);
+}
+.avviso-onesto b { color: var(--inchiostro); font-weight: 600; }
+
+/* ---------- la conversazione ---------- */
+.conversazione { display: flex; flex-direction: column; gap: 18px; }
+
+.messaggio { display: flex; gap: 13px; max-width: 100%; min-width: 0; }
+
+.messaggio-chi {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 2px;
+  font-family: var(--condensato);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.messaggio--assistente .messaggio-chi { background: var(--verde); color: var(--oro); }
+.messaggio--cliente .messaggio-chi { background: var(--terra); color: #fff; }
+
+.messaggio-corpo {
+  /* min-width:0 e' quello che permette alla bolla di stringersi: senza,
+     tiene la larghezza minima delle schede che ha dentro */
+  min-width: 0;
+  padding: 13px 17px 14px;
+  font-size: 15px;
+  line-height: 1.62;
+}
+.messaggio--assistente .messaggio-corpo {
+  background: var(--crema-chiara);
+  border: 1px solid var(--sabbia);
+  color: var(--inchiostro);
+}
+.messaggio--cliente { flex-direction: row-reverse; }
+.messaggio--cliente .messaggio-corpo {
+  background: var(--verde);
+  color: rgba(255, 255, 255, 0.92);
+}
+.messaggio-corpo p + p { margin-top: 9px; }
+.messaggio-corpo img {
+  max-width: 220px;
+  margin-bottom: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* i puntini mentre "pensa" */
+.puntini { display: flex; gap: 5px; padding: 6px 2px; }
+.puntini span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--terra);
+  opacity: 0.35;
+  animation: respiro 1.25s ease-in-out infinite;
+}
+.puntini span:nth-child(2) { animation-delay: .16s; }
+.puntini span:nth-child(3) { animation-delay: .32s; }
+@keyframes respiro { 40% { opacity: 1; transform: translateY(-3px); } }
+
+/* ---------- la rosa dei modelli ---------- */
+.rosa { margin-top: 4px; min-width: 0; }
+
+.rosa-titolo {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-bottom: 11px;
+}
+
+.rosa-schede {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.scheda-porta {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--sabbia);
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+.scheda-porta:hover, .scheda-porta:focus-visible {
+  border-color: var(--terra);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(21, 26, 23, 0.13);
+  outline: none;
+}
+
+.scheda-porta figure {
+  margin: 0;
+  padding: 12px 12px 6px;
+  background: var(--crema);
+}
+.scheda-porta img { width: 100%; height: auto; display: block; }
+
+.porta-scheda-dati { min-width: 0; padding: 11px 13px 13px; }
+.porta-scheda-dati b {
+  display: block;
+  font-family: var(--condensato);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.porta-scheda-dati small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--inchiostro-soft);
+}
+.scheda-apri {
+  margin-top: 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--terra);
+}
+
+/* ---------- la scrivania: fissa in fondo ---------- */
+.scrivania {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 20;
+  width: 100%;
+  max-width: 820px;
+  transform: translateX(-50%);
+  padding: 14px 24px 16px;
+  background: linear-gradient(to bottom, rgba(238, 233, 223, 0) 0%,
+              var(--crema) 26%, var(--crema) 100%);
+}
+
+.allegato {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 9px;
+  padding: 9px 11px;
+  background: var(--crema-chiara);
+  border: 1px solid var(--sabbia);
+}
+.allegato img { width: 46px; height: 46px; object-fit: cover; flex: none; }
+.allegato-dati { min-width: 0; flex: 1; }
+.allegato-nome {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.allegato-peso { font-size: 11.5px; color: var(--inchiostro-soft); }
+.allegato-via {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: none;
+  color: var(--inchiostro-soft);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+.allegato-via:hover { color: var(--terra); }
+
+.riga {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 7px 8px 7px 10px;
+  background: #fff;
+  border: 1px solid var(--sabbia);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.riga:focus-within {
+  border-color: var(--terra);
+  box-shadow: 0 0 0 3px rgba(169, 71, 47, 0.10);
+}
+
+.graffetta {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--inchiostro-soft);
+  cursor: pointer;
+  transition: color .2s ease, background .2s ease;
+}
+.graffetta:hover { color: var(--terra); background: rgba(169, 71, 47, 0.07); }
+.graffetta svg { width: 20px; height: 20px; }
+
+#campo {
+  flex: 1;
+  max-height: 168px;
+  padding: 10px 2px;
+  border: 0;
+  background: none;
+  resize: none;
+  font-family: var(--testo);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--inchiostro);
+}
+#campo:focus { outline: none; }
+#campo::placeholder { color: #9aa39c; }
+
+.invia {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  background: var(--terra);
+  color: #fff;
+  cursor: pointer;
+  transition: background .2s ease, opacity .2s ease;
+}
+.invia svg { width: 19px; height: 19px; }
+.invia:hover:not(:disabled) { background: var(--terra-viva); }
+.invia:disabled { background: var(--sabbia); color: #fff; cursor: default; }
+
+.scrivania-nota {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--inchiostro-soft);
+  text-align: center;
+}
+
+/* ---------- trascinando una foto sulla pagina ---------- */
+.pioggia {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  background: rgba(21, 26, 23, 0.72);
+}
+
+.pioggia-riquadro {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 48px 62px;
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+.pioggia-riquadro svg { width: 44px; height: 44px; }
+.pioggia-riquadro p {
+  font-family: var(--condensato);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---------- solo per chi legge con lo schermo ---------- */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- schermi stretti ---------- */
+@media (max-width: 760px) {
+  .assistente-pagina { padding-top: 30px; }
+  .stanza { padding: 0 18px 210px; }
+  .strade { grid-template-columns: 1fr; }
+  .scrivania { padding: 12px 18px 14px; }
+  .rosa-schede { grid-template-columns: 1fr; gap: 8px; }
+  .scheda-porta { flex-direction: row; align-items: center; }
+  .scheda-porta figure { flex: none; width: 96px; padding: 8px; }
+  .messaggio-corpo { font-size: 14.5px; }
+}
