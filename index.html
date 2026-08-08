@@ -3,14 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Toscocornici · Le porte secondo noi</title>
+<title>Toscocornici · Configuratore porte su misura</title>
 <meta name="description" content="Configura la tua porta interna su misura: 44 modelli a listino, preventivo immediato e modulo d'ordine per la fabbrica.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css?v=12">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/home.css?v=14">
 </head>
 <body>
+
+<a class="salta" href="#collezioni">Vai alle collezioni</a>
+
+<!-- ==================== BARRA FISSA ==================== -->
+<header class="barra">
+
+  <div class="striscia">
+    <div class="dentro">
+      <p>Porte in legno massello · su misura, dalla fabbrica</p>
+      <p>Listino 2025 · prezzi di fabbrica, IVA e trasporto esclusi</p>
+    </div>
+  </div>
+
+  <div class="testata">
+    <div class="dentro">
+      <a class="marchio" href="index.html" aria-label="Toscocornici — home">
+        <img src="assets/logo_toscocornici_chiaro.png"
+             alt="Toscocornici — Le porte secondo noi" width="1254" height="240">
+      </a>
+
+      <nav class="menu" aria-label="Principale">
+        <a href="#collezioni">Collezioni</a>
+        <a href="configuratore.html">Listino 2025</a>
+        <a href="#collezioni">Pantografato</a>
+        <a href="#collezioni">Assistente</a>
+      </nav>
+
+      <a class="bottone bottone--pieno" href="configuratore.html">
+        Apri il configuratore <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </div>
+
+</header>
 
 <!-- ==================== COPERTINA ==================== -->
 <section class="copertina">
@@ -34,91 +68,101 @@
     </figure>
   </div>
 
-  <div class="segnaposti" id="segnaposti" role="tablist" aria-label="Immagini di copertina"></div>
-
   <div class="velo" aria-hidden="true"></div>
 
   <div class="insegna">
-    <picture>
-      <source media="(max-width: 900px)" srcset="assets/logo_toscocornici.png">
-      <img class="marchio" src="assets/logo_toscocornici_chiaro.png"
-           alt="Toscocornici — Le porte secondo noi" width="1254" height="240">
-    </picture>
-    <h1>Da dove vuoi <em>cominciare?</em></h1>
-    <p class="sottotitolo">Tre strade per arrivare alla stessa cosa: la tua porta,
-      con il suo prezzo e il modulo pronto per la fabbrica.</p>
+    <div class="dentro">
+      <p class="occhiello">Configuratore porte</p>
+      <h1>La tua porta su misura—<br>e il prezzo mentre la scegli.</h1>
+      <p class="sottotitolo">Quarantaquattro modelli a listino, con essenze, laccati,
+        coprifili, maniglie e capitelli. Il preventivo si aggiorna a ogni scelta e il
+        modulo d'ordine esce pronto per la fabbrica.</p>
+      <a class="bottone bottone--pieno bottone--grande" href="configuratore.html">
+        Apri il configuratore <span aria-hidden="true">↗</span>
+      </a>
+      <div class="segnaposti" id="segnaposti" role="tablist" aria-label="Immagini di copertina"></div>
+    </div>
   </div>
 
 </section>
 
-<!-- ==================== LE TRE STRADE ==================== -->
-<main class="home">
+<!-- ==================== LE COLLEZIONI ==================== -->
+<main class="collezioni" id="collezioni">
+  <div class="dentro">
 
-  <div class="scelte">
+    <div class="apertura">
+      <div>
+        <p class="occhiello occhiello--scuro">Da dove cominciare</p>
+        <h2>Listino, pantografato<br>o te lo trovo io</h2>
+      </div>
+      <p class="apertura-testo">Tre strade per arrivare alla stessa cosa: la tua porta,
+        col suo prezzo e il modulo pronto per l'ordine. Se sai già cosa vuoi, il
+        configuratore è aperto.</p>
+    </div>
 
-    <!-- 1 · assistente -->
-    <article class="scelta scelta--attesa">
-      <div class="figura figura--trittico">
-        <img src="assets/home/ia1.webp" alt="" width="197" height="460" loading="lazy">
-        <img src="assets/home/ia2.webp" alt="" width="197" height="460" loading="lazy">
-        <img src="assets/home/ia3.webp" alt="" width="197" height="460" loading="lazy">
-      </div>
-      <div class="testo">
-        <p class="occhiello">Assistente <span class="en">/ Assistant</span></p>
-        <h2>Descrivila, o mandami una foto</h2>
-        <p class="desc">Racconta com'è la porta che hai in mente — o carica la foto di
-          una che ti piace. Ti propongo i modelli del catalogo che le somigliano e ti
-          porto al configuratore già impostato.</p>
-        <p class="stato">In costruzione</p>
-      </div>
-    </article>
+    <div class="scelte">
 
-    <!-- 2 · listino -->
-    <a class="scelta scelta--via" href="configuratore.html">
-      <div class="figura figura--foto">
-        <img src="assets/copertina/sicilia.webp"
-             srcset="assets/copertina/sicilia-sm.webp 460w, assets/copertina/sicilia.webp 900w"
-             sizes="(max-width: 900px) 100vw, 370px"
-             alt="Porta Sicilia in rovere, due vetri verticali, in un soggiorno"
-             width="900" height="1350" loading="lazy">
-      </div>
-      <div class="testo">
-        <p class="occhiello">Collezione <span class="en">/ Collection</span></p>
-        <h2>Listino 2025</h2>
-        <p class="desc">I 44 modelli a catalogo, con essenze, laccati, coprifili,
-          maniglie e capitelli. Prezzo che si aggiorna mentre scegli e modulo d'ordine
-          da stampare.</p>
-        <p class="azione">Apri il configuratore</p>
-      </div>
-    </a>
+      <!-- 1 · listino -->
+      <a class="scelta scelta--via" href="configuratore.html">
+        <div class="figura">
+          <img src="assets/copertina/sicilia.webp"
+               srcset="assets/copertina/sicilia-sm.webp 460w, assets/copertina/sicilia.webp 900w"
+               sizes="(max-width: 900px) 100vw, 380px"
+               alt="Porta Sicilia in rovere, due vetri verticali, in un soggiorno"
+               width="900" height="1350" loading="lazy">
+        </div>
+        <div class="testo">
+          <h3>Listino 2025 <span class="freccia" aria-hidden="true">→</span></h3>
+          <p>I 44 modelli a catalogo, con essenze, laccati, coprifili, maniglie e
+            capitelli. Prezzo che si aggiorna mentre scegli.</p>
+          <p class="azione">Apri il configuratore</p>
+        </div>
+      </a>
 
-    <!-- 3 · pantografato -->
-    <article class="scelta scelta--attesa">
-      <div class="figura figura--vuota" aria-hidden="true">
-        <svg viewBox="0 0 197 460" role="img" aria-label="">
-          <rect x="14" y="10" width="169" height="440" rx="2"/>
-          <rect x="34" y="40" width="129" height="170" rx="2"/>
-          <rect x="34" y="248" width="129" height="170" rx="2"/>
-          <path d="M60 90h77M60 120h77M60 150h77M60 298h77M60 328h77M60 358h77"/>
-        </svg>
-      </div>
-      <div class="testo">
-        <p class="occhiello">Collezione <span class="en">/ Collection</span></p>
-        <h2>Pantografato</h2>
-        <p class="desc">La collezione con il disegno inciso sul pannello. I modelli
-          sono in lavorazione: appena arrivano in fabbrica entrano qui, con lo stesso
-          configuratore.</p>
-        <p class="stato">In arrivo</p>
-      </div>
-    </article>
+      <!-- 2 · assistente -->
+      <article class="scelta scelta--attesa">
+        <div class="figura figura--trittico">
+          <img src="assets/home/ia1.webp" alt="" width="197" height="460" loading="lazy">
+          <img src="assets/home/ia2.webp" alt="" width="197" height="460" loading="lazy">
+          <img src="assets/home/ia3.webp" alt="" width="197" height="460" loading="lazy">
+        </div>
+        <div class="testo">
+          <h3>Assistente</h3>
+          <p>Racconta com'è la porta che hai in mente, o carica la foto di una che ti
+            piace: ti propongo i modelli che le somigliano.</p>
+          <p class="stato">In costruzione</p>
+        </div>
+      </article>
+
+      <!-- 3 · pantografato -->
+      <article class="scelta scelta--attesa">
+        <div class="figura figura--vuota" aria-hidden="true">
+          <svg viewBox="0 0 197 460" role="img" aria-label="">
+            <rect x="14" y="10" width="169" height="440" rx="2"/>
+            <rect x="34" y="40" width="129" height="170" rx="2"/>
+            <rect x="34" y="248" width="129" height="170" rx="2"/>
+            <path d="M60 90h77M60 120h77M60 150h77M60 298h77M60 328h77M60 358h77"/>
+          </svg>
+        </div>
+        <div class="testo">
+          <h3>Pantografato</h3>
+          <p>La collezione col disegno inciso sul pannello. I modelli sono in
+            lavorazione: appena arrivano entrano qui, con lo stesso configuratore.</p>
+          <p class="stato">In arrivo</p>
+        </div>
+      </article>
+
+    </div>
 
   </div>
-
-  <footer class="piede">
-    <p>Toscocornici · Listino 2025 — prezzi di fabbrica, IVA e trasporto esclusi.</p>
-  </footer>
-
 </main>
+
+<footer class="piede">
+  <div class="dentro">
+    <p>Toscocornici · Le porte secondo noi</p>
+    <p>Listino 2025 — prezzi di fabbrica, IVA e trasporto esclusi.</p>
+  </div>
+</footer>
 
 <script>
 /* Copertina: una stanza per volta, cambio ogni 5 secondi.
@@ -152,17 +196,12 @@
     });
   }
 
-  function avvia() {
-    clearInterval(timer);
-    timer = setInterval(() => mostra(i + 1), PAUSA);
-  }
+  function avvia() { clearInterval(timer); timer = setInterval(() => mostra(i + 1), PAUSA); }
 
   mostra(0);
 
-  /* chi ha chiesto meno movimento resta sulla prima e sceglie a mano */
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     avvia();
-    /* a scheda nascosta il timer non serve: si riprende al ritorno */
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) clearInterval(timer); else avvia();
     });

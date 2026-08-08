@@ -1,93 +1,147 @@
 /* ============================================================
    TOSCOCORNICI · schermata d'ingresso
-   Fondo notturno, non nero puro: e' lo stesso espresso del sito
-   portato al buio, cosi la palette resta quella di casa.
-   Il titolo e' l'unica luce accesa — ottone al neon, non insegna
-   da luna park: alone ampio e morbido, colore caldo, nessun
-   contorno duro.
+   Impianto e palette presi dal riferimento indicato dal cliente
+   (hpwindowsanddoors.com), coi valori letti dal sito: barra fissa
+   verde-nero, accento terracotta, sezioni su crema, titoli in
+   condensato maiuscolo.
    ============================================================ */
 
 :root {
-  /* la stessa del configuratore: avorio caldo, espresso, ottone */
-  --ivory: #f4efe6;
-  --ivory-deep: #ece5d8;
-  --espresso: #2b211a;
-  --espresso-soft: #4a3c30;
-  --taupe: #8d7d6a;
-  --brass: #a8843c;
-  --brass-bright: #e8c47c;   /* solo per il neon sopra la foto */
-  --panel-bg: #faf7f0;
-  --panel-lift: #f3ede1;
+  --verde: #202822;          /* barra fissa e fondo copertina */
+  --verde-cupo: #151a17;     /* striscia in cima */
+  --terra: #a9472f;          /* accento: bottoni, frecce */
+  --terra-viva: #c2543a;
+  --oro: #d6a36f;            /* occhielli sopra il verde */
+  --crema: #eee9df;          /* fondo delle sezioni */
+  --crema-chiara: #f8f5ef;   /* schede */
+  --sabbia: #d8cdbb;         /* filetti su crema */
+  --inchiostro: #1b211d;     /* testo su crema */
+  --inchiostro-soft: #55605a;
 
-  --hairline: rgba(43, 33, 26, 0.14);
-  --hairline-soft: rgba(43, 33, 26, 0.07);
-
-  --serif: "Cormorant Garamond", Georgia, serif;
-  --sans: "Jost", "Segoe UI", sans-serif;
+  --condensato: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --testo: "Barlow", "Segoe UI", sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  min-height: 100vh;
-  font-family: var(--sans);
-  color: var(--espresso);
-  background:
-    radial-gradient(ellipse 130% 46% at 50% 100%, var(--ivory-deep) 0%, transparent 74%),
-    var(--ivory);
+  font-family: var(--testo);
+  color: var(--inchiostro);
+  background: var(--crema);
   -webkit-font-smoothing: antialiased;
 }
 
-.en { color: var(--taupe); font-weight: 300; }
+img { display: block; max-width: 100%; }
 
-.home {
-  position: relative;
-  z-index: 1;
-  max-width: 1180px;
+.dentro {
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 54px 32px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
+  padding: 0 32px;
 }
 
-/* la pagina riceve la foto con un alone caldo invece che di netto */
-.home::before {
-  content: "";
+.salta {
   position: absolute;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vw;
-  height: 220px;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(ellipse 70% 100% at 50% 0%,
-              rgba(226, 214, 195, 0.34) 0%, transparent 76%);
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 20px;
+  background: var(--terra);
+  color: #fff;
+  font-weight: 700;
+}
+.salta:focus { left: 0; }
+
+/* ---------- barra fissa ---------- */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--verde);
 }
 
-/* ---------- copertina ----------
-   Due render d'ambiente affiancati, a tutta larghezza. Il taglio fra i
-   due e' una fessura di buio: sono due stanze diverse, non una foto sola.
-   Il velo scende dal fondo della pagina e ci appoggia sopra il titolo. */
+.striscia {
+  background: var(--verde-cupo);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.striscia .dentro {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.striscia p {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.testata .dentro {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.marchio { display: block; flex: none; }
+.marchio img { height: 34px; width: auto; }
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-left: auto;
+}
+
+.menu a {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+  text-decoration: none;
+  transition: color .18s ease;
+}
+.menu a:hover, .menu a:focus-visible { color: var(--oro); }
+
+/* ---------- bottoni ---------- */
+.bottone {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+
+.bottone--pieno { background: var(--terra); color: #fff; }
+.bottone--pieno:hover, .bottone--pieno:focus-visible { background: var(--terra-viva); }
+.bottone:focus-visible { outline: 2px solid var(--oro); outline-offset: 3px; }
+
+.bottone--grande { padding: 17px 30px; font-size: 12px; }
+
+/* ---------- copertina ---------- */
 .copertina {
   position: relative;
-  z-index: 1;
-  /* La proporzione e' quella del render, cosi non si taglia niente.
-     width:100% e' obbligatorio: con aspect-ratio, quando max-height
-     stringe l'altezza il browser stringe ANCHE la larghezza per tenere
-     il rapporto, e restava mezza pagina di buio a destra. */
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  max-height: 92vh;
-  display: flex;
-  align-items: flex-end;
+  background: var(--verde);
   overflow: hidden;
 }
 
-/* una stanza per volta: le foto stanno impilate e si scambiano
-   sfumando. Il lieve ingrandimento tiene viva l'immagine ferma. */
-.lastre { position: absolute; inset: 0; background: var(--ivory-deep); }
+.lastre { position: absolute; inset: 0; }
 
 .lastra {
   position: absolute;
@@ -95,270 +149,196 @@ body {
   margin: 0;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 1.3s ease;
-  pointer-events: none;
+  transition: opacity 1.2s ease;
 }
-
 .lastra.is-attiva { opacity: 1; }
 
 .lastra img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 58% center;
-  filter: brightness(0.98) saturate(1.05);
+  object-position: 62% center;
   transform: scale(1);
   transition: transform 7s ease-out;
 }
-
-.lastra.is-attiva img { transform: scale(1.035); }
+.lastra.is-attiva img { transform: scale(1.04); }
 
 .lastra figcaption {
   position: absolute;
-  right: 40px;
-  bottom: 74px;
+  right: 34px;
+  bottom: 26px;
   z-index: 3;
   font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(244, 239, 230, 0.66);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
 }
 
-/* i segnaposti: quante stanze ci sono e a quale siamo */
-.segnaposti {
-  position: absolute;
-  left: 48px;
-  bottom: 74px;
-  z-index: 4;
-  display: flex;
-  gap: 9px;
-}
-
-.segnaposto {
-  width: 26px;
-  height: 2px;
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-  background: rgba(244, 239, 230, 0.26);
-  transition: background .3s ease, width .3s ease;
-}
-
-.segnaposto.is-attivo { width: 46px; background: var(--brass-bright); }
-.figura--foto img { filter: brightness(1) saturate(1.02); }
-.segnaposto:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
-
-/* il buio della pagina risale sulle foto e regge il titolo */
+/* il velo scende da sinistra: il testo poggia sul pieno, la foto
+   resta leggibile a destra. Stessa logica del riferimento. */
 .velo {
   position: absolute;
   inset: 0;
   z-index: 2;
-  /* il buio serve solo all'angolo dove poggia il titolo: e' una
-     vignettatura, non piu' una notte stesa su tutta la foto */
-  background:
-    linear-gradient(76deg, rgba(22, 17, 13, 0.88) 0%, rgba(22, 17, 13, 0.62) 18%,
-                    rgba(22, 17, 13, 0.22) 38%, rgba(22, 17, 13, 0) 56%),
-    linear-gradient(180deg, rgba(22, 17, 13, 0.34) 0%, rgba(22, 17, 13, 0) 22%,
-                    rgba(22, 17, 13, 0) 62%, rgba(22, 17, 13, 0.30) 80%,
-                    rgba(196, 184, 166, 0.5) 90%, var(--ivory) 100%);
+  background: linear-gradient(to right,
+              rgba(32, 40, 34, 0.95) 0%,
+              rgba(32, 40, 34, 0.72) 50%,
+              rgba(32, 40, 34, 0.05) 100%);
 }
 
 .insegna {
   position: relative;
   z-index: 3;
-  width: 100%;
-  padding: 0 40px 92px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 92px 0 96px;
 }
 
-.marchio {
-  height: 46px;
-  width: auto;
-  align-self: flex-start;
-  margin-bottom: 10px;
-  opacity: 0.94;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, .6));
+.insegna .dentro { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+
+.occhiello {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--oro);
 }
+.occhiello--scuro { color: var(--terra); }
 
 .insegna h1 {
-  font-family: var(--serif);
-  font-size: clamp(38px, 5.4vw, 62px);
-  font-weight: 500;
-  line-height: 1.06;
-  letter-spacing: 0.005em;
-  color: #fbf6ec;
-  /* alone a strati: nucleo quasi bianco, poi ottone sempre piu' largo */
-  text-shadow:
-    0 0 1px rgba(255, 246, 228, 0.9),
-    0 0 10px rgba(201, 164, 90, 0.38),
-    0 0 30px rgba(201, 164, 90, 0.22),
-    0 0 68px rgba(168, 132, 60, 0.14);
-}
-
-.insegna h1 em {
-  font-style: italic;
-  color: var(--brass-bright);
-  text-shadow:
-    0 0 2px rgba(255, 248, 232, 0.95),
-    0 0 12px rgba(232, 196, 124, 0.7),
-    0 0 34px rgba(201, 164, 90, 0.46),
-    0 0 84px rgba(168, 132, 60, 0.3);
-  animation: respiro 5.5s ease-in-out infinite;
-}
-
-/* un tubo al neon non sta mai perfettamente fermo */
-@keyframes respiro {
-  0%, 100% { opacity: 1; }
-  46%      { opacity: 0.9; }
+  max-width: 15ch;
+  font-family: var(--condensato);
+  font-size: clamp(46px, 6.6vw, 104px);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  color: #fff;
 }
 
 .sottotitolo {
-  max-width: 46ch;
-  font-size: 15px;
-  font-weight: 300;
-  line-height: 1.62;
-  color: rgba(244, 239, 230, 0.82);
+  max-width: 52ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
 }
 
-/* ---------- le tre schede ---------- */
+.segnaposti { display: flex; gap: 9px; margin-top: 6px; }
+
+.segnaposto {
+  width: 28px;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background .3s ease, width .3s ease;
+}
+.segnaposto.is-attivo { width: 48px; background: var(--oro); }
+.segnaposto:focus-visible { outline: 2px solid var(--oro); outline-offset: 4px; }
+
+/* ---------- collezioni ---------- */
+.collezioni { padding: 84px 0 96px; }
+
+.apertura {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: end;
+  margin-bottom: 44px;
+}
+
+.apertura h2 {
+  margin-top: 14px;
+  font-family: var(--condensato);
+  font-size: clamp(32px, 3.9vw, 56px);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+
+.apertura-testo {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--inchiostro-soft);
+  max-width: 48ch;
+}
+
 .scelte {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  align-items: stretch;
+  gap: 26px;
 }
 
 .scelta {
   display: flex;
   flex-direction: column;
-  background: var(--panel-bg);
-  border: 1px solid var(--hairline);
   text-decoration: none;
   color: inherit;
-  overflow: hidden;
 }
-
-/* quella percorribile reagisce; le altre restano ferme */
-.scelta--via {
-  transition: border-color .22s ease, transform .22s ease, box-shadow .22s ease;
-}
-.scelta--via:hover,
-.scelta--via:focus-visible {
-  border-color: var(--brass);
-  transform: translateY(-3px);
-  box-shadow: 0 14px 30px rgba(43, 33, 26, .10);
-  outline: none;
-}
-.scelta--via:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 
 .scelta--attesa { opacity: .72; }
 
-/* ---------- figura ---------- */
 .figura {
+  height: 330px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: 10px;
-  height: 400px;
-  padding: 22px 20px 0;
-  /* la porta sta in una nicchia appena illuminata da sotto */
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 100%, #e6ddcc 0%, transparent 70%),
-    linear-gradient(180deg, #fdfbf7 0%, var(--panel-lift) 100%);
-  border-bottom: 1px solid var(--hairline-soft);
+  padding: 0;
+  overflow: hidden;
+  background: var(--crema-chiara);
+  border: 1px solid var(--sabbia);
 }
 
-.figura img {
-  height: 100%;
-  width: auto;
-  object-fit: contain;
-  object-position: bottom;
-  filter: drop-shadow(0 8px 14px rgba(43, 33, 26, .13));
-}
+.figura img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.scelta--via:hover .figura img { transform: scale(1.05); }
 
-/* la scheda del listino porta una foto d'ambiente: riempie tutto il riquadro */
-.figura--foto { padding: 14px 14px 0; align-items: center; }
-.figura--foto img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;   /* la porta si vede tutta, dall'architrave al pavimento */
-  filter: brightness(0.94) saturate(1.04);
-  transition: transform .5s ease;
-}
-.scelta--via:hover .figura--foto img { transform: scale(1.04); }
-
-/* il trittico: tre porte, come le opzioni che l'assistente proporra */
-.figura--trittico img { height: 86%; }
+/* il trittico e la collezione che non c'e' ancora restano ritagli */
+.figura--trittico { padding: 26px 20px 0; gap: 8px; }
+.figura--trittico img { width: auto; height: 86%; object-fit: contain; object-position: bottom; }
 .figura--trittico img:nth-child(2) { height: 100%; }
 
-/* la collezione che non c'e' ancora: solo il contorno */
+.figura--vuota { padding: 26px 20px 0; }
 .figura--vuota svg {
   height: 86%;
   width: auto;
   fill: none;
-  stroke: var(--taupe);
+  stroke: var(--inchiostro-soft);
   stroke-width: 3;
-  opacity: .38;
+  opacity: .3;
 }
 .figura--vuota svg path { stroke-width: 2.4; opacity: .8; }
 
-/* ---------- testo ---------- */
-.testo {
+.testo { display: flex; flex-direction: column; gap: 10px; padding: 20px 2px 0; }
+
+.testo h3 {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 22px 24px 24px;
-  flex: 1;
-}
-
-.occhiello {
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--brass);
-}
-
-.testo h2 {
-  font-family: var(--serif);
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--condensato);
   font-size: 27px;
-  font-weight: 500;
-  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
 }
 
-.desc {
-  font-size: 13.5px;
-  font-weight: 300;
-  line-height: 1.62;
-  color: var(--espresso-soft);
-  flex: 1;
-}
+.freccia { color: var(--terra); font-family: var(--testo); font-size: 20px; transition: transform .22s ease; }
+.scelta--via:hover .freccia { transform: translateX(6px); }
+
+.testo p { font-size: 14.5px; line-height: 1.6; color: var(--inchiostro-soft); }
 
 .azione, .stato {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding-top: 6px;
+  margin-top: 2px;
 }
-
-.azione { color: var(--espresso); }
-
-.azione::after {
-  content: "→";
-  margin-left: 9px;
-  color: var(--brass);
-  transition: margin-left .22s ease;
-  display: inline-block;
-}
-.scelta--via:hover .azione::after { margin-left: 15px; }
-
-.stato { color: var(--taupe); }
-
+.azione { color: var(--terra); }
+.stato { color: var(--inchiostro-soft); opacity: .8; }
 .stato::before {
   content: "";
   display: inline-block;
@@ -367,53 +347,42 @@ body {
   margin-right: 8px;
   vertical-align: 2px;
   border-radius: 50%;
-  background: var(--taupe);
+  background: currentColor;
 }
 
 /* ---------- piede ---------- */
-.piede {
-  margin-top: auto;
-  padding-top: 22px;
-  border-top: 1px solid var(--hairline-soft);
-  font-size: 11.5px;
-  font-weight: 300;
-  color: var(--taupe);
-}
+.piede { background: var(--verde); color: rgba(255, 255, 255, 0.6); padding: 30px 0; }
+.piede .dentro { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.piede p { font-size: 12px; letter-spacing: 0.04em; }
 
 /* ---------- schermi stretti ---------- */
-@media (max-width: 900px) {
-  .home { padding: 34px 20px 32px; gap: 30px; }
+@media (max-width: 1000px) {
+  .menu { display: none; }
+  .testata .dentro { justify-content: space-between; }
+  .marchio { margin-right: auto; }
+}
 
-  /* In verticale una 3:2 e' troppo bassa per reggere il titolo sopra:
-     la foto resta intera e il titolo scende sull'avorio, dove va scritto
-     in espresso — il neon vive solo sopra la fotografia. */
-  .copertina { aspect-ratio: auto; max-height: none; display: block; }
-  .lastre { position: relative; aspect-ratio: 3 / 2; }
-  .lastra { position: absolute; }
-  .velo { inset: 0 0 auto; height: 66.6vw;
-    background: linear-gradient(180deg, rgba(22,17,13,.30) 0%, rgba(22,17,13,0) 28%,
-                                rgba(22,17,13,0) 64%, rgba(196,184,166,.42) 88%,
-                                var(--ivory) 100%); }
-  .segnaposti { left: 20px; bottom: auto; top: calc(66.6vw - 34px); }
-  .lastra figcaption { right: 20px; bottom: auto; top: calc(66.6vw - 38px); }
+@media (max-width: 820px) {
+  .dentro { padding: 0 20px; }
+  .striscia p:last-child { display: none; }
+  .insegna { padding: 62px 0 66px; }
+  /* di lato lo sfumato non basta: il velo copre tutto quanto */
+  .velo { background: linear-gradient(to right,
+          rgba(32, 40, 34, 0.94) 0%, rgba(32, 40, 34, 0.80) 60%,
+          rgba(32, 40, 34, 0.55) 100%); }
+  .apertura { grid-template-columns: 1fr; gap: 18px; align-items: start; }
+  .scelte { grid-template-columns: 1fr; gap: 34px; }
+  .collezioni { padding: 56px 0 64px; }
+  .figura { height: 300px; }
+}
 
-  .insegna { padding: 26px 20px 4px; }
-  .insegna h1 { color: var(--espresso); text-shadow: none; }
-  .insegna h1 em { color: var(--brass); text-shadow: none; animation: none; }
-  .sottotitolo { color: var(--espresso-soft); max-width: none; }
-
-  .scelte { grid-template-columns: 1fr; }
-  .figura { height: 320px; }
-  .scelta--attesa { opacity: 1; }        /* in colonna l'opacita' confonde */
-  .scelta--attesa .figura { opacity: .6; }
-  .scelta--attesa .testo { opacity: .72; }
+@media (max-width: 520px) {
+  .bottone span { display: none; }
+  .testata .dentro { height: 64px; gap: 14px; }
+  .marchio img { height: 28px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scelta--via, .azione::after { transition: none; }
-  .lastra, .lastra img { transition: none; }
-  .lastra.is-attiva img { transform: scale(1); }
-  .figura--foto img, .scelta--via:hover .figura--foto img { transition: none; transform: none; }
-  .scelta--via:hover { transform: none; }
-  .insegna h1 em { animation: none; }
+  .lastra, .lastra img, .figura img, .freccia { transition: none; }
+  .lastra.is-attiva img { transform: none; }
 }
