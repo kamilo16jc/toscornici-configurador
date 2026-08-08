@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo configuratore.html e la pagina si rompe -->
-<link rel="stylesheet" href="css/style.css?v=32">
+<link rel="stylesheet" href="css/style.css?v=33">
 <script type="importmap">
 {
   "imports": {
@@ -64,7 +64,13 @@
   <!-- ==================== CONFIG PANEL ==================== -->
   <aside class="panel">
     <header class="panel-header">
-      <p class="panel-kicker">Configuratore · <span class="en">Configurator</span></p>
+      <div class="panel-testa">
+        <p class="panel-kicker">Configuratore · <span class="en">Configurator</span></p>
+        <a class="torna" href="index.html" title="Torna alla schermata d'ingresso">
+          <span class="torna-freccia" aria-hidden="true">←</span>
+          <span>Menu</span>
+        </a>
+      </div>
       <h1 id="panelTitle">Liverpool&nbsp;100-C</h1>
       <p class="panel-sub" id="panelSub">Porta interna classica con bugne — <span class="en">Classic interior panelled door</span></p>
     </header>

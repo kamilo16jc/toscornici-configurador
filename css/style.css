@@ -286,6 +286,42 @@ body {
 
 .panel-header { margin-bottom: 30px; }
 
+/* riga in cima al pannello: l'occhiello a sinistra, il ritorno al menu
+   nell'angolo. Il margine passa alla riga, se no il flex lo sbilancia */
+.panel-testa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.panel-testa .panel-kicker { margin-bottom: 0; }
+
+.torna {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.torna:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+  background: rgba(169, 71, 47, 0.07);
+}
+.torna-freccia { transition: transform .2s; }
+.torna:hover .torna-freccia { transform: translateX(-3px); }
+
 .panel-kicker {
   font-size: 11px;
   letter-spacing: 0.3em;
