@@ -29,15 +29,15 @@
     },
     striscia_2: {
       it: 'Listino · prezzi di fabbrica, IVA e trasporto esclusi',
-      en: 'Price list · ex-works prices, VAT and delivery excluded',
+      en: 'Listino · ex-works prices, VAT and delivery excluded',
     },
     striscia_ass: {
       it: 'L’assistente restringe il catalogo: la scelta resta tua',
       en: 'The assistant narrows the catalogue: the choice stays yours',
     },
     menu_collezioni: { it: 'Collezioni', en: 'Collections' },
-    menu_listino: { it: 'Listino', en: 'Price list' },
-    menu_panto: { it: 'Pantografato', en: 'Routed' },
+    menu_listino: { it: 'Listino', en: 'Listino' },
+    menu_panto: { it: 'Pantografato', en: 'Pantografato' },
     menu_assistente: { it: 'Assistente', en: 'Assistant' },
     apri_conf: { it: 'Apri il configuratore', en: 'Open the configurator' },
     salta: { it: 'Vai alle collezioni', en: 'Skip to the collections' },
@@ -53,13 +53,13 @@
       it: 'Quarantaquattro modelli a listino, con essenze, laccati, coprifili, '
         + 'maniglie e capitelli. Il preventivo si aggiorna a ogni scelta e il '
         + 'modulo d’ordine esce pronto per la fabbrica.',
-      en: 'Forty-four models in the price list, with wood species, lacquer '
+      en: 'Forty-four models in the Listino collection, with wood species, lacquer '
         + 'colours, architraves, handles and door surrounds. The quote updates '
         + 'with every choice, and the order form comes out ready for the factory.',
     },
     lastra_1: { it: 'Nebraska · rovere', en: 'Nebraska · oak' },
     lastra_2: { it: 'Ragusa · rovere', en: 'Ragusa · oak' },
-    lastra_3: { it: 'Pantografato · laccato bianco', en: 'Routed · white lacquer' },
+    lastra_3: { it: 'Pantografato · laccato bianco', en: 'Pantografato · white lacquer' },
 
     /* ---------- le collezioni ---------- */
     col_occhiello: { it: 'Le collezioni', en: 'The collections' },
@@ -72,13 +72,13 @@
         + 'diversi: ognuno ha il suo configuratore, con le voci che gli '
         + 'appartengono. <button class="richiamo" type="button" data-legno="rovere">Le '
         + 'quattro essenze</button> valgono per entrambi.',
-      en: 'Solid timber from the price list and the routed range have different '
-        + 'prices and different machining: each has its own configurator, with '
-        + 'the items that belong to it. <button class="richiamo" type="button" '
+      en: 'The Listino in solid timber and the Pantografato have different prices '
+        + 'and different machining: each has its own configurator, with the items '
+        + 'that belong to it. <button class="richiamo" type="button" '
         + 'data-legno="rovere">The four wood species</button> apply to both.',
     },
     pan_listino_occhiello: { it: 'Massello · 44 modelli', en: 'Solid timber · 44 models' },
-    pan_listino_titolo: { it: 'Listino', en: 'Price list' },
+    pan_listino_titolo: { it: 'Listino', en: 'Listino' },
     pan_listino_testo: {
       it: 'Essenze, laccati, coprifili, maniglie e capitelli. Prezzo che si '
         + 'aggiorna mentre scegli.',
@@ -86,7 +86,7 @@
         + 'surrounds. The price updates as you choose.',
     },
     pan_panto_occhiello: { it: 'Laccato · disegno inciso', en: 'Lacquered · routed pattern' },
-    pan_panto_titolo: { it: 'Pantografato', en: 'Routed' },
+    pan_panto_titolo: { it: 'Pantografato', en: 'Pantografato' },
     pan_panto_testo: {
       it: 'I modelli sono in lavorazione. Avranno un configuratore loro, con le '
         + 'voci di questa collezione.',
@@ -121,7 +121,7 @@
     },
     piede_2: {
       it: 'Listino — prezzi di fabbrica, IVA e trasporto esclusi.',
-      en: 'Price list — ex-works prices, VAT and delivery excluded.',
+      en: 'Listino — ex-works prices, VAT and delivery excluded.',
     },
 
     /* ============================================================

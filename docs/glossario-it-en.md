@@ -149,6 +149,14 @@ pubblicare:** una porta ordinata sulla misura sbagliata non si rimedia.
 
 ## Quello che non si traduce
 
+**I nomi delle due collezioni: Listino e Pantografato.** Non sono due
+parole comuni da voltare in «price list» e «routed»: sono i nomi con
+cui la fabbrica, il listino e il cliente le chiamano. Stanno accanto a
+Liverpool e Nebraska, e come quelli restano in italiano.
+
+Attenzione a *prezzi di listino*, che invece è un'espressione comune e
+diventa *list prices*: è la stessa parola con due mestieri diversi.
+
 I nomi dei modelli — Liverpool, Nebraska, Country — e i nomi dei
 coprifili — Tintoretto, Raffaello, Caravaggio, Novecento. Sono nomi
 propri: sono il catalogo. Restano in italiano in tutte le lingue.
