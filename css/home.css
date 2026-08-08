@@ -163,6 +163,10 @@ img { display: block; max-width: 100%; }
 }
 .lastra.is-attiva img { transform: scale(1.04); }
 
+/* Ogni stanza ha il suo fuoco: dove la porta e' gia' al centro il taglio
+   standard la spinge sotto il titolo, e va riportata a destra. */
+.lastra--centro img { object-position: 42% center; }
+
 .lastra figcaption {
   position: absolute;
   right: 34px;
