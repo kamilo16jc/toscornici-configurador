@@ -31,6 +31,16 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* I fondi vanno stampati. Senza questo il browser li scarta, a meno
+   che il cliente non spunti "grafica di sfondo" nella finestra di
+   stampa: la testata verde, il blocco del totale e il foglio della
+   porta uscivano bianchi. */
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+
 body {
   font-family: var(--testo);
   color: var(--inchiostro);
@@ -382,6 +392,12 @@ body {
 
 @media print {
   body { background: #fff; }
+  /* ribadito: alcuni motori lo leggono solo dentro la regola di stampa */
+  html, body, .foglio, .testata, .totale, .foglio--porta, .filo-oro,
+  .note, .avviso-listino, .telaio-foto {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .barra-prova { display: none; }
   .foglio { margin: 0; box-shadow: none; break-after: page; }
   .foglio:last-child { break-after: auto; }
