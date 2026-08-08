@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
+import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
@@ -1680,8 +1681,6 @@ const quoteForm = document.getElementById('quoteForm');
 const quoteFormView = document.getElementById('quoteFormView');
 const quoteDoneView = document.getElementById('quoteDoneView');
 
-const pdfMoney = (v) => eur.format(v).replace('€', 'EUR').trim();
-
 // scatto dedicato per il PDF: solo la porta su bianco,
 // inquadratura frontale con margine calcolato
 function captureRender() {
@@ -1719,146 +1718,82 @@ function captureRender() {
   return { dataURL: c.toDataURL('image/jpeg', 0.85), w: c.width, h: c.height };
 }
 
-function buildPDF(cliente, rif) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const W = 595, M = 48;
+/* ------------------------------------------------------------
+   I dati che il documento del cliente si aspetta. Qui si legge lo
+   stato, di la' si impagina: chi cambia il listino non deve entrare
+   nel foglio di stampa, e chi cambia il foglio non tocca i prezzi.
+   ------------------------------------------------------------ */
+function datiPreventivo(cliente, rif) {
   const mod = MODELLI[state.modello];
   const prev = computePreventivo();
   const qty = Math.max(1, parseInt(cliente.quantita, 10) || 1);
-  const unitTotal = prev.totale;
-  const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+  const tel = TELAI.find((t) => t.id === state.telaio);
+  const cop = COPRI.find((c) => c.id === state.copri);
+  const mis = misuraAttiva(cop);
+  const ape = APERTURE.find((a) => a.id === state.apertura);
+  const forma = FORME.find((f) => f.id === state.forma);
+  const sop = SOPRALUCI.find((x) => x.id === state.sopraluce);
+  const ser = SERRATURE.find((x) => x.id === state.serratura);
+  const man = MANIGLIE_MOD.find((m) => m.id === state.manigliaMod);
+  const all = allargatoExtra(state.muro, state.allargato);
 
-  // — intestazione: logo ufficiale (fallback testuale se non caricato)
-  if (logoData) {
-    const lw = 150, lh = lw * (240 / 1048); // ~34pt, proporzioni del PNG
-    doc.addImage(logoData, 'PNG', M, 44, lw, lh);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(141, 125, 106);
-    doc.text('Porte in legno massello · Configuratore 3D', M, 44 + lh + 11);
-  } else {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(43, 33, 26);
-    doc.text('T O S C O C O R N I C I', M, 58);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(141, 125, 106);
-    doc.text('Porte in legno massello · Configuratore 3D', M, 70);
-  }
+  const CERN = { anuba: 'Anuba standard', anuba14: 'Anuba registrabile 14 mm',
+                 scomparsa: 'A scomparsa, regolazione 3D' };
 
-  doc.setFontSize(9);
-  doc.setTextColor(43, 33, 26);
-  doc.text('RICHIESTA PREVENTIVO / QUOTE REQUEST', W - M, 52, { align: 'right' });
-  doc.setTextColor(168, 132, 60);
-  doc.text(`Rif. ${rif}`, W - M, 64, { align: 'right' });
-  doc.setTextColor(141, 125, 106);
-  doc.text(oggi, W - M, 76, { align: 'right' });
+  // la maniglia: modello + finitura, o la finitura del 3D se non c'e' modello
+  const maniglia = man.extra === 0 && man.id === 'no'
+    ? 'Da definire'
+    : `${man.label}${state.manFinitura ? ' · ' + state.manFinitura : ''}`;
 
-  doc.setDrawColor(43, 33, 26);
-  doc.setLineWidth(0.8);
-  doc.line(M, 90, W - M, 90);
+  const citta = `${cliente.citta || ''}${cliente.cap ? ' · ' + cliente.cap : ''}` +
+                `${cliente.provincia ? ' (' + cliente.provincia + ')' : ''}`;
 
-  const section = (title, y) => {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(168, 132, 60);
-    doc.text(title, M, y);
-    doc.setDrawColor(220, 210, 195);
-    doc.setLineWidth(0.5);
-    doc.line(M, y + 5, W - M, y + 5);
+  const config = [
+    ['Essenza', essenzaLabel()],
+    ['Finitura', FINITURA_LABEL[state.finitura]],
+    ['Misure luce', `${state.w} × ${state.h} mm`,
+      `${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`],
+    ['Muro', `${state.muro} mm`, all.label || `allargato ${state.allargato}`],
+    ['Telaio', tel.label],
+    ['Coprifili', `${cop.label.replace(/\s*\(.*?\)/, '')} ${mis.label}`,
+      COPRI_WOOD_LABEL[state.copriWood]],
+    ['Apertura', ape.label, forma.id === 'diritta' ? '' : forma.label],
+    ['Maniglia', maniglia],
+    ['Serratura', ser.label],
+    ['Cerniere', CERN[state.cerniere] || state.cerniere],
+  ];
+  if (sop.id !== 'no') config.push(['Sopraluce', sop.label]);
+
+  return {
+    rif,
+    data: new Date().toLocaleDateString('it-IT',
+      { day: 'numeric', month: 'long', year: 'numeric' }),
+    logo: logoData,
+    modello: mod.linea === 'Base' ? mod.label : `${mod.label} ${mod.linea}`,
+    sottotitolo: `${mod.descIt} · ${essenzaLabel()}, ${FINITURA_LABEL[state.finitura]}`,
+    essenza: essenzaLabel(),
+    luce: `${state.w} × ${state.h} mm`,
+    maniglia,
+    cliente: [
+      ['Nome', cliente.nome],
+      ['Telefono', cliente.telefono],
+      ['Email', cliente.email],
+      ['Città', citta],
+      ['Indirizzo', cliente.indirizzo],
+      ['Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte uguali'}`],
+    ],
+    config,
+    righe: prev.righe,
+    totale: prev.totale,
+    qty,
+    note: cliente.note || '',
+    fuoriListino: prev.suPreventivo ? prev.motivo : '',
+    // finche' l'assistente non genera il render, la porta la fa il 3D:
+    // e' un oggetto su fondo chiaro, non una scena, e va contenuto
+    immagine: null,
+    scena: false,
+    fogli: prev.righe.length > 12 ? 3 : 2,
   };
-
-  const row = (k, v, y, x = M, keyW = 92) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(141, 125, 106);
-    doc.text(k, x, y);
-    doc.setTextColor(43, 33, 26);
-    doc.text(String(v || '—'), x + keyW, y);
-  };
-
-  // — cliente
-  let y = 112;
-  section('CLIENTE / CUSTOMER', y);
-  y += 20;
-  row('Nome', cliente.nome, y);
-  row('Telefono', cliente.telefono, y + 14);
-  row('Email', cliente.email, y + 28);
-  row('Indirizzo', cliente.indirizzo, y + 42);
-  row('Città', `${cliente.citta}${cliente.cap ? ' · ' + cliente.cap : ''}${cliente.provincia ? ' (' + cliente.provincia + ')' : ''}`, y + 56);
-
-  // — immagine della configurazione (colonna destra)
-  const img = captureRender();
-  const imgW = 235;
-  const imgH = imgW * (img.h / img.w);
-  doc.addImage(img.dataURL, 'JPEG', W - M - imgW, y - 6, imgW, imgH);
-  doc.setDrawColor(220, 210, 195);
-  doc.rect(W - M - imgW, y - 6, imgW, imgH);
-
-  // — configurazione
-  y = Math.max(y + 82, y - 6 + imgH + 24);
-  section('CONFIGURAZIONE / CONFIGURATION', y);
-  y += 20;
-  row('Modello', `${mod.label} — ${mod.sub}`, y);
-  row('Essenza', essenzaLabel(), y + 14);
-  row('Finitura', `${FINITURA_LABEL[state.finitura]} / ${state.finitura === 'grezza' ? 'raw' : 'painted'}`, y + 28);
-  row('Misure luce', `${state.w} × ${state.h} mm — ${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`, y + 42);
-  row('Muro', `${state.muro} mm`, y + 56);
-  row('Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte'} · maniglia fin. ${MANIGLIE[state.maniglia].label}`, y + 70);
-
-  // — righe del preventivo
-  y += 96;
-  section('PREVENTIVO / QUOTE', y);
-  y += 20;
-  for (const r of prev.righe) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(43, 33, 26);
-    doc.text(`${r.k}${r.sub ? ` — ${r.sub}` : ''}`, M, y, { maxWidth: W - 2 * M - 90 });
-    doc.text(pdfMoney(r.v), W - M, y, { align: 'right' });
-    y += 15;
-  }
-  doc.setDrawColor(43, 33, 26);
-  doc.setLineWidth(0.8);
-  doc.line(M, y, W - M, y);
-  y += 16;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(43, 33, 26);
-  doc.text('Totale unitario / Unit total', M, y);
-  doc.text(pdfMoney(unitTotal), W - M, y, { align: 'right' });
-  if (qty > 1) {
-    y += 18;
-    doc.text(`Totale (${qty} porte) / Grand total`, M, y);
-    doc.text(pdfMoney(unitTotal * qty), W - M, y, { align: 'right' });
-  }
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(141, 125, 106);
-  doc.text('IVA esclusa · Prezzi di listino 2026 / VAT excluded · 2026 list prices', M, y);
-
-  // — note del cliente (larghezza piena)
-  if (cliente.note) {
-    y += 26;
-    section('NOTE DEL CLIENTE / CUSTOMER NOTES', y);
-    y += 18;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(43, 33, 26);
-    doc.text(doc.splitTextToSize(cliente.note, W - 2 * M), M, y);
-  }
-
-  // — piè di pagina
-  doc.setFontSize(8);
-  doc.setTextColor(141, 125, 106);
-  doc.text(
-    'Documento generato automaticamente dal Configuratore 3D Toscocornici e inoltrato a ordini@toscocornici.it',
-    W / 2, 812, { align: 'center' }
-  );
-  return doc;
 }
 
 /* ============================================================
@@ -1915,9 +1850,10 @@ function loadBloccoBg() {
 }
 loadBloccoBg().catch((e) => console.warn('Blocco TL_2018 non precaricato:', e));
 
-// logo ufficiale per l'intestazione del PDF preventivo
+// logo per la testata del preventivo: la testata e' verde,
+// e la targa nera del logo normale ci sparirebbe dentro
 let logoData = null;
-fetch('assets/logo_toscocornici.png')
+fetch('assets/logo_toscocornici_chiaro.png')
   .then((r) => r.blob())
   .then((b) => { const fr = new FileReader(); fr.onload = () => { logoData = fr.result; }; fr.readAsDataURL(b); })
   .catch(() => {});
@@ -2059,25 +1995,36 @@ quoteForm.addEventListener('submit', async (e) => {
   const d = new Date();
   const rif = `TC-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-  const doc = buildPDF(cliente, rif);
-  doc.save(`Toscornici_Preventivo_${rif}.pdf`);
+  const dati = datiPreventivo(cliente, rif);
+  // provvisorio: il render lo generera' l'assistente. Intanto la porta
+  // la fa il 3D, e il foglio la tratta da oggetto invece che da scena.
+  try { dati.immagine = captureRender().dataURL; } catch (e) { /* si stampa senza */ }
 
-  // blocco ordine: assicura lo sfondo (riprova se il precarico era fallito)
-  // e scarica con un piccolo ritardo — Chrome blocca i download multipli
-  // simultanei, distanziarli evita il blocco nella maggior parte dei casi.
+  // il modulo di fabbrica resta un PDF scaricato: e' jsPDF sopra la
+  // scansione del TL_2018, con le caselle calibrate al punto
   const okBg = await ensureBloccoBg();
   const blocco = okBg ? buildBlocco(cliente, rif) : null;
-  if (blocco) setTimeout(() => blocco.save(`Toscornici_Blocco_Ordine_${rif}.pdf`), 800);
+  if (blocco) blocco.save(`Toscornici_Blocco_Ordine_${rif}.pdf`);
 
   document.getElementById('doneRef').textContent = `Rif. ${rif}`;
   document.getElementById('doneFiles').innerHTML = blocco
-    ? `Scaricati 2 PDF:<br>· <b>Toscornici_Preventivo_${rif}.pdf</b> — per il cliente<br>· <b>Toscornici_Blocco_Ordine_${rif}.pdf</b> — modulo TL_2018 per la fabbrica<br><span class="en">Se vedi un solo file, consenti i download multipli nel browser.</span>`
-    : `Scaricato: <b>Toscornici_Preventivo_${rif}.pdf</b><br><span class="en">⚠ Blocco ordine non generato (modulo non raggiungibile) — riprova.</span>`;
+    ? `· <b>Preventivo ${rif}</b> — si apre la finestra di stampa: scegli <b>Salva come PDF</b>.<br>· <b>Toscornici_Blocco_Ordine_${rif}.pdf</b> — modulo TL_2018 per la fabbrica, già scaricato.`
+    : `· <b>Preventivo ${rif}</b> — si apre la finestra di stampa: scegli <b>Salva come PDF</b>.<br><span class="en">⚠ Blocco ordine non generato (modulo non raggiungibile) — riprova.</span>`;
   quoteFormView.hidden = true;
   quoteDoneView.hidden = false;
+
+  // dopo lo scarico: la stampa e' modale e blocca la pagina finche' resta aperta
+  ultimiDati = dati;
+  setTimeout(() => stampaPreventivo(dati), 700);
 });
 
-window.__pdf = { buildPDF, buildBlocco }; // hook di verifica
+// il bottone della schermata finale riapre lo stesso documento
+let ultimiDati = null;
+document.getElementById('doneStampa')?.addEventListener('click', () => {
+  if (ultimiDati) stampaPreventivo(ultimiDati);
+});
+
+window.__pdf = { buildBlocco, datiPreventivo, stampaPreventivo, documentoPreventivo }; // hook di verifica
 
 /* ============================================================
    AVVIO

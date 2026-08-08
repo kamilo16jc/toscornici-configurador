@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo configuratore.html e la pagina si rompe -->
-<link rel="stylesheet" href="css/style.css?v=33">
+<link rel="stylesheet" href="css/style.css?v=34">
 <script type="importmap">
 {
   "imports": {
@@ -333,13 +333,14 @@
       <p class="done-text">Allega il <b>blocco ordine</b> alla mail per <b>ordini@toscocornici.it</b> dopo averlo controllato.<br>
       <span class="en">(Demo: invio simulato — i PDF sono reali e completi.)</span></p>
       <div class="modal-actions">
-        <button type="button" class="cta cta-compact" id="quoteClose">Chiudi — Close</button>
+        <button type="button" class="cta cta-compact" id="doneStampa">Riapri il preventivo</button>
+        <button type="button" class="cta cta-compact cta-ghost" id="quoteClose">Chiudi — Close</button>
       </div>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=32"></script>
+<script type="module" src="js/app.js?v=33"></script>
 </body>
 </html>
