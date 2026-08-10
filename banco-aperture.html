@@ -11,6 +11,11 @@
 <link rel="stylesheet" href="css/style.css">
 
 <style>
+  /* Il foglio del sito blocca lo scroll del body -- nel configuratore e'
+     giusto, perche' li' a scorrere e' il pannello per conto suo. Qui no:
+     questa e' una pagina normale e lunga, e senza questa riga il banco
+     si apriva bloccato a meta'. */
+  html, body { height: auto; overflow: auto; }
   /* Solo l'impalcatura del banco. Niente che tocchi gli schemi. */
   body {
     margin: 0; padding: 26px 30px 60px;

@@ -6,6 +6,11 @@
 <title>Banco · i telai, e cosa cambia fra uno e l'altro</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
+  /* Il foglio del sito blocca lo scroll del body -- nel configuratore e'
+     giusto, perche' li' a scorrere e' il pannello per conto suo. Qui no:
+     questa e' una pagina normale e lunga, e senza questa riga il banco
+     si apriva bloccato a meta'. */
+  html, body { height: auto; overflow: auto; }
   body { margin: 0; padding: 26px 30px 60px; background: #f4f1ea; color: #2b211a;
          font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif; }
   h1 { font-size: 20px; margin: 0 0 4px; }
