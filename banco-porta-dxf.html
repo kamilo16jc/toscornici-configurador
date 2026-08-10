@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco · la porta dall'alzato DXF</title>
+<style>
+  html, body { height: auto; overflow: auto; }
+  body { margin: 0; padding: 24px 30px 50px; background: #efeae0; color: #2b211a;
+         font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sotto { color: #7a6c5d; margin: 0 0 18px; max-width: 92ch; font-size: 13.5px; }
+  .coppia { display: grid; grid-template-columns: 1fr 1.35fr; gap: 20px;
+            align-items: start; }
+  .riq { background: #fffdf8; border: 1px solid #e2dacb; border-radius: 6px;
+         padding: 10px; }
+  .riq h2 { font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+            color: #9a8b78; margin: 0 0 8px; font-weight: 600; }
+  .riq svg, .riq canvas { display: block; width: 100%; }
+  .riq svg { height: 620px; }
+  .riq canvas { height: 620px; cursor: grab; }
+  .riq canvas:active { cursor: grabbing; }
+  .avviso { margin-top: 20px; font-size: 12.5px; color: #8d7d6a; background: #fffdf8;
+            border: 1px dashed #ccc2b1; border-radius: 6px; padding: 14px 16px;
+            max-width: 96ch; }
+  .avviso b { color: #a9472f; }
+  code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<h1>Porta 700-C — dall'alzato di fabbrica</h1>
+<p class="sotto" id="riassunto">…</p>
+
+<div class="coppia">
+  <div class="riq"><h2>L'alzato, com'e' nel DXF</h2><svg id="piatto"></svg></div>
+  <div class="riq"><h2>Il rilievo ricavato — trascina per girarlo</h2><canvas id="tela"></canvas></div>
+</div>
+
+<p class="avviso" id="avviso"></p>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const SPESSORE = 44;      // l'anta, in mm
+const GRADINO = 14;       // PROVA: esagerato apposta, per vedere se il rilievo c'e'
+
+const d = await (await fetch('assets/profili/700-c-alzato.json')).json();
+const livelli = Math.max(...d.facce.map((f) => f.livello));
+
+document.getElementById('riassunto').textContent =
+  `${d.larghezza} × ${d.altezza} mm · ${d.facce.length} facce chiuse ricavate `
+  + `dal disegno, annidate su ${livelli + 1} livelli. La forma di ogni faccia `
+  + `viene dal DXF; quanto scende ogni gradino no — quello lo decidiamo noi.`;
+
+/* ---- l'alzato piatto, cosi' com'e' nel file ---- */
+const via = d.facce.map((f) =>
+  f.punti.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${(d.altezza - y).toFixed(1)}`)
+    .join('') + 'Z').join('');
+document.getElementById('piatto').setAttribute(
+  'viewBox', `-20 -20 ${d.larghezza + 40} ${d.altezza + 40}`);
+document.getElementById('piatto').innerHTML =
+  `<path d="${via}" fill="none" stroke="#2b211a" stroke-width="3"/>`;
+
+/* ---- il rilievo ---- */
+const tela = document.getElementById('tela');
+const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: true, alpha: true });
+rend.setPixelRatio(Math.min(devicePixelRatio, 2));
+rend.setSize(tela.clientWidth, 620, false);
+rend.toneMapping = THREE.NeutralToneMapping;
+rend.toneMappingExposure = 0.85;
+
+const scena = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(rend);
+scena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const tx = new THREE.TextureLoader();
+const carica = (n, srgb) => {
+  const t = tx.load(`assets/textures/rovere/${n}`);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(0.004, 0.004);
+  return t;
+};
+const mat = new THREE.MeshStandardMaterial({
+  map: carica('albedo.jpg', true),
+  normalMap: carica('normal.jpg'),
+  roughnessMap: carica('roughness.jpg'),
+  roughness: 0.62, metalness: 0, envMapIntensity: 0.5,
+});
+
+/* Ogni faccia si estrude fino alla sua quota: piu' e' annidata, piu' e'
+   corta, e viene fuori il rilievo a gradini di una porta bugnata.
+
+   MA con un buco dentro. Alla prima prova ogni faccia era un pieno, e
+   quella esterna -- alta tutto lo spessore -- copriva tutte le altre:
+   usciva una tavola liscia. In una porta vera quella faccia e' una
+   CORNICE, non una lastra. Quindi ogni faccia si buca con le figlie
+   dirette, cioe' quelle subito dentro di lei. */
+const area = (p) => {
+  let s = 0;
+  for (let i = 0; i < p.length; i++) {
+    const [x0, y0] = p[i], [x1, y1] = p[(i + 1) % p.length];
+    s += x0 * y1 - x1 * y0;
+  }
+  return Math.abs(s / 2);
+};
+const dentro = ([x, y], poly) => {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) &&
+        x < ((xj - xi) * (y - yi)) / ((yj - yi) || 1e-9) + xi) c = !c;
+  }
+  return c;
+};
+const centro = (p) => [p.reduce((a, q) => a + q[0], 0) / p.length,
+                       p.reduce((a, q) => a + q[1], 0) / p.length];
+
+const porta = new THREE.Group();
+for (const f of d.facce) {
+  const forma = new THREE.Shape();
+  f.punti.forEach(([x, y], i) => (i ? forma.lineTo(x, y) : forma.moveTo(x, y)));
+  forma.closePath();
+  // le figlie DIRETTE: un livello piu' dentro, e col centro qui dentro
+  for (const g of d.facce) {
+    if (g.livello !== f.livello + 1) continue;
+    if (!dentro(centro(g.punti), f.punti)) continue;
+    if (area(g.punti) >= area(f.punti)) continue;
+    const buco = new THREE.Path();
+    g.punti.forEach(([x, y], i) => (i ? buco.lineTo(x, y) : buco.moveTo(x, y)));
+    buco.closePath();
+    forma.holes.push(buco);
+  }
+  const geo = new THREE.ExtrudeGeometry(forma, {
+    depth: SPESSORE - f.livello * GRADINO, bevelEnabled: false, curveSegments: 1,
+  });
+  geo.computeVertexNormals();
+  porta.add(new THREE.Mesh(geo, mat));
+}
+porta.position.set(-d.larghezza / 2, -d.altezza / 2, -SPESSORE / 2);
+scena.add(porta);
+
+const chiave = new THREE.DirectionalLight(0xffffff, 2.2);
+chiave.position.set(-1600, 2400, 2600);
+scena.add(chiave);
+const riempi = new THREE.DirectionalLight(0xffffff, 0.3);
+riempi.position.set(2000, 900, 1500);
+scena.add(riempi);
+
+/* La distanza si calcola dal pezzo, non a occhio: una porta e' alta due
+   metri e a occhio la si mette sempre troppo vicina -- la prima volta si
+   vedeva solo una tavola che riempiva lo schermo. */
+const fov = 28;
+const asp = tela.clientWidth / 620;
+const mezzo = Math.tan((fov / 2) * Math.PI / 180);
+const dist = Math.max(d.altezza / 2 / mezzo, d.larghezza / 2 / (mezzo * asp)) * 1.18;
+const cam = new THREE.PerspectiveCamera(fov, asp, 10, 30000);
+cam.position.set(dist * 0.42, dist * 0.16, dist * 0.90);
+cam.lookAt(0, 0, 0);
+const controlli = new OrbitControls(cam, tela);
+controlli.enableDamping = true;
+controlli.enablePan = false;
+controlli.autoRotate = true;
+controlli.autoRotateSpeed = 0.8;
+controlli.minPolarAngle = Math.PI * 0.25;
+controlli.maxPolarAngle = Math.PI * 0.68;
+tela.addEventListener('pointerdown', () => { controlli.autoRotate = false; },
+                      { once: true });
+
+(function gira() { controlli.update(); rend.render(scena, cam); requestAnimationFrame(gira); }());
+
+document.getElementById('avviso').innerHTML =
+  '<b>Cosa e\' misurato e cosa e\' inventato.</b> La forma di ogni faccia viene dal '
+  + 'DXF, esatta: di fronte questa porta e\' quella vera. La PROFONDITA\' no — '
+  + `il gradino da ${GRADINO} mm e lo spessore da ${SPESSORE} mm li abbiamo scelti noi, `
+  + 'perche\' un alzato la profondita\' non ce l\'ha. Per averla esatta anche di '
+  + 'fianco serve la <b>sezione</b>: un taglio orizzontale sul montante e uno '
+  + 'verticale sul traverso e sul riquadro. Con quelle, ogni pezzo diventa '
+  + 'un\'estrusione e non si inventa piu\' niente.';
+
+window.__pronto = true;
+</script>
+</body>
+</html>
