@@ -50,7 +50,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
-const PROFILI = ['scorn-coprifilo-sagomato_24,5x69'];
+// tutti i profili di fabbrica, col nome del RUOLO (vedi
+// tools/coprifili-dxf.py: i nomi dei file di fabbrica non erano affidabili)
+const PROFILI = [
+  'listellare-l70', 'pierre-p70',
+  'tintoretto-t70', 'tintoretto-t90',
+  'raffaello-r70', 'raffaello-r90',
+  'giotto-g70', 'giotto-g90', 'leonardo-e90',
+  'michelangelo-h70', 'michelangelo-h90',
+  'cartesio-c70', 'cartesio-c100',
+  'caravaggio-v90', 'tiziano-z90', 'canaletto-n90',
+];
 const LUNGHEZZA = 420;          // mm di barra da mostrare
 
 window.__glb = {};              // il banco lo legge per salvare i file

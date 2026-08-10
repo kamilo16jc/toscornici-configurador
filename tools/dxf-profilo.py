@@ -8,18 +8,28 @@ coprifili erano immagini di repertorio e i telai ricalchi di miniature.
 
 TRE COSE VISTE LEGGENDO IL PRIMO FILE
 1. Il DXF porta anche il RIQUADRO DEL FOGLIO: quattro linee che fanno un
-   rettangolo 280x200 attorno al disegno. Non e' il profilo, e tenendolo
-   la sezione verrebbe fuori grande come la pagina. Si riconosce perche'
-   i suoi quattro vertici sono gli angoli esatti del rettangolo.
+   rettangolo attorno al disegno. Non e' il profilo, e tenendolo la
+   sezione verrebbe fuori grande come la pagina.
 2. I codici di gruppo delle LINE non sono in coppia come uno se li
    aspetta: prima 10 e 11 (le due x), poi 20 e 21 (le due y).
 3. Tolto il riquadro, il profilo misura 69,00 x 24,68 mm -- che e'
    esattamente il nome del file, 24,5X69. Il decimo di troppo e' la
    pancia degli archi: la misura nominale e' sul corpo.
 
+E UNA QUARTA, ARRIVATO IL RESTO DEI FILE
+Non tutti i disegni sono una linea chiusa e basta: qualcuno porta dentro
+un dettaglio a se' (il Canaletto), qualcuno una linea rimasta li' lunga
+due decimi (il Tintoretto). Incatenare per vicinanza -- come si faceva
+quando il file era uno solo -- su questi va a sbattere: la catena
+imbocca il dettaglio e il contorno esce annodato.
+
+Percio' adesso non si incatena: si CAMMINA SUL BORDO. Si parte dal punto
+piu' in basso -- che sul bordo ci sta per forza, sotto non c'e' niente --
+e a ogni nodo si prende il lato piu' orario. Cosi' il cammino resta sul
+guscio: nei dettagli interni non entra mai, e non c'e' niente da tarare.
+
 USO
-    python tools/dxf-profilo.py <file.dxf> [altro.dxf ...]
-Scrive un JSON col contorno chiuso, pronto da estrudere.
+    python tools/dxf-profilo.py <file.dxf> [--nome slug]
 """
 
 import io
@@ -31,7 +41,8 @@ import sys
 FUORI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                      'assets', 'profili')
 PASSO_ARCO = 2.0     # gradi per segmento: sotto il decimo di mm sul raggio
-CHIUSO = 0.05        # due punti piu' vicini di cosi' sono lo stesso punto
+SNAP = 0.01          # due punti piu' vicini di cosi' sono gia' lo stesso nodo
+CUCI = 1.0           # e fin qui si cuce, ma solo fra due capi liberi
 
 
 def leggi(percorso):
@@ -91,64 +102,198 @@ def senza_riquadro(ent):
     return [e for e in ent if not bordo(e)]
 
 
-def contorno(ent):
-    """Incatena le entita' in un contorno chiuso.
+def area(p):
+    s = 0.0
+    for i in range(len(p)):
+        x0, y0 = p[i]
+        x1, y1 = p[(i + 1) % len(p)]
+        s += x0 * y1 - x1 * y0
+    return s / 2
 
-    Il DXF non le da' in ordine: si parte da una e si cerca ogni volta
-    quella che attacca all'ultimo punto, girandola se serve.
+
+def spezza_a_T(segs, chiavi):
+    """Spezza i segmenti dove ci finisce sopra il capo di un altro.
+
+    Il Canaletto lo ha fatto vedere: il suo incastro e' disegnato con una
+    linea che ARRIVA A META' del fianco, non a un vertice. Per il disegno
+    e' un raccordo normale; per un grafo no -- se il punto non e' un nodo
+    condiviso, quella linea resta appesa, e potando gli appesi si porta
+    via mezzo profilo. (Era il motivo per cui del Canaletto usciva un
+    rettangolino 9x3 al posto della sezione.)
+
+    Percio' prima di camminare si guarda, per ogni capo di entita', se
+    cade in mezzo a un segmento: li' il segmento si taglia in due, e la
+    giunzione diventa un nodo come tutti gli altri.
     """
-    pezzi = [punti(e) for e in ent]
-    catena = list(pezzi.pop(0))
-    while pezzi:
-        fine = catena[-1]
-        vicino = lambda p: math.hypot(p[0] - fine[0], p[1] - fine[1])
-        migliore, girato, dist = None, False, 1e9
-        for i, pz in enumerate(pezzi):
-            for g, cap in ((False, pz[0]), (True, pz[-1])):
-                d = vicino(cap)
+    fuori = []
+    for a, b in segs:
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L2 = dx * dx + dy * dy
+        if L2 < 1e-12:
+            continue
+        dentro = []
+        for p in chiavi:
+            t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2
+            if not (1e-6 < t < 1 - 1e-6):
+                continue
+            q = (a[0] + dx * t, a[1] + dy * t)
+            if math.hypot(p[0] - q[0], p[1] - q[1]) < SNAP:
+                dentro.append((t, p))
+        if not dentro:
+            fuori.append((a, b))
+            continue
+        dentro.sort()
+        prec = a
+        for _, p in dentro:
+            fuori.append((prec, p))
+            prec = p
+        fuori.append((prec, b))
+    return fuori
+
+
+def contorno_esterno(segs):
+    """Il contorno esterno del disegno.
+
+    QUI NON SERVE l'estrazione di TUTTE le facce del grafo piano, come in
+    tools/dxf-porta.py: di un coprifilo interessa il giro di fuori, e
+    basta. Provata comunque, si e' rotta sul Cartesio 100 -- ha un
+    dettaglio che tocca il profilo in quattro punti, e dai nodi di grado
+    tre il cammino a sinistra ripassava su un lato gia' speso e buttava
+    via il giro. Prendere solo il bordo toglie il problema invece di
+    tararlo.
+
+    Si parte dal punto PIU' IN BASSO: quello sta sul bordo per forza, non
+    c'e' niente sotto. Da li' si gira tenendo sempre la curva piu' stretta
+    verso l'esterno, e a ogni nodo si sceglie fra i lati quello piu'
+    orario: cosi' il cammino sta sempre sul guscio e nei dettagli interni
+    non entra mai.
+    """
+    nodo = {}
+
+    def id_di(p):
+        k = (round(p[0] / SNAP), round(p[1] / SNAP))
+        if k not in nodo:
+            nodo[k] = (len(nodo), p)
+        return nodo[k][0]
+
+    pos, archi = {}, {}
+    for a, b in segs:
+        ia, ib = id_di(a), id_di(b)
+        if ia == ib:
+            continue
+        pos[ia], pos[ib] = a, b
+        archi.setdefault(ia, set()).add(ib)
+        archi.setdefault(ib, set()).add(ia)
+
+    # I disegni non chiudono al centesimo: fra un'entita' e la successiva
+    # restano capi liberi a mezzo millimetro l'uno dall'altro, e un
+    # contorno aperto non fa faccia. Si cuciono -- ma solo fra due capi
+    # LIBERI, cioe' nodi da cui parte una linea sola: dove il disegno e'
+    # gia' chiuso non si tocca niente, e un dettaglio staccato resta
+    # staccato perche' i suoi capi non hanno un compagno vicino.
+    liberi = lambda: [n for n in archi if len(archi[n]) == 1]
+    for _ in range(200):
+        soli = liberi()
+        coppia, dist = None, CUCI
+        for i, a in enumerate(soli):
+            for b in soli[i + 1:]:
+                if b in archi[a]:
+                    continue
+                d = math.hypot(pos[a][0] - pos[b][0], pos[a][1] - pos[b][1])
                 if d < dist:
-                    migliore, girato, dist = i, g, d
-        if dist > CHIUSO * 20:
-            break                        # il contorno si spezza qui
-        pz = pezzi.pop(migliore)
-        if girato:
-            pz = pz[::-1]
-        catena.extend(pz[1:])
-    return catena
+                    coppia, dist = (a, b), d
+        if not coppia:
+            break
+        a, b = coppia
+        archi[a].add(b)
+        archi[b].add(a)
+
+    # Cucito il cucibile, quello che ha ancora un capo per aria non e' il
+    # contorno: e' un trattino di dettaglio, un richiamo, una linea
+    # rimasta. Si pota -- e potando si scopre il trattino successivo,
+    # percio' si ripete finche' non resta che roba chiusa. Senza questo il
+    # cammino imbocca il ramo morto e il giro non torna piu' a casa.
+    while True:
+        morti = [n for n in archi if len(archi[n]) == 1]
+        if not morti:
+            break
+        for n in morti:
+            for m in archi[n]:
+                archi[m].discard(n)
+            archi[n].clear()
+        archi = {n: v for n, v in archi.items() if v}
+
+    if not archi:
+        return []
+    ang = lambda a, b: math.atan2(pos[b][1] - pos[a][1], pos[b][0] - pos[a][0])
+
+    # il piu' in basso, e a parita' il piu' a sinistra: sta sul bordo
+    via = min(archi, key=lambda n: (pos[n][1], pos[n][0]))
+    # si arriva da sotto, cioe' da dove non c'e' nessuno
+    entrata = -math.pi / 2
+    giro, a = [], via
+    for _ in range(20000):
+        giro.append(pos[a])
+        scelta, meglio = None, -1.0
+        for c in archi[a]:
+            if len(giro) > 1 and c == prima and len(archi[a]) > 1:
+                continue                      # indietro solo se non c'e' altro
+            d = (entrata - ang(a, c)) % (2 * math.pi)
+            if d > meglio:                    # il piu' orario: resta di fuori
+                meglio, scelta = d, c
+        if scelta is None:
+            break
+        prima, entrata, a = a, ang(scelta, a), scelta
+        if a == via:
+            break
+    return [giro] if len(giro) >= 3 else []
 
 
-def prepara(percorso):
+def prepara(percorso, nome=None):
     ent = senza_riquadro(leggi(percorso))
-    c = contorno(ent)
+    segs, capi = [], []
+    for e in ent:
+        p = punti(e)
+        segs += list(zip(p, p[1:]))
+        capi += [p[0], p[-1]]
+    f = [g for g in contorno_esterno(spezza_a_T(segs, capi)) if abs(area(g)) > 1]
+    if not f:
+        raise SystemExit('%s: contorno non chiuso' % percorso)
+    c = f[0]
+    if area(c) < 0:                       # sempre antiorario, come vuole Three
+        c = c[::-1]
     xs = [p[0] for p in c]
     ys = [p[1] for p in c]
-    # a zero, cosi' il profilo sta in origine invece che dove capitava
-    # sul foglio del disegno
-    c = [(round(x - min(xs), 4), round(y - min(ys), 4)) for x, y in c]
-    chiuso = math.hypot(c[0][0] - c[-1][0], c[0][1] - c[-1][1]) < CHIUSO * 20
+    # a zero, cosi' il profilo sta in origine invece che dove capitava sul
+    # foglio del disegno
     return {
-        'nome': os.path.splitext(os.path.basename(percorso))[0],
+        'nome': nome or os.path.splitext(os.path.basename(percorso))[0],
+        'origine': os.path.basename(percorso),
         'larghezza': round(max(xs) - min(xs), 3),
         'spessore': round(max(ys) - min(ys), 3),
-        'punti': c,
-        'chiuso': chiuso,
-        'entita': len(ent),
+        'punti': [(round(x - min(xs), 4), round(y - min(ys), 4)) for x, y in c],
+        'chiuso': True,
     }
 
 
 def main():
-    file = sys.argv[1:]
-    if not file:
-        sys.exit('Uso: python tools/dxf-profilo.py <file.dxf> ...')
+    arg = sys.argv[1:]
+    nome = None
+    if '--nome' in arg:
+        i = arg.index('--nome')
+        nome = arg[i + 1]
+        arg = arg[:i] + arg[i + 2:]
+    if not arg:
+        sys.exit('Uso: python tools/dxf-profilo.py <file.dxf> [--nome slug]')
     os.makedirs(FUORI, exist_ok=True)
-    for f in file:
-        d = prepara(f)
-        nome = d['nome'].lower().replace(' ', '-')
-        with io.open(os.path.join(FUORI, nome + '.json'), 'w', encoding='utf8') as g:
+    for f in arg:
+        d = prepara(f, nome if len(arg) == 1 else None)
+        slug = d['nome'].lower().replace(' ', '-')
+        with io.open(os.path.join(FUORI, slug + '.json'), 'w', encoding='utf8') as g:
             json.dump(d, g, ensure_ascii=False)
-        print('  %-44s %7.2f x %6.2f mm   %3d punti   contorno %s'
-              % (nome + '.json', d['larghezza'], d['spessore'], len(d['punti']),
-                 'chiuso' if d['chiuso'] else 'APERTO — da controllare'))
+        print('  %-30s %7.2f x %6.2f mm  %3d punti'
+              % (slug + '.json', d['larghezza'], d['spessore'],
+                 len(d['punti'])))
 
 
 if __name__ == '__main__':

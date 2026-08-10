@@ -160,6 +160,11 @@ const COPRI_WOOD_LABEL = { frassino: 'Frassino', toulipier: 'Toulipier', pino: '
 // è il credito da scalare quando si calcola una combinazione a ml.
 const COPRI_INCLUSO_CAD = 80;
 const ml1 = (n) => n.toFixed(1).replace('.', ',');   // metri all'italiana
+// I millimetri arrivano dal DXF al centesimo: scriverli tutti (24,689)
+// fa sembrare una tolleranza di lavorazione quello che è solo la corda
+// con cui abbiamo spezzato un arco. Un decimo è già più di quanto un
+// coprifilo si misuri in cantiere.
+const mm1 = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',');
 const ML = (f, t, p) => ({ frassino: f, toulipier: t, pino: p });
 const COPRI_MISURE = {
   listellare: [
@@ -1465,7 +1470,8 @@ function refreshCopriSelect() {
     <button class="man-card${attiva ? ' is-active' : ''}" data-copri="${c.id}"
             title="Guardalo in 3D e scegli la misura">
       ${PROFILI[c.id]
-        ? `<span class="man-photo man-photo--sez" data-sez="${c.id}"></span>`
+        ? `<span class="man-photo man-photo--sez" data-sez="${c.id}"
+                 data-sezmis="${mis.id}"></span>`
         : c.img
           ? `<span class="man-photo"><img src="${c.img}" alt="Coprifilo ${c.label}" loading="lazy"></span>`
           : '<span class="man-photo man-photo--none">—</span>'}
@@ -1478,7 +1484,8 @@ function refreshCopriSelect() {
   // fabbrica, e dice la forma -- che di un profilo sagomato e' tutto.
   // Si riempie dopo, perche' il contorno arriva da un file.
   grid.querySelectorAll('[data-sez]').forEach((box) => {
-    sezioneSvg(box.dataset.sez).then((svg) => { if (svg) box.innerHTML = svg; });
+    sezioneSvg(box.dataset.sez, box.dataset.sezmis)
+      .then((svg) => { if (svg) box.innerHTML = svg; });
   });
 
   // Un clic solo: sceglie il coprifilo E apre il 3D. La lente era un
@@ -1528,12 +1535,16 @@ function renderVisoreCopri() {
   // Se quel DXF non c'e' ancora, si torna alla foto -- meglio una foto
   // onesta di un 3D inventato.
   fig.innerHTML = '<span class="visore-nofoto">…</span>';
-  apriVisore(fig, cop.id).then((fatto) => {
+  apriVisore(fig, cop.id, attiva.id).then((fatto) => {
     if (fatto) {
-      misureProfilo(cop.id).then((m) => {
+      misureProfilo(cop.id, attiva.id).then((m) => {
+        // le misure sono quelle MISURATE sul DXF, non quelle del codice:
+        // sul corpo il profilo è nominale, ma gli archi fanno pancia e
+        // un CS204 «30×90» in mano è 32
         nota3d.textContent = m
-          ? `Sezione dal disegno di fabbrica — ${m.larghezza} × ${m.spessore} mm. `
-            + 'Trascina per girarlo.'
+          ? `Sezione dal disegno di fabbrica — ${
+              m.map((x) => `${mm1(x.larghezza)} × ${mm1(x.spessore)} mm`).join(' e ')
+            }. Trascina per girarlo.`
           : 'Trascina per girarlo.';
       });
       return;
