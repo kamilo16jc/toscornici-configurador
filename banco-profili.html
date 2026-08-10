@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco · profili dai DXF di fabbrica</title>
+<style>
+  html, body { height: auto; overflow: auto; }
+  body { margin: 0; padding: 24px 30px 60px; background: #efeae0; color: #2b211a;
+         font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sotto { color: #7a6c5d; margin: 0 0 20px; max-width: 88ch; font-size: 13.5px; }
+  .griglia { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); }
+  .scheda { background: #fffdf8; border: 1px solid #e2dacb; border-radius: 6px;
+            padding: 16px 18px 18px; }
+  .testa { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  h2 { font-size: 15px; margin: 0; }
+  .mis { font: 600 13px/1 Jost, sans-serif; color: #a9472f; white-space: nowrap; }
+  .vista { margin-top: 12px; background: #f6f2ea; border: 1px solid #ece5d8;
+           border-radius: 5px; overflow: hidden; }
+  .vista canvas { display: block; width: 100%; height: 320px; }
+  .sezione { margin-top: 10px; background: #fbf8f2; border: 1px solid #ece5d8;
+             border-radius: 5px; padding: 8px; }
+  .sezione svg { display: block; width: 100%; height: 120px; }
+  .dati { margin: 10px 0 0; font-size: 12px; color: #7a6c5d; }
+  code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<h1>Profili dai DXF di fabbrica</h1>
+<p class="sotto">
+  Niente e' disegnato a mano: la sezione arriva dal DXF della fabbrica —
+  coordinate esatte, archi con centro e raggio — e da li' si estrude il solido.
+  Sotto ogni pezzo c'e' la sezione piatta, che e' letteralmente il contorno che
+  il 3D usa: se le due non coincidono, il difetto e' nostro.
+</p>
+
+<div class="griglia" id="griglia"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+const PROFILI = ['scorn-coprifilo-sagomato_24,5x69'];
+const LUNGHEZZA = 420;          // mm di barra da mostrare
+
+window.__glb = {};              // il banco lo legge per salvare i file
+
+for (const nome of PROFILI) {
+  const d = await (await fetch(`assets/profili/${nome}.json`)).json();
+
+  const scheda = document.createElement('div');
+  scheda.className = 'scheda';
+  scheda.innerHTML = `
+    <div class="testa">
+      <h2>${d.nome}</h2>
+      <span class="mis">${d.larghezza} × ${d.spessore} mm</span>
+    </div>
+    <div class="vista"><canvas></canvas></div>
+    <div class="sezione"><svg viewBox="-2 -2 ${d.larghezza + 4} ${d.spessore + 4}"
+      preserveAspectRatio="xMidYMid meet"></svg></div>
+    <p class="dati">Sezione dal DXF · ${d.punti.length} punti · contorno
+      ${d.chiuso ? 'chiuso' : 'APERTO'} · barra da ${LUNGHEZZA} mm</p>`;
+  document.getElementById('griglia').appendChild(scheda);
+
+  // la sezione piatta: lo stesso contorno che estrudiamo, per confronto
+  const via = d.punti.map((p, i) =>
+    `${i ? 'L' : 'M'}${p[0].toFixed(2)} ${(d.spessore - p[1]).toFixed(2)}`).join('');
+  scheda.querySelector('.sezione svg').innerHTML =
+    `<path d="${via}Z" fill="#f2ead9" stroke="#4a3c30" stroke-width="0.5"/>`;
+
+  /* ---- il solido ---- */
+  const forma = new THREE.Shape();
+  d.punti.forEach(([x, y], i) => (i ? forma.lineTo(x, y) : forma.moveTo(x, y)));
+  forma.closePath();
+
+  const geo = new THREE.ExtrudeGeometry(forma, {
+    depth: LUNGHEZZA, bevelEnabled: false, curveSegments: 1,
+  });
+  // in origine e in piedi: il DXF ha lo zero dove capitava sul foglio
+  geo.translate(-d.larghezza / 2, -d.spessore / 2, -LUNGHEZZA / 2);
+  geo.computeVertexNormals();
+
+  const tela = scheda.querySelector('canvas');
+  const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: true, alpha: true });
+  rend.setPixelRatio(Math.min(devicePixelRatio, 2));
+  rend.setSize(tela.clientWidth, 320, false);
+  rend.toneMapping = THREE.NeutralToneMapping;
+  rend.toneMappingExposure = 0.9;
+
+  const scena = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(rend);
+  scena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+  const tex = new THREE.TextureLoader();
+  const carica = (f, srgb) => {
+    const t = tex.load(`assets/textures/rovere/${f}`);
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(0.02, 0.02);   // la texture e' tarata sui metri, qui siamo in mm
+    return t;
+  };
+  const mat = new THREE.MeshStandardMaterial({
+    map: carica('albedo.jpg', true),
+    normalMap: carica('normal.jpg'),
+    roughnessMap: carica('roughness.jpg'),
+    roughness: 0.62, metalness: 0, envMapIntensity: 0.55,
+  });
+
+  const barra = new THREE.Mesh(geo, mat);
+  scena.add(barra);
+
+  const luce = new THREE.DirectionalLight(0xffffff, 2.0);
+  luce.position.set(-180, 240, 260);
+  scena.add(luce);
+  const riempi = new THREE.DirectionalLight(0xffffff, 0.3);
+  riempi.position.set(220, 120, 180);
+  scena.add(riempi);
+
+  const cam = new THREE.PerspectiveCamera(26, tela.clientWidth / 320, 1, 5000);
+  cam.position.set(300, 210, 430);
+  cam.lookAt(0, 0, 0);
+
+  const controlli = new OrbitControls(cam, tela);
+  controlli.enableDamping = true;
+  controlli.enablePan = false;
+  controlli.autoRotate = true;
+  controlli.autoRotateSpeed = 1.1;
+  tela.addEventListener('pointerdown', () => { controlli.autoRotate = false; },
+                        { once: true });
+
+  (function gira() {
+    controlli.update();
+    rend.render(scena, cam);
+    requestAnimationFrame(gira);
+  }());
+
+  /* Il GLB, per chi lo vuole riusare fuori dal browser.
+
+     Si esporta una copia col materiale NUDO, non quello che si vede.
+     L'esportatore prova a fondere roughness e metalness in una texture
+     sola, e se le immagini non hanno ancora finito di caricare fallisce
+     con "source width is 0" -- capitato. Nel GLB conta la geometria: le
+     tinte del legno le rimette chi lo apre.
+
+     E si aspetta il callback: senza, chi legge window.__glb lo trova
+     vuoto e non salva niente. Capitato pure quello. */
+  const nudo = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: 0xcbb79a, roughness: 0.6, metalness: 0,
+  }));
+  nudo.name = d.nome;
+  await new Promise((fatto) => {
+    new GLTFExporter().parse(nudo, (bin) => {
+      window.__glb[nome] = Array.from(new Uint8Array(bin));
+      fatto();
+    }, (e) => { console.error('GLB non riuscito:', e); fatto(); },
+    { binary: true });
+  });
+}
+
+window.__pronto = true;
+</script>
+</body>
+</html>
