@@ -74,14 +74,19 @@ export function pushSolid(list, o, u, v, w, tone) {
              P(0,0,1), P(1,0,1), P(1,1,1), P(0,1,1)];
   const facce = [[[0,1,2,3],'back'], [[4,5,6,7],'front'], [[1,5,6,2],'edge'],
                  [[0,4,7,3],'edge'], [[3,2,6,7],'top'], [[0,1,5,4],'top']];
-  // Si tiene la faccia se sta DAVANTI al centro del solido. Il verso di
-  // percorrenza non serve: dipende da come sono orientati i tre vettori
-  // della scatola, e con la terna opposta scartava le due facce grandi.
-  const cz = p.reduce((s2, a) => s2 + proj(a[0], a[1], a[2])[2], 0) / 8;
+  // PROVATO E SCARTATO: buttare via le facce che guardano dall'altra
+  // parte, confrontando la profondita' della faccia con quella del
+  // centro del solido. Sembra un risparmio e invece e' la causa dello
+  // sfarfallio: quando una faccia arriva quasi di taglio i due valori
+  // si sfiorano, la faccia entra ed esce a ogni fotogramma e lascia un
+  // buco che lampeggia. Misurato sui tre schemi a libro: il numero di
+  // facce ballava 23-21-23-21 lungo tutta la corsa.
+  //
+  // Adesso si disegnano tutte e sei e decide l'ordine per profondita'.
+  // Una faccia di troppo non si vede -- ci passa sopra quella davanti,
+  // che e' opaca -- mentre una faccia che manca si vede eccome.
   for (const [idx, kind] of facce) {
     const q = idx.map((n) => { const a = p[n]; return proj(a[0], a[1], a[2]); });
-    const fz = (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4;
-    if (fz <= cz) continue;                        // faccia che guarda via
     list.push({
       d: 'M' + q.map((a) => a[0].toFixed(1) + ' ' + a[1].toFixed(1)).join(' L') + 'Z',
       z: (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4,
@@ -142,11 +147,20 @@ function anta(list, hw, o, s, ang, larg, alt, opts) {
       // incasso sul bordo: una scorrevole non ha leva ne cerniere
       hw.incassi.push([at(larg - 60, hv - 90, T + 2), at(larg - 60, hv + 90, T + 2)]);
     } else {
-      hw.handles.push({ rose: at(larg - 105, hv, T),
-                        knee: at(larg - 105, hv, T + 30),
-                        tip:  at(larg - 235, hv, T + 30) });
-      for (const v of [alt * 0.22, alt * 0.78]) {
-        hw.hinges.push([at(0, v - 55, T * 0.5), at(0, v + 55, T * 0.5)]);
+      // La maniglia sta sul bordo libero, le cerniere su quello fisso.
+      // In una porta a libro l'anta a muro ha il bordo libero attaccato
+      // all'altra anta: li' non ci va nessuna maniglia, ci vanno le
+      // cerniere DELL'ALTRA. Per questo si puo' chiedere l'una senza
+      // l'altra invece di prendere o lasciare tutto il corredo.
+      if (!opts.senzaManiglia) {
+        hw.handles.push({ rose: at(larg - 105, hv, T),
+                          knee: at(larg - 105, hv, T + 30),
+                          tip:  at(larg - 235, hv, T + 30) });
+      }
+      if (!opts.senzaCerniere) {
+        for (const v of [alt * 0.22, alt * 0.78]) {
+          hw.hinges.push([at(0, v - 55, T * 0.5), at(0, v + 55, T * 0.5)]);
+        }
       }
     }
   }
@@ -412,8 +426,17 @@ function scena(tipo, u, opt) {
       const g1 = k.r1 * 180 / Math.PI, g2 = k.r2 * 180 / Math.PI;
 
       ombra([s * W/2, 0, 0], s, vz * g1, L1);
-      anta(L.anta, hw, [s * W/2, 0, 0], s, vz * g1, L1, H, { noHW: g1 > 1 });
-      anta(L.anta, null, k.gi, s, -vz * g2, L2, H);
+      // La ferramenta racconta il meccanismo, e va messa dove sta:
+      //   anta a muro   cerniere sullo stipite, e basta
+      //   anta libera   cerniere sul giunto (e' li' che le due ante
+      //                 sono attaccate fra loro) e maniglia sul bordo
+      //                 che si prende in mano
+      // Prima l'anta a muro perdeva tutto appena si apriva e la seconda
+      // non aveva niente: le cerniere del giunto, che sono la firma di
+      // una porta a libro, non si vedevano mai.
+      anta(L.anta, hw, [s * W/2, 0, 0], s, vz * g1, L1, H,
+           { senzaManiglia: true });
+      anta(L.anta, hw, k.gi, s, -vz * g2, L2, H);
 
       // PROVATO E SCARTATO: disegnare a terra il giro del bordo libero
       // della battente, per dire "qui non c'e' binario". Non dice
