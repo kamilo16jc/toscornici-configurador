@@ -403,7 +403,15 @@ montaAnta();
    riottenere esattamente la U della tavola, ed e' il modo di sapere che
    il montaggio e' giusto. */
 const bordi = (curve, i) => curve.flatMap((c) => c.map((p) => p[i]));
-const telaioAltoY = Math.max(...bordi(d.telaio_alto, 0));
+/* Fin dove salgono gli stipiti: fino in cima all'IMBOTTO della traversa,
+   non fino in cima al telaio intero. Sono due quote diverse da quando il
+   coprifilo si e' staccato -- l'imbotto finisce a 2127, il telaio con la
+   sua ala a 2196 -- e salendo fino a 2196 lo stipite spuntava di
+   sessantanove millimetri sopra la traversa, proprio nell'angolo dove il
+   coprifilo va in mitra. Erano i due blocchetti che si vedevano in alto.
+   Il buco che prima si tappava tirando su gli stipiti adesso non c'e'
+   piu': lo copre il coprifilo, che gira l'angolo tutto intero. */
+const telaioAltoY = Math.max(...bordi(d.telaio_alto_imbotto, 0));
 const spor = -Math.min(...bordi(d.telaio, 0));      // quanto sporge dal filo anta
 
 /* Gli stipiti arrivano FIN SOPRA, non si fermano sotto la traversa.
@@ -423,6 +431,7 @@ for (const c of d.telaio_alto_imbotto) {
    Serve perche' i sedici DXF NON sono orientati allo stesso modo: in
    nove il piede sta a destra, in cinque a sinistra. */
 function assetta(p, larghezza) {
+  // le corse orizzontali, quota per quota
   const corse = new Map();
   for (let i = 0; i < p.length; i++) {
     const a = p[i], b = p[(i + 1) % p.length];
@@ -430,15 +439,46 @@ function assetta(p, larghezza) {
     const k = Math.round((a[1] + b[1]) / 2 * 2) / 2;
     corse.set(k, (corse.get(k) || 0) + Math.abs(a[0] - b[0]));
   }
-  let dorso = 0, meglio = -1;
-  for (const [y, len] of corse) if (len > meglio) { meglio = len; dorso = y; }
-  const piede = p.filter((q) => q[1] < dorso - .3);
+  /* IL DORSO E' LA QUOTA DA CUI PARTE IL PIEDE, e va cercato cosi'.
+     Prendere la corsa piu' lunga -- che sembra ovvio -- sbaglia proprio
+     sul listellare: quello e' disegnato al ROVESCIO rispetto agli altri
+     quindici, con la faccia liscia in basso e le cave di stabilita' in
+     alto, e la corsa piu' lunga e' la faccia a vista. Montandolo cosi'
+     le cave finivano in vista sulla parete, e un listellare le cave non
+     le ha: sono dietro, contro il muro, e servono a non farlo imbarcare.
+     Il piede invece si riconosce sempre: e' l'unica sporgenza CORTA, sta
+     a un capo solo, e da qualunque parte sia disegnata dice dov'e' il
+     dorso. */
+  let dorso = null, minimo = 1e9, lunga = 0, dorsoLungo = 0;
+  for (const [y, len] of corse) {
+    if (len > lunga) { lunga = len; dorsoLungo = y; }
+    if (len < larghezza * .15) continue;
+    for (const s of [1, -1]) {
+      const oltre = p.filter((q) => (q[1] - y) * s > .5);
+      if (!oltre.length) continue;
+      const largo = Math.max(...oltre.map((q) => q[0]))
+                  - Math.min(...oltre.map((q) => q[0]));
+      if (largo < larghezza * .35 && largo < minimo) { minimo = largo; dorso = y; }
+    }
+  }
+  if (dorso === null) dorso = dorsoLungo;    // tavola liscia, senza piede
+
+  // il corpo sta da una parte del dorso, il piede dall'altra
+  const su = p.filter((q) => q[1] > dorso + .5);
+  const giu = p.filter((q) => q[1] < dorso - .5);
+  const corpoSu = su.length > giu.length;
+  const piede = corpoSu ? giu : su;
+  // e il piede sta a un capo solo: quel capo va verso il vano
   const media = piede.length
     ? piede.reduce((s, q) => s + q[0], 0) / piede.length : larghezza;
-  const q = media < larghezza / 2
+  let q = media < larghezza / 2
     ? p.map(([x, y]) => [larghezza - x, y]).reverse() : p.slice();
-  // u: distanza dal filo verso la luce.  v: fuori dal muro
-  return q.map(([x, y]) => [larghezza - x, y - dorso]);
+  /* u: distanza dal filo verso il vano.  v: fuori dal muro.
+     Il verso di v si prende dal CORPO, non da come e' stato disegnato:
+     il corpo sta fuori e il piede dentro, sempre. */
+  const s = corpoSu ? 1 : -1;
+  q = q.map(([x, y]) => [larghezza - x, (y - dorso) * s]);
+  return s < 0 ? q.reverse() : q;      // il verso del contorno non cambia
 }
 
 /* Il coprifilo come cornice INGLETATA su tre lati.
@@ -495,9 +535,14 @@ async function montaCoprifili() {
   const sx = Math.max(...d.ali.flat().map((a) => a.a).filter((v) => v < L / 2));
   const dx = Math.min(...d.ali.flat().map((a) => a.a).filter((v) => v > L / 2));
   const su = d.ali_alto.flat()[0].a;
-  const facce = [...new Set(d.ali.flat().map((a) => `${a.z}|${a.verso}`))]
-    .map((k) => ({ z: +k.split('|')[0], verso: +k.split('|')[1] }))
-    .sort((a, b) => b.z - a.z);          // prima la faccia della porta
+  /* Il coprifilo appoggia sulla FACCIA DEL MURO, non sul filo interno
+     dell'ala. Sono due piani diversi, distanti quanto il piede: il piede
+     entra nel vano e scavalca l'imbotto, il dorso resta fuori sul muro.
+     Prendendo il filo dell'ala il coprifilo entrava tutto di un piede.
+     Il muro e' quello del tratteggio, 118 -- che torna proprio adesso:
+     con le facce a 30 e -88, e il piede del listellare lungo 12, l'ala
+     disegnata viene da 18 a 40, che e' esattamente quello che misura. */
+  const facce = [{ z: d.muro.z1, verso: 1 }, { z: d.muro.z0, verso: -1 }];
   facce.forEach((f, i) => {
     metti(gCopri, cornice(sez[Math.min(i, sez.length - 1)], sx, dx, su,
                           f.z, f.verso), false);
@@ -584,14 +629,12 @@ if (d.muro) {
   // l'architrave appoggia sul telaio, con un dito di sovrapposizione: se
   // parte piu' in alto fra i due resta una striscia di fondo che si vede
   const alto = telaioAltoY - 10;
-  /* Lo SPESSORE del muro non si prende dal tratteggio. Quello misura
-     118 e comprende l'intonaco: con 118 il muro sporgeva dodici
-     millimetri oltre la faccia su cui il coprifilo appoggia, e se lo
-     mangiava -- sulla parete non si vedeva piu' niente. Le facce vere le
-     dicono le ALI del telaio: il coprifilo ci va sopra, quindi sono
-     quelle. */
-  const zf = d.ali.flat().map((a) => a.z);
-  const mz0 = Math.min(...zf), mz1 = Math.max(...zf);
+  /* Il muro e' quello del tratteggio: 118. Per un momento era sembrato
+     troppo -- sporgeva dodici millimetri oltre l'ala del telaio e se la
+     mangiava -- ma quei dodici sono il PIEDE del coprifilo, che entra
+     nel vano: il dorso appoggia sul muro e il piede scavalca l'imbotto.
+     Le facce a 30 e -88 sono giuste, ed e' l'ala a partire piu' dentro. */
+  const mz0 = d.muro.z0, mz1 = d.muro.z1;
   const mattone = (x0, x1, y0, y1) => {
     const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, mz1 - mz0);
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (mz0 + mz1) / 2);
