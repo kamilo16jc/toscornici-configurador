@@ -40,6 +40,10 @@ const VISTE = {
    E' la vista in cui la fabbrica disegna le porte a libro, perche' e'
    l'unica dove le cerniere e la piega si leggono senza interpretare. */
 export const PIANTA = { view: 0, tilt: 1, pianta: true };
+// L'alzato: di fronte, senza scorcio. E' la vista delle quote -- una
+// misura storta non si legge, e sommarci una prospettiva vorrebbe dire
+// disegnare 900 mm lunghi 830.
+export const ALZATO = { view: 0, tilt: 0 };
 const VISTA_BASE = { view: VIEW, tilt: TILT };
 let vista = VISTA_BASE;
 let cosV = Math.cos(VIEW * Math.PI / 180);
@@ -652,3 +656,18 @@ export function mostraApertura(svg, tipo, opt) {
 export function fotogramma(svg, tipo, u, opt) {
   disegna(svg, tipo, u, opt);
 }
+
+/**
+ * Presta il punto di vista a chi disegna da fuori.
+ * proj() legge una variabile del modulo, quindi chiamarla dall'esterno
+ * senza dire da dove si guarda darebbe l'ultima vista rimasta in giro.
+ * Qui si imposta, si disegna e si rimette com'era.
+ */
+export function conVista(v, fn) {
+  const prima = vista;
+  guarda(null, v);
+  try { return fn(); } finally { guarda(null, prima); }
+}
+
+/** Le misure vere, per chi disegna quote sulla stessa scala. */
+export const MISURE = { W, H, T, F, FD, WALL };

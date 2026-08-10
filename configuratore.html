@@ -125,6 +125,9 @@
         <button class="pill is-active" data-ante="1" data-t="ante_1">1 anta</button>
         <button class="pill" data-ante="2"><span data-t="ante_2">2 ante</span> <span class="en">+100%</span></button>
       </div>
+      <!-- quote: la luce vista di fronte. Si muove quando il cliente
+           cambia una misura, cosi' si vede COSA e' cambiato. -->
+      <figure class="anim"><svg id="misureAnim" role="img" aria-label="Larghezza e altezza della luce"></svg></figure>
       <!-- schema animato: pianta vista dall'alto -->
       <figure class="anim"><svg id="anteAnim" role="img" aria-label="Schema del movimento"></svg></figure>
       <p class="pill-note" id="misureNote"></p>
@@ -138,6 +141,9 @@
           <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
         </label>
       </div>
+      <!-- quote: lo spessore del muro, in pianta. Di frontale non si
+           vedrebbe affatto. -->
+      <figure class="anim"><svg id="muroAnim" role="img" aria-label="Spessore del muro"></svg></figure>
       <div class="pills" id="allargatoPills" hidden>
         <button class="pill is-active" data-allargato="integrale" data-t="all_integrale">Integrale</button>
         <button class="pill" data-allargato="imbottino" data-t="all_imbottino">Con imbottino</button>

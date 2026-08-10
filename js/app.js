@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
+import { mostraLuce, mostraMuro } from './misure.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -1519,6 +1520,12 @@ function refreshAnim() {
   if (conSopraluce) mostraApertura(document.getElementById('sopraluceAnim'),
                                    `sopraluce_${state.sopraluce}`);
 
+  // Gli schemi quotati non hanno un ciclo: si muovono quando cambia la
+  // misura. Passare sempre i valori va bene -- se non sono cambiati non
+  // fanno niente, se no partono verso quelli nuovi.
+  mostraLuce(document.getElementById('misureAnim'), state.w, state.h);
+  mostraMuro(document.getElementById('muroAnim'), state.w, state.muro,
+             state.muro > 108 ? state.allargato : null);
 }
 
 function refreshUI() {

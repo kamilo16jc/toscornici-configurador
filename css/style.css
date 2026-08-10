@@ -544,6 +544,12 @@ body {
 }
 .anim svg { display: block; width: 100%; max-width: 320px; height: 210px; margin: 0 auto; }
 
+/* Gli schemi quotati non stanno nel riquadro comune: l'alzato della
+   luce e' verticale e a 210 px veniva un francobollo, la pianta del
+   muro e' larga e bassa e sprecava meta' altezza. */
+#misureAnim { max-width: 300px; height: 300px; }
+#muroAnim   { max-width: 320px; height: 150px; }
+
 /* tinte dei solidi negli schemi: le stesse del pannello, cosi lo schema
    sta nella pagina e non sembra incollato da un altro documento */
 .anim {
