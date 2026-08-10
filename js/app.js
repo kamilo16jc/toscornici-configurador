@@ -1289,6 +1289,47 @@ function renderVisoreManiglia() {
 const swatchesEl = document.getElementById('swatches');
 const laccatiEl = document.getElementById('laccati');
 
+/**
+ * Quali colori si possono fare su un'essenza.
+ *
+ * Per adesso tutti su tutte, ed e' una scelta consapevole: la fabbrica
+ * deve ancora mandare l'elenco vero, e inventarselo vorrebbe dire
+ * mostrare al cliente colori che nessuno gli fara'.
+ *
+ * Quando l'elenco arriva si cambia solo questa funzione: la tavolozza
+ * si ridisegna gia' a ogni cambio d'essenza, e un colore che sparisce
+ * viene gia' tolto dalla scelta. Sta tutto in piedi, manca il dato.
+ */
+function coloriDisponibili() {
+  return Object.keys(LACCATI);
+}
+
+function renderLaccati() {
+  const disponibili = coloriDisponibili(state.essenza);
+  laccatiEl.innerHTML = `
+    <button class="lacc" data-colore="nessuno">
+      <span class="lacc-chip lacc-chip--none"></span>
+      <span class="lacc-label">Legno a vista</span>
+      <span class="lacc-extra">naturale</span>
+    </button>` + disponibili.map((k) => {
+    const l = LACCATI[k];
+    return `
+    <button class="lacc" data-colore="${k}">
+      <span class="lacc-chip" style="background:#${l.color.toString(16).padStart(6, '0')}"></span>
+      <span class="lacc-label">${l.label}</span>
+      <span class="lacc-extra">${l.extra ? `+ ${eur.format(l.extra)}` : 'incluso'}</span>
+    </button>`;
+  }).join('');
+  laccatiEl.querySelectorAll('.lacc').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.colore = btn.dataset.colore;
+      if (isLaccato()) state.finitura = 'verniciata'; // la laccatura è una verniciatura
+      applyEssenza();
+      refreshUI();
+    });
+  });
+}
+
 function renderEssenze() {
   swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
     <button class="swatch" data-essenza="${k}">
@@ -1296,28 +1337,18 @@ function renderEssenze() {
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
-  laccatiEl.innerHTML = `
-    <button class="lacc" data-colore="nessuno">
-      <span class="lacc-chip lacc-chip--none"></span>
-      <span class="lacc-label">Legno a vista</span>
-      <span class="lacc-extra">naturale</span>
-    </button>` + Object.entries(LACCATI).map(([k, l]) => `
-    <button class="lacc" data-colore="${k}">
-      <span class="lacc-chip" style="background:#${l.color.toString(16).padStart(6, '0')}"></span>
-      <span class="lacc-label">${l.label}</span>
-      <span class="lacc-extra">${l.extra ? `+ ${eur.format(l.extra)}` : 'incluso'}</span>
-    </button>`).join('');
+  renderLaccati();
   swatchesEl.querySelectorAll('.swatch').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.essenza = btn.dataset.essenza; // il colore laccato resta com'è
-      applyEssenza();
-      refreshUI();
-    });
-  });
-  laccatiEl.querySelectorAll('.lacc').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.colore = btn.dataset.colore;
-      if (isLaccato()) state.finitura = 'verniciata'; // la laccatura è una verniciatura
+      state.essenza = btn.dataset.essenza;
+      // Se il colore scelto non si fa su questo legno, torna al legno a
+      // vista invece di restare selezionato un bottone che non c'e'
+      // piu'. Oggi non succede mai; il giorno che l'elenco arriva,
+      // succede subito.
+      if (isLaccato() && !coloriDisponibili(state.essenza).includes(state.colore)) {
+        state.colore = 'nessuno';
+      }
+      renderLaccati();
       applyEssenza();
       refreshUI();
     });

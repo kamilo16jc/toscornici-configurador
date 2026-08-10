@@ -85,29 +85,30 @@
       <select class="model-select" id="modelloSelect" aria-label="Modello / Model"></select>
     </section>
 
-    <!-- Finitura — prima dell'essenza, perche' e' lei a decidere se la
-         domanda sul colore ha senso: sul legno grezzo non si lacca. -->
+    <!-- Essenza — prima della finitura: e' il legno a decidere quali
+         colori si possono fare, quindi la domanda viene prima della
+         tavolozza che deve filtrare. Il filtro vero arriva quando la
+         fabbrica manda l'elenco: per ora si mostrano tutti. -->
     <section class="section">
-      <h2 class="section-title"><span class="num">02</span> <span data-t="sez_finitura">Finitura</span></h2>
+      <h2 class="section-title"><span class="num">02</span> <span data-t="sez_essenza">Essenza</span></h2>
+      <div class="swatches" id="swatches"><!-- essenze generate dal catalogo --></div>
+    </section>
+
+    <!-- Finitura, con i colori che apre -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">03</span> <span data-t="sez_finitura">Finitura</span></h2>
       <div class="pills" id="pills">
         <button class="pill" data-finitura="grezza" data-t="fin_grezza">Grezza</button>
         <button class="pill is-active" data-finitura="verniciata" data-t="fin_verniciata">Verniciata</button>
       </div>
-      <!-- I colori stanno QUI, sotto la finitura che li apre, e non giu'
-           nell'essenza: sono la seconda meta' della stessa domanda. Il
-           div che li avvolge e' un blocco normale apposta -- 'hidden' su
-           .laccati, che e' una griglia, non avrebbe fatto niente. -->
+      <!-- Il div che avvolge titolo e tavolozza e' un blocco normale
+           apposta: 'hidden' su .laccati, che e' una griglia, non avrebbe
+           fatto niente. -->
       <div id="bloccoLaccati">
         <p class="lacc-title" data-t="lacc_titolo">Colore laccato — su qualsiasi essenza</p>
         <div class="laccati" id="laccati"><!-- colori generati dal catalogo --></div>
       </div>
       <p class="pill-note" id="pillNote"></p>
-    </section>
-
-    <!-- Essenza -->
-    <section class="section">
-      <h2 class="section-title"><span class="num">03</span> <span data-t="sez_essenza">Essenza</span></h2>
-      <div class="swatches" id="swatches"><!-- essenze generate dal catalogo --></div>
     </section>
 
     <!-- Misure -->
