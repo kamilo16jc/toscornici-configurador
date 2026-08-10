@@ -28,15 +28,15 @@ export const PROFILI = {
   pierre: 'scorn-coprifilo-sagomato_24,5x69',
 };
 
-/* Il legno del listino e la texture che gli somiglia.
-   Il frassino una texture sua non ce l'ha: si usa quella del toulipier,
-   che e' l'altro legno chiaro, e si schiarisce un po'. E' un ripiego
-   dichiarato, non una svista. */
-const LEGNO = {
-  frassino:  { cartella: 'toulipier', tinta: 0xf0e6d2 },
-  toulipier: { cartella: 'toulipier', tinta: 0xffffff },
-  pino:      { cartella: 'pino',      tinta: 0xffffff },
-};
+/* Il legno del render e' SEMPRE il rovere, qualunque essenza si scelga.
+
+   Non e' una dimenticanza: qui si guarda la FORMA del profilo, e vederla
+   cambiare tinta a ogni clic sposta l'attenzione sul colore, che il
+   cliente decide altrove. Una sola essenza, sempre la stessa, tiene il
+   confronto onesto fra un profilo e l'altro.
+   (Il rovere e' anche l'unica con una texture tarata bene: il frassino
+   una sua non ce l'ha affatto.) */
+const LEGNO = { cartella: 'rovere' };
 
 const LUNGHEZZA = 420;         // mm di barra da mostrare
 
@@ -69,10 +69,15 @@ export function chiudiVisore() {
  * false se quel profilo il DXF non ce l'ha: in quel caso chi chiama
  * mostra la foto.
  */
-export async function apriVisore(dove, idCoprifilo, legno) {
-  chiudiVisore();
+export async function apriVisore(dove, idCoprifilo) {
   const file = PROFILI[idCoprifilo];
-  if (!file) return false;
+  if (!file) { chiudiVisore(); return false; }
+  // Se e' gia' quello che si sta guardando, si lascia stare. Cambiare
+  // legno o misura ridisegna il modale, ma il render e' sempre in
+  // rovere: rifare il contesto WebGL a ogni clic sarebbe lavoro buttato,
+  // e il pezzo ripartirebbe girato da capo mentre lo si sta guardando.
+  if (vivo && vivo.profilo === idCoprifilo && dove.contains(vivo.tela)) return true;
+  chiudiVisore();
 
   let d;
   try {
@@ -110,11 +115,10 @@ export async function apriVisore(dove, idCoprifilo, legno) {
   geo.translate(-d.larghezza / 2, -d.spessore / 2, -LUNGHEZZA / 2);
   geo.computeVertexNormals();
 
-  const L = LEGNO[legno] || LEGNO.toulipier;
   const tx = new THREE.TextureLoader();
   const texture = [];
   const carica = (nome, srgb) => {
-    const t = tx.load(`assets/textures/${L.cartella}/${nome}`);
+    const t = tx.load(`assets/textures/${LEGNO.cartella}/${nome}`);
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     // le texture sono tarate sui metri della porta, qui si lavora in mm
@@ -123,7 +127,6 @@ export async function apriVisore(dove, idCoprifilo, legno) {
     return t;
   };
   const mat = new THREE.MeshStandardMaterial({
-    color: L.tinta,
     map: carica('albedo.jpg', true),
     normalMap: carica('normal.jpg'),
     roughnessMap: carica('roughness.jpg'),
@@ -156,7 +159,7 @@ export async function apriVisore(dove, idCoprifilo, legno) {
   tela.addEventListener('pointerdown', () => { controlli.autoRotate = false; },
                         { once: true });
 
-  vivo = { tela, rend, controlli, geo, mat, texture, giro: 0 };
+  vivo = { profilo: idCoprifilo, tela, rend, controlli, geo, mat, texture, giro: 0 };
 
   (function anima() {
     if (!vivo) return;
@@ -166,6 +169,25 @@ export async function apriVisore(dove, idCoprifilo, legno) {
   }());
 
   return true;
+}
+
+/**
+ * La sezione piatta come SVG, per la copertina della scheda.
+ * E' lo stesso contorno che il 3D estrude: la scheda mostra il disegno
+ * di fabbrica, e il clic apre il solido. Prima li' c'era una foto di
+ * repertorio, che del profilo non diceva la forma.
+ */
+export async function sezioneSvg(idCoprifilo) {
+  const file = PROFILI[idCoprifilo];
+  if (!file) return null;
+  let d;
+  try { d = await contorno(file); } catch { return null; }
+  const via = d.punti.map(([x, y], i) =>
+    `${i ? 'L' : 'M'}${x.toFixed(2)} ${(d.spessore - y).toFixed(2)}`).join('');
+  return `<svg class="man-sezione" viewBox="-2 -2 ${d.larghezza + 4} `
+       + `${d.spessore + 4}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">`
+       + `<path d="${via}Z" fill="var(--ivory-deep)" stroke="var(--ink)" `
+       + `stroke-width="0.7" stroke-linejoin="round"/></svg>`;
 }
 
 /** Le misure vere del profilo, per scriverle accanto al visore. */

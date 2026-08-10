@@ -503,6 +503,9 @@ body {
 .visore-fig img { width: 100%; max-height: 300px; object-fit: contain; }
 /* il minivisore 3D del profilo: cursore da presa, cosi' si capisce che
    si puo' girare senza doverlo scrivere */
+.man-photo--sez { display: grid; place-items: center; padding: 6px 8px; }
+.man-photo--sez .man-sezione { display: block; width: 100%; height: 100%; max-height: 62px; }
+
 .visore-3d { display: block; width: 100%; height: 260px; cursor: grab; touch-action: none; }
 .visore-3d:active { cursor: grabbing; }
 .visore-3d-nota {

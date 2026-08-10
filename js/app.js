@@ -3,7 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
 import { mostraLuce, mostraMuro } from './misure.js';
 import { mostraAllargato, fermaAllargato } from './allargato.js';
-import { apriVisore, chiudiVisore, misureProfilo } from './visore-profilo.js';
+import { apriVisore, chiudiVisore, misureProfilo, sezioneSvg, PROFILI }
+  from './visore-profilo.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -1435,6 +1436,13 @@ function renderExtras() {
     }));
 }
 
+// La lente resta alle MANIGLIE, che hanno una scheda tecnica da aprire.
+// I coprifili non ce l'hanno piu': li' il clic sulla scheda apre il 3D.
+const SVG_LENTE = `<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+  <circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <path d="M10.4 10.4 14 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+</svg>`;
+
 // il menu coprifili mostra il prezzo già scalato sui ml della misura attuale
 function refreshCopriSelect() {
   // griglia con anteprima: stessa immagine per tutte le misure di uno stesso
@@ -1454,38 +1462,36 @@ function refreshCopriSelect() {
     const p = Math.round((mis.pack && !mis.cad ? b * fml : b) * 100) / 100;
     const n = misureDi(c.id).length;
     return `
-    <button class="man-card${attiva ? ' is-active' : ''}" data-copri="${c.id}">
-      ${c.img
-        ? `<span class="man-photo"><img src="${c.img}" alt="Coprifilo ${c.label}" loading="lazy"></span>`
-        : '<span class="man-photo man-photo--none">—</span>'}
-      <span class="man-zoom" data-zoom="${c.id}" role="button" tabindex="0"
-            title="Ingrandisci e scegli la misura"
-            aria-label="Ingrandisci ${c.label}">${SVG_LENTE}</span>
+    <button class="man-card${attiva ? ' is-active' : ''}" data-copri="${c.id}"
+            title="Guardalo in 3D e scegli la misura">
+      ${PROFILI[c.id]
+        ? `<span class="man-photo man-photo--sez" data-sez="${c.id}"></span>`
+        : c.img
+          ? `<span class="man-photo"><img src="${c.img}" alt="Coprifilo ${c.label}" loading="lazy"></span>`
+          : '<span class="man-photo man-photo--none">—</span>'}
       <span class="man-label">${c.label.replace(/ \(.*/, '').replace(' — compreso', '')}</span>
       <span class="man-extra">${p ? `+ ${eur.format(p)}` : 'compreso'}${
         n > 1 ? ` · ${mis.label}` : ''}</span>
     </button>`;
   }).join('');
+  // In copertina la SEZIONE del DXF, non una foto: e' il disegno di
+  // fabbrica, e dice la forma -- che di un profilo sagomato e' tutto.
+  // Si riempie dopo, perche' il contorno arriva da un file.
+  grid.querySelectorAll('[data-sez]').forEach((box) => {
+    sezioneSvg(box.dataset.sez).then((svg) => { if (svg) box.innerHTML = svg; });
+  });
+
+  // Un clic solo: sceglie il coprifilo E apre il 3D. La lente era un
+  // secondo bersaglio dentro il primo, e per vedere la forma -- che e'
+  // il motivo per cui uno guarda un coprifilo -- bisognava sapere di
+  // doverla cercare.
   grid.querySelectorAll('.man-card').forEach((btn) => {
-    btn.addEventListener('click', (ev) => {
-      if (ev.target.closest('.man-zoom')) return;      // la lente apre il visore
-      state.copri = btn.dataset.copri;
+    btn.addEventListener('click', () => {
       state.copriMisura = null;                        // torna alla misura di listino
-      refreshCopriSelect();
-      refreshUI();
+      apriVisoreCopri(btn.dataset.copri);
     });
   });
-  grid.querySelectorAll('.man-zoom').forEach((z) => {
-    const apri = (ev) => { ev.stopPropagation(); apriVisoreCopri(z.dataset.zoom); };
-    z.addEventListener('click', apri);
-    z.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') apri(ev); });
-  });
 }
-
-const SVG_LENTE = `<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-  <circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-  <path d="M10.4 10.4 14 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-</svg>`;
 
 // ── Visore coprifilo: immagine grande, legno e misura ─────────────────────
 function apriVisoreCopri(id) {
@@ -1522,7 +1528,7 @@ function renderVisoreCopri() {
   // Se quel DXF non c'e' ancora, si torna alla foto -- meglio una foto
   // onesta di un 3D inventato.
   fig.innerHTML = '<span class="visore-nofoto">…</span>';
-  apriVisore(fig, cop.id, state.copriWood).then((fatto) => {
+  apriVisore(fig, cop.id).then((fatto) => {
     if (fatto) {
       misureProfilo(cop.id).then((m) => {
         nota3d.textContent = m
