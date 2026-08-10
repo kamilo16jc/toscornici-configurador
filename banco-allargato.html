@@ -4,127 +4,224 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Banco · allargato integrale contro imbottino</title>
-<link rel="stylesheet" href="css/style.css">
 <style>
-  body {
-    margin: 0; padding: 26px 30px 60px;
-    background: #f4f1ea; color: #2b211a;
-    font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif;
-  }
+  body { margin: 0; padding: 26px 30px 60px; background: #f4f1ea; color: #2b211a;
+         font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .sotto { color: #7a6c5d; margin: 0 0 22px; max-width: 78ch; font-size: 13.5px; }
-  .comandi {
-    display: flex; flex-wrap: wrap; gap: 22px; align-items: center;
-    border-bottom: 1px solid #ddd5c6; padding-bottom: 14px; margin-bottom: 22px;
-  }
+  .sotto { color: #7a6c5d; margin: 0 0 20px; max-width: 84ch; font-size: 13.5px; }
+  .comandi { display: flex; gap: 22px; align-items: center; border-bottom: 1px solid #ddd5c6;
+             padding-bottom: 14px; margin-bottom: 22px; }
   .gruppo { display: flex; align-items: center; gap: 8px; }
   .gruppo > b { font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
                 color: #8d7d6a; font-weight: 600; }
-  input[type=range] { width: 260px; accent-color: #a9472f; }
+  input[type=range] { width: 240px; accent-color: #a9472f; }
   button { font: inherit; font-size: 13px; padding: 5px 13px; cursor: pointer;
            border: 1px solid #c9bfae; background: #fffdf8; border-radius: 3px; }
-  .val { font-variant-numeric: tabular-nums; color: #7a6c5d; min-width: 5em; }
-  .griglia { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  button.on { background: #a9472f; border-color: #a9472f; color: #fff; }
+  .val { font-variant-numeric: tabular-nums; color: #7a6c5d; min-width: 4em; }
+  .griglia { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); }
   .scheda { background: #fffdf8; border: 1px solid #e2dacb; border-radius: 5px;
-            padding: 14px 16px 18px; }
-  .scheda h2 { font-size: 14.5px; margin: 0 0 2px; }
-  .scheda p.mecc { margin: 0 0 10px; font-size: 12.5px; color: #7a6c5d; min-height: 3em; }
-  .scheda .anim svg { width: 100%; max-width: none; height: 260px; display: block; }
-  .prezzo { margin-top: 8px; font-size: 13px; color: #a9472f; font-weight: 600; }
+            padding: 16px 18px 18px; }
+  .scheda h2 { font-size: 15px; margin: 0 0 3px; }
+  .scheda p.mecc { margin: 0 0 4px; font-size: 12.5px; color: #7a6c5d; min-height: 4.6em; }
+  .conta { font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+           color: #a9472f; font-weight: 600; margin: 0 0 8px; }
+  .disegno { background: #fbf8f2; border: 1px solid #ece5d8; border-radius: 4px; }
+  .disegno svg { display: block; width: 100%; height: 250px; }
+  .prezzo { margin-top: 10px; font-size: 13px; color: #a9472f; font-weight: 600; }
+  .avviso { margin-top: 26px; font-size: 12.5px; color: #8d7d6a; background: #fffdf8;
+            border: 1px dashed #ccc2b1; border-radius: 5px; padding: 13px 16px; max-width: 92ch; }
   code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+  /* le stesse classi dei file del listino, cosi' i tratti restano i loro */
+  .p { fill: #fdfbf6; stroke: #4a3c30; stroke-width: 2.15; stroke-linejoin: round;
+       stroke-linecap: round; }
+  .g { fill: #a8843c; stroke: none; }
+  .d { stroke: #4a3c30; stroke-width: 1.5; fill: none; }
+  .agg .p { fill: #e2a98f; }
+  .marca { fill: none; stroke: #a9472f; stroke-width: 2.4; }
 </style>
 </head>
 <body>
 
 <h1>Allargato — integrale contro imbottino</h1>
 <p class="sotto">
-  Dettaglio in pianta di una spalla, tutti e due con lo stesso metro. Le sezioni
-  del listino sono su fogli diversi (191×44 una, 224×153 l'altra) e messe a
-  confronto non dicono niente. In terracotta il pezzo che l'allargato
-  <b>aggiunge</b>: e' quello che si paga. Muovi lo spessore del muro e guarda
-  cosa cresce in ciascuno dei due.
+  Non sono disegni miei: sono <b>i tracciati del listino</b>, letti da
+  <code>assets/telai/allargato_*.svg</code> e portati alla stessa scala usando la
+  guarnizione come riferimento — e' l'unico pezzo che compare identico in tutti e
+  due i fogli. Premi <b>Smonta</b>: quello che si separa e' quello che i pezzi
+  sono davvero.
 </p>
 
 <div class="comandi">
+  <div class="gruppo"><button id="esplodi">Smonta</button></div>
   <div class="gruppo">
-    <b>Spessore muro</b>
-    <input type="range" id="muro" min="90" max="400" step="1" value="108">
-    <span class="val" id="muroVal">108 mm</span>
+    <b>Apertura</b>
+    <input type="range" id="quanto" min="0" max="1" step="0.01" value="0">
+    <span class="val" id="quantoVal">0%</span>
   </div>
-  <div class="gruppo"><button id="anima">▶ Falli crescere</button></div>
 </div>
 
 <div class="griglia">
   <div class="scheda">
     <h2>Integrale</h2>
-    <p class="mecc">Il telaio e' un pezzo solo, spesso, lungo quanto il muro.
-      Cresce il muro, cresce tutto il pezzo.</p>
-    <figure class="anim" style="margin:0"><svg id="svgInt"></svg></figure>
-    <p class="prezzo" id="przInt"></p>
+    <p class="mecc">Un tracciato solo. La battuta a un capo, con la guarnizione, e
+      poi il profilo corre liscio fino in fondo al muro. Non si smonta perche' non
+      c'e' niente da separare: e' un pezzo di legno unico.</p>
+    <p class="conta" id="contaInt"></p>
+    <div class="disegno"><svg id="svgInt"></svg></div>
+    <p class="prezzo">Muro 220 mm: + 250,00 €</p>
   </div>
   <div class="scheda">
     <h2>Con imbottino</h2>
-    <p class="mecc">Il telaio resta quello standard da 108 mm. A completare il
-      vano si aggiunge una tavola piu' sottile, appoggiata alla spalla.</p>
-    <figure class="anim" style="margin:0"><svg id="svgImb"></svg></figure>
-    <p class="prezzo" id="przImb"></p>
+    <p class="mecc">Quattro tracciati: il telaio con la battuta, una tavola staccata
+      che prosegue lo stipite, e i due coprifili — uno per faccia del muro. Dove la
+      tavola incontra il telaio resta una giunta.</p>
+    <p class="conta" id="contaImb"></p>
+    <div class="disegno"><svg id="svgImb"></svg></div>
+    <p class="prezzo">Muro 220 mm: + 180,00 € — 70,00 € meno dell'integrale</p>
   </div>
 </div>
 
-<script type="module">
-import { mostraAllargato } from './js/misure.js';
+<p class="avviso" id="avviso"></p>
 
-// le stesse bande del listino (pag. 49), per vedere il prezzo cambiare
-// insieme al disegno
-function extra(muro, sistema) {
-  if (muro <= 108) return 0;
-  if (sistema === 'imbottino') {
-    if (muro <= 158) return 110;
-    if (muro <= 220) return 180;
-    if (muro <= 300) return 310;
-    return 310 + Math.ceil((muro - 300) / 10) * 20;
-  }
-  if (muro <= 118) return 34;
-  if (muro <= 158) return 150;
-  if (muro <= 220) return 250;
-  if (muro <= 300) return 380;
-  return 380 + Math.ceil((muro - 300) / 10) * 25;
+<script type="module">
+/* I due fogli del listino sono a scale diverse: 191x44 uno, 224x153
+   l'altro. Per confrontarli si riportano allo stesso metro, e il metro
+   e' la GUARNIZIONE: lo stesso pezzo di gomma su tutti e due i disegni.
+
+   Onesta': i due rettangoli non hanno le stesse proporzioni (6x10
+   contro 9x13), quindi il rapporto viene diverso in larghezza e in
+   altezza. Si usa la media, e la differenza si scrive in chiaro sotto
+   invece di nasconderla. */
+
+const FILE = {
+  integrale: 'assets/telai/allargato_integrale.svg',
+  imbottino: 'assets/telai/allargato_imbottino.svg',
+};
+
+async function leggi(url) {
+  const testo = await (await fetch(url)).text();
+  const doc = new DOMParser().parseFromString(testo, 'image/svg+xml');
+  const vb = doc.documentElement.getAttribute('viewBox').split(/\s+/).map(Number);
+  const g = doc.querySelector('rect.g');
+  return {
+    pezzi: [...doc.querySelectorAll('path.p')].map((n) => n.outerHTML),
+    minuti: [...doc.querySelectorAll('line, path.d')].map((n) => n.outerHTML),
+    guarn: g && { x: +g.getAttribute('x'), y: +g.getAttribute('y'),
+                  w: +g.getAttribute('width'), h: +g.getAttribute('height'),
+                  html: g.outerHTML },
+    vb,
+  };
 }
 
-const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
-const sInt = document.getElementById('svgInt');
-const sImb = document.getElementById('svgImb');
-const muro = document.getElementById('muro');
-const muroVal = document.getElementById('muroVal');
+/* Dove va ogni pezzo quando si smonta. Non e' una scelta grafica: dice
+   da dove arriva in cantiere. I coprifili si appoggiano alle due facce
+   del muro, quindi escono uno per lato; la tavola dell'imbottino esce
+   verso il vano, che e' da dove la si infila. */
+const VIA = {
+  imbottino: [
+    { dx: -62, dy: -40 },   // 1 la tavola, verso il vano
+    { dx: 0,   dy: 0 },     // 2 il telaio: resta fermo, e' il riferimento
+    { dx: -46, dy: 26 },    // 3 coprifilo, faccia interna
+    { dx: 50,  dy: 30 },    // 4 coprifilo, faccia esterna
+  ],
+  integrale: [{ dx: 0, dy: 0 }],
+};
+
+// quale tracciato e' la parte che si aggiunge, cioe' quella che si paga
+const AGGIUNTA = { imbottino: 0, integrale: -1 };
+
+const dati = {};
+const scala = {};
+
+function disegna(tipo, k) {
+  const d = dati[tipo];
+  const svg = document.getElementById(tipo === 'integrale' ? 'svgInt' : 'svgImb');
+  const via = VIA[tipo];
+
+  let out = '';
+  d.pezzi.forEach((html, i) => {
+    const v = via[i] || { dx: 0, dy: 0 };
+    out += `<g class="${i === AGGIUNTA[tipo] ? 'agg' : ''}" `
+         + `transform="translate(${(v.dx * k).toFixed(1)} ${(v.dy * k).toFixed(1)})">`
+         + html + '</g>';
+  });
+  out += d.minuti.join('');
+  if (d.guarn) out += d.guarn.html;
+
+  // la giunta: dove la tavola appoggia sul telaio. Si accende mentre i
+  // pezzi si separano, perche' e' allora che si vede dov'era.
+  if (tipo === 'imbottino') {
+    const o = (0.2 + 0.8 * k).toFixed(2);
+    out += `<circle cx="95" cy="17" r="10" class="marca" opacity="${o}"/>`
+         + `<text x="95" y="-4" text-anchor="middle" fill="#a9472f" font-size="10"`
+         + ` font-family="Jost, sans-serif" font-weight="600" opacity="${o}">GIUNTA</text>`;
+  }
+
+  svg.innerHTML = `<g transform="scale(${scala[tipo].toFixed(4)})">${out}</g>`;
+  // il riquadro tiene conto di quanto i pezzi si allontanano, se no
+  // sparirebbero fuori proprio mentre si smontano
+  const s = scala[tipo], vb = d.vb;
+  const fuoriX = 70 * s, fuoriY = 52 * s;
+  svg.setAttribute('viewBox',
+    `${vb[0] * s - fuoriX} ${vb[1] * s - fuoriY} `
+    + `${vb[2] * s + 2.2 * fuoriX} ${vb[3] * s + 2.2 * fuoriY}`);
+}
+
+let k = 0, su = true, gira = false;
+const bottone = document.getElementById('esplodi');
+
+function passo() {
+  k += su ? 0.018 : -0.018;
+  if (k >= 1) { k = 1; su = false; }
+  if (k <= 0) { k = 0; su = true; }
+  aggiorna();
+  if (gira) requestAnimationFrame(passo);
+}
 
 function aggiorna() {
-  const m = +muro.value;
-  muroVal.textContent = m + ' mm';
-  mostraAllargato(sInt, 'integrale', m);
-  mostraAllargato(sImb, 'imbottino', m);
-  const a = extra(m, 'integrale'), b = extra(m, 'imbottino');
-  document.getElementById('przInt').textContent =
-    m <= 108 ? 'Non serve: il telaio standard basta.' : '+ ' + eur.format(a);
-  document.getElementById('przImb').textContent =
-    m <= 108 ? 'Non serve: il telaio standard basta.'
-    : m < 120 ? 'Sotto i 120 mm non ci sta.'
-    : '+ ' + eur.format(b) + (b < a ? '  — piu\' economico di ' + eur.format(a - b) : '');
+  document.getElementById('quanto').value = k;
+  document.getElementById('quantoVal').textContent = Math.round(k * 100) + '%';
+  disegna('integrale', k);
+  disegna('imbottino', k);
 }
 
-muro.addEventListener('input', aggiorna);
+(async () => {
+  for (const [tipo, url] of Object.entries(FILE)) dati[tipo] = await leggi(url);
 
-document.getElementById('anima').addEventListener('click', () => {
-  let m = 108;
-  const passo = () => {
-    m += 4;
-    if (m > 400) return;
-    muro.value = m; aggiorna();
-    setTimeout(passo, 30);
-  };
-  passo();
+  // la taratura: quanto ingrandire l'integrale perche' la sua
+  // guarnizione venga grande come quella dell'imbottino
+  const a = dati.integrale.guarn, b = dati.imbottino.guarn;
+  const kw = b.w / a.w, kh = b.h / a.h;
+  scala.integrale = (kw + kh) / 2;
+  scala.imbottino = 1;
+
+  document.getElementById('contaInt').textContent = dati.integrale.pezzi.length + ' pezzo';
+  document.getElementById('contaImb').textContent = dati.imbottino.pezzi.length + ' pezzi';
+  document.getElementById('avviso').textContent =
+    `Taratura sulla guarnizione: ${a.w}×${a.h} sul foglio dell'integrale, `
+    + `${b.w}×${b.h} su quello dell'imbottino. Il rapporto viene ${kw.toFixed(2)} in `
+    + `larghezza e ${kh.toFixed(2)} in altezza — non coincidono, quindi qui si usa `
+    + `la media (${scala.integrale.toFixed(2)}). E' una taratura onesta ma `
+    + `approssimata: da confermare sul listino di carta prima di mostrarla ai clienti.`;
+
+  aggiorna();
+})();
+
+bottone.addEventListener('click', () => {
+  gira = !gira;
+  bottone.classList.toggle('on', gira);
+  bottone.textContent = gira ? 'Ferma' : 'Smonta';
+  if (gira) requestAnimationFrame(passo);
 });
 
-aggiorna();
+document.getElementById('quanto').addEventListener('input', (e) => {
+  gira = false;
+  bottone.classList.remove('on');
+  bottone.textContent = 'Smonta';
+  k = +e.target.value;
+  aggiorna();
+});
 </script>
 </body>
 </html>
