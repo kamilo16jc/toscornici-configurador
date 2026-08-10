@@ -243,13 +243,16 @@ function lati(L, testi, opt) {
                     [bx, 1, fuori], [-bx, 1, fuori]],
            'var(--f-fuori)', { z: -9.5e4, noStroke: true, force: true, deco: true });
   const P = opt.parole || { dentro: 'INTERNO', fuori: 'ESTERNO' };
-  // Fuori dal vano, se no finiscono addosso alle ante. Il muro copre la
-  // fascia di la' dietro di se', quindi ESTERNO va oltre il muro, dove
-  // il pavimento di fuori si vede davvero.
+  // Il lato da cui si guarda e' l'ESTERNO: si sta fuori e si spinge la
+  // porta verso dentro. Le due scritte erano scambiate, e su un disegno
+  // tecnico una scritta girata al contrario confonde piu' che tacere.
+  // (Le variabili qui sotto dicono dove sta la fascia, non che stanza
+  // sia: 'dentro' e' quella vicina a chi guarda.)
+  //
   // In fondo alle fasce, non a meta': l'anta aperta viene avanti proprio
-  // dove stava INTERNO, e le si sedeva addosso.
-  testi.push({ p: [-bx + 250, 1, dentro + q * 0.82], t: P.dentro });
-  testi.push({ p: [ bx - 250, 1, fuori - q * 0.82], t: P.fuori });
+  // di qua, e alla scritta si sedeva addosso.
+  testi.push({ p: [-bx + 250, 1, dentro + q * 0.82], t: P.fuori });
+  testi.push({ p: [ bx - 250, 1, fuori - q * 0.82], t: P.dentro });
 }
 
 /* Il giunto fra le due ante: l'anta a muro ha girato di r1, quindi il
