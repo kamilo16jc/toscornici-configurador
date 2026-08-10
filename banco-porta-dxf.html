@@ -61,7 +61,9 @@ const SPESSORE = 44;      // l'anta, in mm
 const d = await (await fetch('assets/profili/700-c-alzato.json')).json();
 const livelli = Math.max(...d.facce.map((f) => f.livello));
 // mai piu' di meta' spessore in tutto: il fondo del rilievo resta legno
-const GRADINO = Math.min(4, (SPESSORE * 0.45) / Math.max(1, livelli));
+const GRADINO = Math.min(5, (SPESSORE * 0.5) / Math.max(1, livelli));
+// lo smusso del bordo: piccolo, ma senza di lui il rilievo non si vede
+const SMUSSO = Math.min(2.2, GRADINO * 0.55);
 
 document.getElementById('riassunto').textContent =
   `${d.larghezza} × ${d.altezza} mm · ${d.facce.length} facce chiuse ricavate `
@@ -190,11 +192,24 @@ for (const f of d.facce) {
      telaio, e da qualunque parte la si guardi non c'e' aria in mezzo.
      Lo SPESSORE OTTICO resta 4 mm -- quello lo dice il materiale, non
      la geometria. */
+  /* IL BORDO SMUSSATO, che e' quello che fa vedere il rilievo.
+     Con la parete del gradino a 90 gradi non si vedeva niente: solo due
+     righe sottili. Non era questione di quanto scende -- e' che una
+     parete verticale non ha nessuna inclinazione su cui la luce cambi,
+     e senza sfumatura l'occhio non legge la profondita'.
+     Una modanatura vera e' smussata o curva, ed e' proprio quella
+     pendenza che raccoglie la luce. Quindi si smussa: e' anche piu'
+     fedele al pezzo vero della parete dritta. */
   const v = eVetro(f);
   if (v) quantiVetri += 1;
   const geo = new THREE.ExtrudeGeometry(forma, {
     depth: v ? SPESSORE : SPESSORE - f.livello * GRADINO,
-    bevelEnabled: false, curveSegments: 1,
+    curveSegments: 1,
+    bevelEnabled: !v,
+    bevelThickness: SMUSSO,
+    bevelSize: SMUSSO,
+    bevelOffset: 0,
+    bevelSegments: 2,
   });
   geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, v ? vetro : mat);
