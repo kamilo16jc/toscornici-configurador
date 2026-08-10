@@ -550,6 +550,14 @@ body {
   --f-front: #fdfaf3; --f-edge: #e3d8c2; --f-back: #cdbfa5;
   --f-frame: #fbf7ee; --f-jamb: #e8dcc7; --f-wall: #e6ded0;
   --f-rec: #f2ead9;   --f-wood: #e6d2ae; --f-glass: #eef2f0;
+  /* Ferramenta delle porte a libro: metallo, non legno. Sta piu' fredda
+     apposta — se il binario avesse la tinta del telaio si leggerebbe
+     come un pezzo della porta invece che come quello che la tiene. */
+  --f-bin: #b9bcc0;   --f-bin-scuro: #8f9499;
+  /* I due lati: appena accennati. Devono dire da che parte si sta
+     senza rubare l'occhio alle ante. */
+  --f-dentro: rgba(169, 71, 47, .08);
+  --f-fuori:  rgba(43, 33, 26, .12);
   --floor: rgba(43, 33, 26, .07);
   --ink: var(--espresso);
 }

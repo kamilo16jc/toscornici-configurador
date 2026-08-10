@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco · schemi delle porte a libro</title>
+
+<!-- Lo stesso foglio del sito: le tinte degli schemi vivono li'. Se il
+     banco avesse i suoi colori, quello che approviamo qui non sarebbe
+     quello che si vede nel configuratore. -->
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+  /* Solo l'impalcatura del banco. Niente che tocchi gli schemi. */
+  body {
+    margin: 0; padding: 26px 30px 60px;
+    background: #f4f1ea; color: #2b211a;
+    font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif;
+  }
+  h1 { font-size: 20px; letter-spacing: .01em; margin: 0 0 4px; }
+  .sotto { color: #7a6c5d; margin: 0 0 22px; max-width: 76ch; font-size: 13.5px; }
+
+  .comandi {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; flex-wrap: wrap; gap: 22px; align-items: center;
+    background: #f4f1ea; border-bottom: 1px solid #ddd5c6;
+    padding: 12px 0 14px; margin-bottom: 22px;
+  }
+  .gruppo { display: flex; align-items: center; gap: 8px; }
+  .gruppo > b {
+    font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+    color: #8d7d6a; font-weight: 600;
+  }
+  button {
+    font: inherit; font-size: 13px; padding: 5px 13px; cursor: pointer;
+    border: 1px solid #c9bfae; background: #fffdf8; color: #2b211a;
+    border-radius: 3px;
+  }
+  button.on { background: #a9472f; border-color: #a9472f; color: #fff; }
+  input[type=range] { width: 190px; accent-color: #a9472f; }
+  .val { font-variant-numeric: tabular-nums; color: #7a6c5d; font-size: 12.5px;
+         min-width: 3.4em; }
+
+  .griglia {
+    display: grid; gap: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  }
+  .scheda {
+    background: #fffdf8; border: 1px solid #e2dacb; border-radius: 5px;
+    padding: 14px 16px 18px;
+  }
+  .scheda h2 {
+    font-size: 14.5px; margin: 0 0 2px; font-weight: 600;
+  }
+  .scheda p.mecc {
+    margin: 0 0 10px; font-size: 12.5px; color: #7a6c5d; min-height: 3.1em;
+  }
+  /* .anim porta le variabili di tinta: e' la stessa classe del sito */
+  .scheda .anim svg {
+    width: 100%; max-width: none; height: 300px; display: block;
+  }
+  .fabbrica { margin-top: 34px; }
+  .fabbrica img {
+    max-width: 100%; border: 1px solid #e2dacb; border-radius: 5px;
+    background: #fff; display: block;
+  }
+  .manca {
+    font-size: 13px; color: #8d7d6a; background: #fffdf8;
+    border: 1px dashed #ccc2b1; border-radius: 5px; padding: 14px 16px;
+  }
+  code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<h1>Banco degli schemi — porte a libro</h1>
+<p class="sotto">
+  Gira sullo stesso <code>js/aperture.js</code> del configuratore: quello che
+  si approva qui e' esattamente quello che finisce nel sito, senza travasi.
+  I tre meccanismi stanno affiancati apposta — da chiusi si somigliano, e
+  la differenza si giudica solo confrontandoli.
+</p>
+
+<div class="comandi">
+  <div class="gruppo">
+    <button id="play" class="on">❚❚ Pausa</button>
+  </div>
+  <div class="gruppo">
+    <b>Corsa</b>
+    <input type="range" id="corsa" min="0" max="1" step="0.001" value="0.55">
+    <span class="val" id="corsaVal">55%</span>
+  </div>
+  <div class="gruppo">
+    <b>Mano</b>
+    <button data-mano="dx" class="on">DX</button>
+    <button data-mano="sx">SX</button>
+  </div>
+  <div class="gruppo">
+    <b>Verso</b>
+    <button data-verso="spingere" class="on">A spingere</button>
+    <button data-verso="tirare">A tirare</button>
+  </div>
+  <div class="gruppo">
+    <b>Lenta</b>
+    <input type="range" id="vel" min="0.25" max="2" step="0.05" value="1">
+    <span class="val" id="velVal">1.0×</span>
+  </div>
+</div>
+
+<div class="griglia" id="griglia"></div>
+
+<div class="fabbrica">
+  <h2 style="font-size:14.5px;margin:0 0 8px">Il disegno di fabbrica, per confronto</h2>
+  <div id="rif"></div>
+</div>
+
+<script type="module">
+import { fotogramma } from './js/aperture.js';
+
+// I tre casi della tavola. La riga "mecc" e' quello che lo schema deve
+// far vedere: se guardandolo non si capisce questa frase, lo schema non
+// sta facendo il suo lavoro.
+const CASI = [
+  { id: 'libro_battente',
+    titolo: '3 · Porta a libro battente',
+    mecc: 'Solo cerniere. Guarda in alto: qui il binario NON c\'e\', ed e\' ' +
+          'l\'unica cosa che la separa dalla 5.' },
+  { id: 'libro_asimmetrica',
+    titolo: '4 · Porta a libro 2 asimmetrica',
+    mecc: 'Ante di larghezza diversa. Per restare nel binario l\'anta ' +
+          'corta piega di piu\': da qui il braccio di guida.' },
+  { id: 'libro_simmetrica',
+    titolo: '5 · Porta a libro 2 simmetrica',
+    mecc: 'Ante uguali, bordo libero nel carrello che corre nel binario. ' +
+          'Piegano dello stesso angolo.' },
+];
+
+const stato = { mano: 'dx', verso: 'spingere', corsa: 0.55, vel: 1, gira: true };
+const svgs = [];
+
+const griglia = document.getElementById('griglia');
+for (const c of CASI) {
+  const d = document.createElement('div');
+  d.className = 'scheda';
+  d.innerHTML = `<h2>${c.titolo}</h2><p class="mecc">${c.mecc}</p>
+                 <figure class="anim" style="margin:0"><svg></svg></figure>`;
+  griglia.appendChild(d);
+  svgs.push({ el: d.querySelector('svg'), id: c.id });
+}
+
+// La corsa dello slider copre solo l'andata: 0 chiusa, 1 spalancata.
+// Il ciclo completo ha anche le soste, comode a vedersi ma inutili da
+// fermare.
+const U_CHIUSA = 0.06, U_APERTA = 0.36;
+
+function disegnaTutti(u) {
+  const opt = { mano: stato.mano, verso: stato.verso };
+  for (const s of svgs) fotogramma(s.el, s.id, u, opt);
+}
+
+let t = U_CHIUSA, ultimo = performance.now();
+function loop(ora) {
+  const dt = Math.min((ora - ultimo) / 1000, 0.1);
+  ultimo = ora;
+  if (stato.gira) {
+    t = (t + (dt / 5.5) * stato.vel) % 1;
+    disegnaTutti(t);
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---- comandi ---- */
+const corsa = document.getElementById('corsa');
+const corsaVal = document.getElementById('corsaVal');
+const vel = document.getElementById('vel');
+const velVal = document.getElementById('velVal');
+const play = document.getElementById('play');
+
+function fermo() {
+  const u = U_CHIUSA + (U_APERTA - U_CHIUSA) * (+corsa.value);
+  disegnaTutti(u);
+}
+
+play.addEventListener('click', () => {
+  stato.gira = !stato.gira;
+  play.textContent = stato.gira ? '❚❚ Pausa' : '▶ Riprendi';
+  play.classList.toggle('on', stato.gira);
+  if (!stato.gira) fermo();
+});
+
+corsa.addEventListener('input', () => {
+  corsaVal.textContent = Math.round(+corsa.value * 100) + '%';
+  if (stato.gira) play.click();          // scorrere implica fermare
+  else fermo();
+});
+
+vel.addEventListener('input', () => {
+  stato.vel = +vel.value;
+  velVal.textContent = (+vel.value).toFixed(2).replace(/0$/, '') + '×';
+});
+
+for (const chiave of ['mano', 'verso']) {
+  document.querySelectorAll(`[data-${chiave}]`).forEach((b) => {
+    b.addEventListener('click', () => {
+      stato[chiave] = b.dataset[chiave];
+      document.querySelectorAll(`[data-${chiave}]`).forEach(
+        (x) => x.classList.toggle('on', x === b));
+      if (stato.gira) disegnaTutti(t); else fermo();
+    });
+  });
+}
+
+/* ---- il disegno di fabbrica, se c'e' ---- */
+const RIF = 'assets/aperture/fabbrica-libro.png';
+const rif = document.getElementById('rif');
+const prova = new Image();
+prova.onload = () => { rif.innerHTML = `<img src="${RIF}" alt="Tavola di fabbrica">`; };
+prova.onerror = () => {
+  rif.innerHTML = `<p class="manca">Metti la scansione della tavola in
+    <code>${RIF}</code> e comparira' qui sotto, per confrontarla senza
+    andare a memoria.</p>`;
+};
+prova.src = RIF;
+
+disegnaTutti(t);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

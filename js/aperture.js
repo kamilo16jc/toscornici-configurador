@@ -18,12 +18,35 @@ const HS = 520;                    // sopraluce
 /* messa a punto approvata col cliente */
 const ANG = 82, VIEW = 28, TILT = 0.32, DUR = 5.5;
 
-const cosV = Math.cos(VIEW * Math.PI / 180);
-const sinV = Math.sin(VIEW * Math.PI / 180);
+/* Il punto di vista non e' uguale per tutti.
+   Quello di sempre (28 gradi, inclinazione 0.32) guarda la porta quasi
+   in faccia, ed e' giusto per un'anta che gira: si vede la bugnatura e
+   si capisce da che parte va.
+   Per le porte a libro no. Li' quello che conta succede in PIANTA -- le
+   ante che si piegano, il carrello che corre nel binario -- e una vista
+   frontale quella dimensione la schiaccia a niente. Provato: i tre
+   meccanismi venivano fuori indistinguibili, che e' esattamente il
+   contrario di quello che devono fare. La fabbrica li disegna in pianta
+   per lo stesso motivo. */
+const VISTE = {
+  libro_battente:    { view: 32, tilt: 0.72 },
+  libro_simmetrica:  { view: 32, tilt: 0.72 },
+  libro_asimmetrica: { view: 32, tilt: 0.72 },
+};
+const VISTA_BASE = { view: VIEW, tilt: TILT };
+let vista = VISTA_BASE;
+let cosV = Math.cos(VIEW * Math.PI / 180);
+let sinV = Math.sin(VIEW * Math.PI / 180);
+
+function guarda(tipo) {
+  vista = VISTE[tipo] || VISTA_BASE;
+  cosV = Math.cos(vista.view * Math.PI / 180);
+  sinV = Math.sin(vista.view * Math.PI / 180);
+}
 
 export const proj = (x, y, z) => {
   const dp = x * sinV + z * cosV;
-  return [x * cosV - z * sinV, -y + dp * TILT, dp];
+  return [x * cosV - z * sinV, -y + dp * vista.tilt, dp];
 };
 
 const TONE = { front: 'var(--f-front)', back: 'var(--f-back)',
@@ -36,6 +59,12 @@ const T_WOOD  = { front: 'var(--f-wood)',  back: 'var(--f-wood)',
                   edge: 'var(--f-jamb)',   top: 'var(--f-jamb)' };
 const T_GLASS = { front: 'var(--f-glass)', back: 'var(--f-glass)',
                   edge: 'var(--f-edge)',   top: 'var(--f-edge)' };
+const T_METAL = { front: 'var(--f-bin)',   back: 'var(--f-bin-scuro)',
+                  edge: 'var(--f-bin-scuro)', top: 'var(--f-bin)' };
+
+/* ferramenta delle porte a libro */
+const BIN_H = 38, BIN_Z = 30;      // binario a soffitto: sezione
+const CAR_L = 104;                 // carrello
 
 export function pushSolid(list, o, u, v, w, tone) {
   const P = (a, b, c) => [o[0] + u[0]*a + v[0]*b + w[0]*c,
@@ -73,6 +102,10 @@ export function pushQuad(list, pts, fill, opts) {
     d: 'M' + q.map((a) => a[0].toFixed(1) + ' ' + a[1].toFixed(1)).join(' L') + 'Z',
     z: opts.z !== undefined ? opts.z : zm + (opts.zBias || 0),
     fill, noStroke: opts.noStroke,
+    // deco: sta nella scena ma non nell'inquadratura. Le fasce del
+    // pavimento sono un'indicazione, non un pezzo della porta, e se
+    // entrano nel calcolo si mangiano tutto lo spazio.
+    deco: opts.deco,
   });
 }
 
@@ -142,6 +175,75 @@ function guscio(L, cfg, sopra) {
   }
 }
 
+/* ============================================================
+   PORTE A LIBRO — quello che cambia non e' il movimento, e' cosa
+   tiene le ante. Da chiuse si somigliano tutte e tre; il senso di
+   questi schemi e' far vedere il meccanismo, non solo la corsa.
+
+     battente      solo cerniere. Niente binario: il bordo libero
+                   gira per aria, e allora si disegna il giro che fa.
+     simmetrica    due ante uguali. Il bordo libero sta in un
+                   carrello che corre nel binario a soffitto, e da
+                   li' non esce: la sua traccia e' una retta.
+     asimmetrica   ante di larghezza diversa. Perche' il bordo
+                   libero resti nel binario l'anta corta DEVE
+                   piegare di piu' dell'altra -- e' geometria, non
+                   scelta -- ed e' quello che chiede il braccio di
+                   guida. Le due ante che chiudono ad angoli diversi
+                   sono la firma di questo meccanismo.
+   ============================================================ */
+
+/* il binario a soffitto, dentro il vano */
+function binario(L) {
+  pushSolid(L.telaio, [-W/2, H - BIN_H - 8, T/2 - BIN_Z/2], [W, 0, 0],
+            [0, BIN_H, 0], [0, 0, BIN_Z], T_METAL);
+}
+
+/* il carrello, dove il bordo libero e' agganciato al binario */
+function carrello(L, x) {
+  pushSolid(L.front, [x - CAR_L/2, H - BIN_H - 22, T/2 - BIN_Z],
+            [CAR_L, 0, 0], [0, BIN_H + 14, 0], [0, 0, 2*BIN_Z], T_METAL);
+}
+
+/* Da che parte si sta. Il pavimento dei due lati cambia tinta, e la
+   fascia di la' si vede attraverso il vano quando la porta e' aperta:
+   e' il momento in cui serve saperlo. */
+function lati(L, testi, opt) {
+  // Le fasce restano strette apposta. Larghe inghiottivano l'inquadratura
+  // e le ante venivano fuori grandi come francobolli.
+  const bx = W / 2 + F + WALL;
+  const q = 460;
+  const dentro = FD / 2, fuori = -FD / 2;
+  pushQuad(L.back, [[-bx, 1, dentro], [bx, 1, dentro],
+                    [bx, 1, dentro + q], [-bx, 1, dentro + q]],
+           'var(--f-dentro)', { z: -9e4, noStroke: true, force: true, deco: true });
+  pushQuad(L.back, [[-bx, 1, fuori - q], [bx, 1, fuori - q],
+                    [bx, 1, fuori], [-bx, 1, fuori]],
+           'var(--f-fuori)', { z: -9.5e4, noStroke: true, force: true, deco: true });
+  const P = opt.parole || { dentro: 'INTERNO', fuori: 'ESTERNO' };
+  // Fuori dal vano, se no finiscono addosso alle ante. Il muro copre la
+  // fascia di la' dietro di se', quindi ESTERNO va oltre il muro, dove
+  // il pavimento di fuori si vede davvero.
+  // In fondo alle fasce, non a meta': l'anta aperta viene avanti proprio
+  // dove stava INTERNO, e le si sedeva addosso.
+  testi.push({ p: [-bx + 250, 1, dentro + q * 0.82], t: P.dentro });
+  testi.push({ p: [ bx - 250, 1, fuori - q * 0.82], t: P.fuori });
+}
+
+/* Il giunto fra le due ante: l'anta a muro ha girato di r1, quindi il
+   giunto si e' spostato in dentro e in avanti. */
+const giunto = (s, vz, L1, r1) =>
+  [s * (W / 2 - L1 * Math.cos(r1)), 0, vz * L1 * Math.sin(r1)];
+
+/* L'angolo che la seconda anta DEVE fare perche' il bordo libero torni
+   sul piano della porta, cioe' dentro il binario. Con ante uguali viene
+   uguale e opposto; con ante diverse no, ed e' tutta la differenza fra
+   la simmetrica e l'asimmetrica. */
+function angoloRitorno(L1, L2, r1) {
+  const sn = (L1 / L2) * Math.sin(r1);
+  return Math.asin(Math.min(1, sn));
+}
+
 /* quanto e' aperta a ogni istante del ciclo */
 const ease = (u) => u * u * (3 - 2 * u);
 function apertura(u) {
@@ -163,9 +265,20 @@ function ventola(u) {                    // di la, torna, di qua, torna
   return 0;
 }
 
-function scena(tipo, u) {
+function scena(tipo, u, opt) {
+  opt = opt || {};
+  guarda(tipo);        // ogni tipo ha il punto di vista da cui si legge
+  // La mano non e' una decorazione: se il cliente sceglie SX e lo
+  // schema mostra DX, lo schema mente. s = -1 ribalta il lato delle
+  // cerniere, ed e' lo stesso trucco che la porta a due ante usa da
+  // sempre per la sua seconda anta.
+  const s = opt.mano === 'sx' ? -1 : 1;
+  // Verso: a spingere l'anta va via da chi guarda, a tirare gli viene
+  // incontro. E' il segno della componente in profondita'.
+  const vz = opt.verso === 'tirare' ? -1 : 1;
   const L = { back: [], telaio: [], anta: [], front: [] };
-  const hw = { handles: [], hinges: [], incassi: [] };
+  const hw = { handles: [], hinges: [], incassi: [], bracci: [] };
+  const testi = [];
   const p = apertura(u);
   let arco = null;
 
@@ -266,22 +379,83 @@ function scena(tipo, u) {
                 tipo === 'sopraluce_fisso' ? T_GLASS : TONE);
       break;
     }
+    case 'libro_battente':
+    case 'libro_simmetrica':
+    case 'libro_asimmetrica': {
+      guscio(L, {});
+      lati(L, testi, opt);
+
+      const asim = tipo === 'libro_asimmetrica';
+      // l'anta a muro e' la larga: e' quella che regge il peso
+      const L1 = asim ? W * 0.58 : W / 2;
+      const L2 = W - L1;
+      // Con ante diverse il bordo libero arriva in fondo al binario
+      // prima: oltre questo angolo l'anta corta dovrebbe girare piu'
+      // di 90 gradi, e il meccanismo si pianta. Non e' un numero a
+      // occhio, e' asin(L2/L1).
+      const gMax = asim
+        ? Math.asin(L2 / L1) * 180 / Math.PI - 2
+        : Math.min(ANG, 64);
+
+      const piega = (q) => {
+        const r1 = gMax * q * Math.PI / 180;
+        const r2 = asim ? angoloRitorno(L1, L2, r1) : r1;
+        const gi = giunto(s, vz, L1, r1);
+        return {
+          r1, r2, gi,
+          libero: [gi[0] - s * L2 * Math.cos(r2), 0,
+                   gi[2] - vz * L2 * Math.sin(r2)],
+        };
+      };
+
+      const k = piega(p);
+      const g1 = k.r1 * 180 / Math.PI, g2 = k.r2 * 180 / Math.PI;
+
+      ombra([s * W/2, 0, 0], s, vz * g1, L1);
+      anta(L.anta, hw, [s * W/2, 0, 0], s, vz * g1, L1, H, { noHW: g1 > 1 });
+      anta(L.anta, null, k.gi, s, -vz * g2, L2, H);
+
+      // PROVATO E SCARTATO: disegnare a terra il giro del bordo libero
+      // della battente, per dire "qui non c'e' binario". Non dice
+      // niente: con due ante uguali il bordo libero NON esce dal piano
+      // della porta, quindi il suo giro e' una retta -- la stessa che
+      // fa la simmetrica dentro il binario -- e per giunta finisce
+      // sotto l'anta. La differenza fra le due sta solo nella
+      // ferramenta, ed e' li' che va detta.
+      if (tipo !== 'libro_battente') {
+        binario(L);
+        carrello(L, k.libero[0]);
+        if (asim) {
+          // Il braccio di guida: sta fra il carrello e il giunto, ed e'
+          // il pezzo che costringe l'anta corta a piegare di piu'.
+          const alto = H - BIN_H - 30;
+          hw.bracci.push([[k.libero[0], alto, T / 2],
+                          [k.gi[0], alto, k.gi[2] + vz * T / 2]]);
+        }
+      }
+      break;
+    }
     default:
       guscio(L, {});
       anta(L.anta, hw, [W/2, 0, 0], 1, 0, W, H);
   }
-  return { L, hw, arco };
+  return { L, hw, arco, testi };
 }
 
 /* l'inquadratura abbraccia tutti i fotogrammi, non solo quello a riposo */
 const vbCache = {};
-function inquadra(tipo) {
-  if (vbCache[tipo]) return vbCache[tipo];
+function inquadra(tipo, opt) {
+  opt = opt || {};
+  // la chiave porta anche mano e verso: la stessa porta a destra o a
+  // sinistra occupa lo spazio dall'altra parte
+  const key = `${tipo}|${opt.mano || 'dx'}|${opt.verso || 'spingere'}`;
+  if (vbCache[key]) return vbCache[key];
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   for (const u of [0.02, 0.20, 0.30, 0.48, 0.65, 0.75, 0.86]) {
-    const sc = scena(tipo, u);
+    const sc = scena(tipo, u, opt);
     for (const strato of [sc.L.back, sc.L.telaio, sc.L.anta, sc.L.front]) {
       for (const f of strato) {
+        if (f.deco) continue;
         for (const m of f.d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)) {
           const x = +m[1], y = +m[2];
           if (x < x0) x0 = x; if (x > x1) x1 = x;
@@ -291,14 +465,14 @@ function inquadra(tipo) {
     }
   }
   const m = 130;
-  vbCache[tipo] = [x0 - m, y0 - m, (x1 - x0) + 2*m, (y1 - y0) + 2*m];
-  return vbCache[tipo];
+  vbCache[key] = [x0 - m, y0 - m, (x1 - x0) + 2*m, (y1 - y0) + 2*m];
+  return vbCache[key];
 }
 
-function disegna(svg, tipo, u) {
-  const vb = inquadra(tipo);
+function disegna(svg, tipo, u, opt) {
+  const vb = inquadra(tipo, opt);
   svg.setAttribute('viewBox', vb.map((n) => n.toFixed(0)).join(' '));
-  const sc = scena(tipo, u);
+  const sc = scena(tipo, u, opt);
   const sw = Math.max(vb[2], vb[3]) / 330;
   let out = '';
 
@@ -332,8 +506,11 @@ function disegna(svg, tipo, u) {
            'stroke-width="' + w.toFixed(1) + '" stroke-linecap="round" fill="none"' +
            (op ? ' opacity="' + op + '"' : '') + '/>';
   };
+  // Il giro del bordo libero, per la battente: e' l'unica cosa che
+  // dice a colpo d'occhio che li' non c'e' nessun binario.
   for (const [p0, p1] of sc.hw.hinges) out += seg(p0, p1, sw * 3.4);
   for (const [p0, p1] of sc.hw.incassi) out += seg(p0, p1, sw * 2.6, '.85');
+  for (const [p0, p1] of sc.hw.bracci) out += seg(p0, p1, sw * 2.8);
   for (const h of sc.hw.handles) {
     const r = proj(h.rose[0], h.rose[1], h.rose[2]);
     const k = proj(h.knee[0], h.knee[1], h.knee[2]);
@@ -346,7 +523,26 @@ function disegna(svg, tipo, u) {
            '<circle cx="' + r[0].toFixed(1) + '" cy="' + r[1].toFixed(1) +
            '" r="' + (sw*3).toFixed(1) + '" fill="var(--brass)"/>';
   }
+  out = scritte(sc.testi, (P) => P[2] < 0, sw) + out
+      + scritte(sc.testi, (P) => P[2] >= 0, sw);
   svg.innerHTML = out;
+}
+
+/* Le scritte non stanno tutte davanti: ESTERNO e' dall'altra parte del
+   muro, e disegnata in coda finiva sopra l'anta come un adesivo. Quelle
+   di la' vanno sotto a tutto, cosi le copre quello che le sta davanti. */
+function scritte(testi, quali, sw) {
+  let out = '';
+  for (const tx of testi) {
+    if (!quali(tx.p)) continue;
+    const q = proj(tx.p[0], tx.p[1], tx.p[2]);
+    out += '<text x="' + q[0].toFixed(1) + '" y="' + q[1].toFixed(1) + '" ' +
+           'fill="var(--taupe)" text-anchor="middle" ' +
+           'font-family="Jost, Verdana, sans-serif" font-weight="600" ' +
+           'font-size="' + (sw * 13).toFixed(1) + '" ' +
+           'letter-spacing="' + (sw * 1.6).toFixed(1) + '">' + tx.t + '</text>';
+  }
+  return out;
 }
 
 /* ---- un solo ciclo per tutti gli schemi visibili ------------------- */
@@ -372,7 +568,16 @@ export function registra(svg, draw) {
   if (!fermo && !avviato) { avviato = true; requestAnimationFrame(loop); }
 }
 
-/** Mostra un'apertura in un <svg> della pagina. */
-export function mostraApertura(svg, tipo) {
-  registra(svg, (u) => disegna(svg, tipo, u));
+/**
+ * Mostra un'apertura in un <svg> della pagina.
+ * opt: { mano: 'dx'|'sx', verso: 'spingere'|'tirare', parole: {dentro, fuori} }
+ * Senza opt si comporta come prima: chi la chiamava non deve cambiare.
+ */
+export function mostraApertura(svg, tipo, opt) {
+  registra(svg, (u) => disegna(svg, tipo, u, opt));
+}
+
+/** Un fotogramma fermo, per il banco di prova: u da 0 (chiusa) a 1. */
+export function fotogramma(svg, tipo, u, opt) {
+  disegna(svg, tipo, u, opt);
 }
