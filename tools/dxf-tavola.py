@@ -165,6 +165,87 @@ def contorni(ent):
             if abs(profilo.area(c)) > 20]
 
 
+def ali_di(ent):
+    """Le ALI del telaio, cioe' i coprifili che ci sono gia' sopra.
+
+    Il profilo del telaio e' una U sola, e dentro quella U ci sono tre
+    cose diverse: l'imbotto che fascia il muro e i due coprifili che
+    coprono la giunzione col muro, uno per faccia. Nel disegno sono un
+    pezzo unico perche' la fabbrica li vende montati, ma per poter
+    cambiare il coprifilo vanno separati.
+
+    Si trovano da soli: sono le FACCE chiuse del profilo, e su questa
+    tavola misurano 69,00 x 22,00 -- che e' il liscio listellare 22x70,
+    quello compreso nel prezzo, al centesimo. Non e' una coincidenza da
+    dare per buona: e' la conferma che stiamo guardando la cosa giusta.
+    """
+    segs, capi = [], []
+    for e in ent:
+        p = punti(e)
+        segs += list(zip(p, p[1:]))
+        capi += [p[0], p[-1]]
+    fuori = []
+    for c in profilo.facce(profilo.spezza_a_T(segs, capi)):
+        x0 = min(q[0] for q in c); x1 = max(q[0] for q in c)
+        y0 = min(q[1] for q in c); y1 = max(q[1] for q in c)
+        if (x1 - x0) * (y1 - y0) > 800:
+            fuori.append((x0, x1, y0, y1))
+    return fuori
+
+
+def stacca(c, ali, asse, verso_luce):
+    """Stacca l'imbotto dalle sue ali, e dice dove si appoggiano.
+
+    `asse` e' quello che attraversa il muro (0 nella sezione orizzontale,
+    1 in quella verticale); `verso_luce` dice da che parte sta il vano,
+    +1 o -1. L'ala si stacca al suo filo verso la luce, e il coprifilo
+    nuovo si appoggera' li': con il dorso sulla faccia del muro -- che e'
+    il lato dell'ala che guarda dentro il vano -- e il piede che
+    scavalca l'imbotto.
+    """
+    a0, a1 = min(q[asse] for q in c), max(q[asse] for q in c)
+    b = 1 - asse
+    mie = [w for w in ali if a0 - 1 <= w[asse * 2] and w[asse * 2 + 1] <= a1 + 1]
+    if not mie:
+        return c, []
+    # la mezzeria si prende sul TELAIO, non sulle ali: con una sola ala
+    # la sua mezzeria e' se stessa, i due capi distano uguale e la faccia
+    # del muro veniva scelta a caso -- usciva sul lato sbagliato
+    mezz = (min(q[b] for q in c) + max(q[b] for q in c)) / 2
+    seggi, tagli = [], []
+    for w in mie:
+        luce = w[asse * 2 + 1] if verso_luce > 0 else w[asse * 2]
+        z0, z1 = w[b * 2], w[b * 2 + 1]
+        muro = z0 if abs(z0 - mezz) < abs(z1 - mezz) else z1
+        fuor = z1 if muro == z0 else z0
+        seggi.append({'a': luce, 'z': muro, 'verso': 1 if fuor > muro else -1})
+        tagli.append(luce)
+    taglio = max(tagli) if verso_luce > 0 else min(tagli)
+    return taglia(c, asse, taglio, verso_luce), seggi
+
+
+def taglia(c, asse, quota, tieni):
+    """Taglia un contorno con una retta e tiene la meta' che si vuole.
+
+    E' il ritaglio di Sutherland-Hodgman, tre righe: si scorre il
+    contorno e per ogni lato si guarda se i due capi stanno dalla parte
+    buona; dove il lato attraversa la retta si mette il punto
+    d'incrocio. Serve per staccare l'imbotto dalle ali senza ridisegnare
+    niente: il taglio passa dove le ali si innestano.
+    """
+    dentro = lambda p: (p[asse] - quota) * tieni >= 0
+    fuori = []
+    for i in range(len(c)):
+        a, b = c[i], c[(i + 1) % len(c)]
+        da, db = dentro(a), dentro(b)
+        if da:
+            fuori.append(a)
+        if da != db:
+            t = (quota - a[asse]) / (b[asse] - a[asse])
+            fuori.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    return fuori
+
+
 def isole(ent, aria=6.0):
     """Le viste del foglio: gruppi di entita' che stanno vicine.
 
@@ -317,10 +398,10 @@ def main():
         # i solidi li separa contorno_esterno, dopo aver cucito: qui
         # sono due, l'imbotto a U che fascia il muro e il montante di
         # battuta contro cui l'anta chiude
-        return contorni(ent)
+        return contorni(ent), ali_di(ent)
 
-    telB = telaio_di(pB, lambda m: m[1])
-    telA = telaio_di(pA, lambda m: m[0])
+    telB, aliB = telaio_di(pB, lambda m: m[1])
+    telA, aliA = telaio_di(pA, lambda m: m[0])
 
     # il muro: nella sezione orizzontale e' un blocco tratteggiato per
     # parte, e dice due cose che servono -- quanto e' spesso, e fin dove
@@ -370,6 +451,29 @@ def main():
     zA = min(scatola(t)[0] for t in trav)      # dove comincia l'anta in SEZ-A
     cm = contorno(montante)
     ct = [contorno(t) for t in trav]
+    # ogni stipite guarda la luce da una parte diversa; la traversa la
+    # guarda da sotto
+    mezzo = (ax0 + ax1) / 2
+    stipiti = [stacca(c, aliB, 0, 1 if sum(q[0] for q in c) / len(c) < mezzo else -1)
+               for c in telB]
+    traverse = [stacca(c, aliA, 1, -1) for c in telA]
+
+    aliW = [[{'a': round(q['a'] - ax0, 2), 'z': round(q['z'] - ym0, 2),
+              'verso': q['verso']} for q in se] for _, se in stipiti]
+    aliAW = [[{'a': round(q['a'] - ay0, 2), 'z': round(q['z'] - zA, 2),
+               'verso': q['verso']} for q in se] for _, se in traverse]
+    # La traversa, nel disegno, ha una sola delle due ali chiusa come
+    # faccia: l'altra il disegnatore l'ha lasciata aperta. Ma il telaio
+    # e' un profilo solo -- lo stipite e la traversa hanno la stessa
+    # sezione, 104,5 x 138 tutti e due -- quindi le quote in profondita'
+    # sono quelle dello stipite. Si completa da li' invece di rinunciare
+    # a un coprifilo su tre lati.
+    zeta = sorted({(q['z'], q['verso']) for se in aliW for q in se})
+    for se in aliAW:
+        if se and len(se) < len(zeta):
+            a = se[0]['a']
+            se[:] = [{'a': a, 'z': z, 'verso': v} for z, v in zeta]
+
     xz = lambda c: [[round(p[0] - ax0, 3), round(p[1] - ym0, 3)] for p in c]
     yz = lambda c: [[round(p[1] - ay0, 3), round(p[0] - zA, 3)] for p in c]
 
@@ -396,10 +500,19 @@ def main():
                      'z_centro': round((yp0 + yp1) / 2 - ym0, 2),
                      'gioco': round(xp0 - (riquadri[0]['x0']), 2),
                      'bugna': bugna(pann, xp0, yp1 - yp0)},
-        # lo stipite e la traversa alta, gia' al loro posto rispetto
-        # all'anta: ci si sovrappongono, la porta chiude nella battuta
+        # Lo stipite e la traversa alta, gia' al loro posto rispetto
+        # all'anta: ci si sovrappongono, la porta chiude nella battuta.
+        # Vengono in tre pezzi invece che in uno: l'IMBOTTO che fascia il
+        # muro, e le due ALI, che sono i coprifili gia' montati. Nel
+        # disegno sono un profilo unico -- la fabbrica li vende cosi' --
+        # ma per poter cambiare coprifilo vanno staccati, e il posto dove
+        # staccarli lo dice l'ala stessa: si taglia dove finisce.
         'telaio': [xz(c) for c in telB],
         'telaio_alto': [yz(c) for c in telA],
+        'telaio_imbotto': [xz(i) for i, _ in stipiti],
+        'telaio_alto_imbotto': [yz(i) for i, _ in traverse],
+        'ali': aliW,
+        'ali_alto': aliAW,
         'muro': {'z0': round(min(scatola(m)[2] for m in mur) - ym0, 2),
                  'z1': round(max(scatola(m)[3] for m in mur) - ym0, 2),
                  'x0': round(scatola(mur[0])[1] - ax0, 2),

@@ -59,6 +59,11 @@
   <button data-tipo="3">Tipo 3 · vivo, piatto</button>
 </div>
 
+<div class="barra">
+  <span class="etich">Coprifilo</span>
+  <span id="copriBottoni"></span>
+</div>
+
 <div class="riq"><h2>Il solido ricavato — trascina per girarlo</h2><canvas id="tela"></canvas></div>
 
 <p class="nota" id="nota"></p>
@@ -67,6 +72,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+// la stessa tabella che usa il configuratore: quale DXF per quale
+// coprifilo, e per quale misura di listino
+import { PROFILI } from './js/visore-profilo.js';
 
 /* ============================================================
    UN MOTORE SOLO: LA SEZIONE CHE CORRE LUNGO IL SUO ASSE
@@ -381,26 +389,121 @@ function montaAnta() {
 }
 montaAnta();
 
-/* Il telaio: la tavola ne da' due stipiti gia' al loro posto -- uno per
-   parte, non serve specchiarne uno -- e la traversa alta. Lo stipite
-   arriva sotto la traversa e la traversa passa da parte a parte: e' il
-   giunto che si vede guardando in alto in un vano di porta. */
+/* ── il telaio, in due pezzi: imbotto e coprifili ───────────────────── */
+/* Nella tavola il telaio e' un profilo unico -- la fabbrica lo vende
+   montato -- ma dentro quella U ci sono due cose diverse: l'IMBOTTO che
+   fascia il muro, e i due COPRIFILI che coprono la giunzione col muro,
+   uno per faccia. L'imbotto non si tocca mai; il coprifilo lo sceglie il
+   cliente, e sono tredici.
+
+   Una conferma che vale la pena avere scritta: le ali del telaio
+   disegnato misurano 69,00 x 22,00, e il nostro listellare-l70 misura
+   69,00 x 22,00. E' lo stesso profilo al centesimo -- il liscio
+   listellare compreso nel prezzo. Quindi montando il listellare si deve
+   riottenere esattamente la U della tavola, ed e' il modo di sapere che
+   il montaggio e' giusto. */
 const bordi = (curve, i) => curve.flatMap((c) => c.map((p) => p[i]));
 const telaioAltoY = Math.max(...bordi(d.telaio_alto, 0));
 const spor = -Math.min(...bordi(d.telaio, 0));      // quanto sporge dal filo anta
+
 /* Gli stipiti arrivano FIN SOPRA, non si fermano sotto la traversa.
    Fermandoli dove la traversa comincia restava un intaglio nei due
-   angoli alti: la traversa li' comincia con la sola battuta, e le sue
-   ali -- i coprifili, quelli che si vedono -- cominciano tre centimetri
-   piu' su. Fra i due il coprifilo verticale finiva e quello orizzontale
-   non era ancora cominciato.
-   Tirandoli fino in cima si sovrappongono, e la traversa passa sopra:
-   e' anche il giunto vero, il coprifilo orizzontale corre da parte a
-   parte e i due verticali gli vanno sotto. */
-for (const c of d.telaio) metti(gTelaio, verticale(c, 0, telaioAltoY), false);
-for (const c of d.telaio_alto) {
+   angoli alti. Tirandoli fino in cima si sovrappongono, e la traversa
+   passa sopra: e' anche il giunto vero. */
+for (const c of d.telaio_imbotto) metti(gTelaio, verticale(c, 0, telaioAltoY), false);
+for (const c of d.telaio_alto_imbotto) {
   metti(gTelaio, orizzontale(c, -spor, L + spor), true);
 }
+
+/* Come sta messo un coprifilo, e non si suppone: si misura.
+   Il DORSO e' la faccia piatta che appoggia al muro -- la si trova
+   cercando il livello con la corsa orizzontale piu' lunga, non il punto
+   piu' basso, che e' un'altra cosa. Il PIEDE e' quel che scende sotto il
+   dorso: e' la battuta che scavalca l'imbotto, e va verso il vano.
+   Serve perche' i sedici DXF NON sono orientati allo stesso modo: in
+   nove il piede sta a destra, in cinque a sinistra. */
+function assetta(p, larghezza) {
+  const corse = new Map();
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i], b = p[(i + 1) % p.length];
+    if (Math.abs(a[1] - b[1]) > .3) continue;
+    const k = Math.round((a[1] + b[1]) / 2 * 2) / 2;
+    corse.set(k, (corse.get(k) || 0) + Math.abs(a[0] - b[0]));
+  }
+  let dorso = 0, meglio = -1;
+  for (const [y, len] of corse) if (len > meglio) { meglio = len; dorso = y; }
+  const piede = p.filter((q) => q[1] < dorso - .3);
+  const media = piede.length
+    ? piede.reduce((s, q) => s + q[0], 0) / piede.length : larghezza;
+  const q = media < larghezza / 2
+    ? p.map(([x, y]) => [larghezza - x, y]).reverse() : p.slice();
+  // u: distanza dal filo verso la luce.  v: fuori dal muro
+  return q.map(([x, y]) => [larghezza - x, y - dorso]);
+}
+
+/* Il coprifilo come cornice INGLETATA su tre lati.
+   Non si estrudono tre pezzi e poi si accostano: un profilo sagomato
+   accostato di testa si vede subito che e' sbagliato, e un coprifilo si
+   ingleta sempre. Si fa invece come la bugna del pannello -- e' proprio
+   la stessa idea: per ogni punto della sezione si disegna il percorso
+   RIENTRATO di quel tanto, e fra un punto e il successivo si tende la
+   superficie. Rientrando un percorso ad angolo retto gli angoli si
+   tagliano a 45 da soli, e la mitra viene senza che nessuno la chieda. */
+function cornice(sez, xL, xR, yT, zMuro, verso) {
+  const pos = [];
+  const via = (u) => [[xL - u, 0], [xL - u, yT + u], [xR + u, yT + u], [xR + u, 0]];
+  const tri = (a, b, c) => pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  for (let i = 0; i < sez.length; i++) {
+    const [u0, v0] = sez[i], [u1, v1] = sez[(i + 1) % sez.length];
+    const A = via(u0), B = via(u1);
+    const z0 = zMuro + verso * v0, z1 = zMuro + verso * v1;
+    for (let j = 0; j + 1 < A.length; j++) {
+      const a = [A[j][0], A[j][1], z0], b = [A[j + 1][0], A[j + 1][1], z0];
+      const c = [B[j + 1][0], B[j + 1][1], z1], e = [B[j][0], B[j][1], z1];
+      if (verso > 0) { tri(a, b, c); tri(a, c, e); }
+      else { tri(a, c, b); tri(a, e, c); }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();          // non indicizzata: gli spigoli restano vivi
+  return g;
+}
+
+const cacheSez = {};
+async function sezione(slug) {
+  if (!cacheSez[slug]) {
+    cacheSez[slug] = fetch(`assets/profili/${slug}.json`).then((r) => r.json())
+      .then((j) => assetta(j.punti, j.larghezza));
+  }
+  return cacheSez[slug];
+}
+
+const gCopri = new THREE.Group();
+gTelaio.add(gCopri);
+let copri = 'listellare';
+
+async function montaCoprifili() {
+  for (const m of gCopri.children) m.geometry.dispose();
+  gCopri.clear();
+  const mis = PROFILI[copri];
+  if (!mis) return;
+  const slug = [].concat(mis[Object.keys(mis)[0]]);
+  // il 90 va sulla faccia della porta, il 70 dall'altra: e' come si
+  // monta un pacchetto 90/70 di listino
+  const sez = await Promise.all(slug.map(sezione));
+  const sx = Math.max(...d.ali.flat().map((a) => a.a).filter((v) => v < L / 2));
+  const dx = Math.min(...d.ali.flat().map((a) => a.a).filter((v) => v > L / 2));
+  const su = d.ali_alto.flat()[0].a;
+  const facce = [...new Set(d.ali.flat().map((a) => `${a.z}|${a.verso}`))]
+    .map((k) => ({ z: +k.split('|')[0], verso: +k.split('|')[1] }))
+    .sort((a, b) => b.z - a.z);          // prima la faccia della porta
+  facce.forEach((f, i) => {
+    metti(gCopri, cornice(sez[Math.min(i, sez.length - 1)], sx, dx, su,
+                          f.z, f.verso), false);
+  });
+}
+await montaCoprifili();
 
 const PERNO_Z = T + 3;
 perno.position.set(L, 0, PERNO_Z);
@@ -481,9 +584,17 @@ if (d.muro) {
   // l'architrave appoggia sul telaio, con un dito di sovrapposizione: se
   // parte piu' in alto fra i due resta una striscia di fondo che si vede
   const alto = telaioAltoY - 10;
+  /* Lo SPESSORE del muro non si prende dal tratteggio. Quello misura
+     118 e comprende l'intonaco: con 118 il muro sporgeva dodici
+     millimetri oltre la faccia su cui il coprifilo appoggia, e se lo
+     mangiava -- sulla parete non si vedeva piu' niente. Le facce vere le
+     dicono le ALI del telaio: il coprifilo ci va sopra, quindi sono
+     quelle. */
+  const zf = d.ali.flat().map((a) => a.z);
+  const mz0 = Math.min(...zf), mz1 = Math.max(...zf);
   const mattone = (x0, x1, y0, y1) => {
-    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, m.z1 - m.z0);
-    g.translate((x0 + x1) / 2, (y0 + y1) / 2, (m.z0 + m.z1) / 2);
+    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, mz1 - mz0);
+    g.translate((x0 + x1) / 2, (y0 + y1) / 2, (mz0 + mz1) / 2);
     gTelaio.add(new THREE.Mesh(g, matMuro));
   };
   mattone(m.x0 - 900, m.x0, 0, alto + 700);
@@ -569,6 +680,7 @@ let prima = performance.now();
 // il banco si guarda anche da fuori, per fare le prove
 window.__banco = { cam, controlli, scena, centro, dati: d,
                    get angolo() { return perno.rotation.y; },
+                   gCopri,
                    filo: (t) => rifaiFilo(d.montante.punti, t,
                                           d.montante.larghezza, 1) };
 
@@ -585,6 +697,16 @@ document.getElementById('esploso').addEventListener('click', (ev) => {
   gTelaio.position.z = esploso ? -260 : 0;
   gPann.position.z = esploso ? 260 : 0;
 });
+
+document.getElementById('copriBottoni').innerHTML = Object.keys(PROFILI)
+  .map((k) => `<button data-copri="${k}"${k === copri ? ' class="on"' : ''}>${
+    k[0].toUpperCase() + k.slice(1)}</button>`).join(' ');
+document.querySelectorAll('[data-copri]').forEach((b) => b.addEventListener('click', async () => {
+  document.querySelectorAll('[data-copri]').forEach((x) => x.classList.remove('on'));
+  b.classList.add('on');
+  copri = b.dataset.copri;
+  await montaCoprifili();
+}));
 
 document.querySelectorAll('[data-tipo]').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('[data-tipo]').forEach((x) => x.classList.remove('on'));
