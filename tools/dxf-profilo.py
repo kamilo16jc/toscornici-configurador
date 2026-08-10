@@ -151,7 +151,7 @@ def spezza_a_T(segs, chiavi):
     return fuori
 
 
-def contorno_esterno(segs):
+def contorno_esterno(segs, cuci=CUCI):
     """Il contorno esterno del disegno.
 
     QUI NON SERVE l'estrazione di TUTTE le facce del grafo piano, come in
@@ -194,7 +194,7 @@ def contorno_esterno(segs):
     liberi = lambda: [n for n in archi if len(archi[n]) == 1]
     for _ in range(200):
         soli = liberi()
-        coppia, dist = None, CUCI
+        coppia, dist = None, cuci
         for i, a in enumerate(soli):
             for b in soli[i + 1:]:
                 if b in archi[a]:
@@ -225,10 +225,10 @@ def contorno_esterno(segs):
 
     ang = lambda a, b: math.atan2(pos[b][1] - pos[a][1], pos[b][0] - pos[a][0])
 
-    def un_giro():
-        """Il bordo del lobo che contiene il punto piu' in basso."""
-        via = min(archi, key=lambda n: (pos[n][1], pos[n][0]))
-        entrata = -math.pi / 2
+    def un_giro(scegli=None, entrata=-math.pi / 2):
+        """Il bordo, partendo da un punto che sul bordo ci sta di sicuro."""
+        scegli = scegli or (lambda n: (pos[n][1], pos[n][0]))
+        via = min(archi, key=scegli)
         giro, strada, a, prima = [], [], via, None
         for _ in range(20000):
             giro.append(pos[a])
@@ -273,14 +273,132 @@ def contorno_esterno(segs):
     for n in tutto:
         isolotti.setdefault(trova(n), []).append(n)
 
+    # DA QUALE ESTREMO SI PARTE non e' indifferente, e questo e' costato
+    # caro. Il punto piu' in basso sta sul bordo per forza, e da li' il
+    # cammino il bordo lo trova -- ma su un profilo a C, arrivando al
+    # nodo dove il fianco si stacca dall'ala, la virata piu' esterna
+    # riporta dentro la C e il giro si chiude corto. Sul telaio di questa
+    # porta veniva fuori 71 mm di larghezza invece di 104: mancava la
+    # battuta, e nel 3D fra anta e coprifilo si vedeva il muro.
+    # Si prova da tutti e quattro gli estremi -- ognuno sta sul bordo, ma
+    # non tutti vedono lo stesso giro -- e si tiene il piu' grande.
+    DA = [(lambda n: (pos[n][1], pos[n][0]), -math.pi / 2),
+          (lambda n: (-pos[n][1], pos[n][0]), math.pi / 2),
+          (lambda n: (pos[n][0], pos[n][1]), math.pi),
+          (lambda n: (-pos[n][0], pos[n][1]), 0.0)]
     interi, fuori = archi, []
     for nodi in isolotti.values():
         archi = {n: interi[n] for n in nodi}
-        giro, _ = un_giro()
+        giri = [un_giro(s, e)[0] for s, e in DA]
+        giro = max(giri, key=lambda g: abs(area(g)) if len(g) >= 3 else -1)
         if len(giro) >= 3:
             fuori.append(giro)
     fuori.sort(key=lambda g_: -abs(area(g_)))
     return fuori
+
+
+def facce(segs):
+    """Tutte le facce chiuse del disegno, non solo il giro di fuori.
+
+    PERCHE' NE SERVE UN'ALTRA, avendo gia' contorno_esterno. Il contorno
+    va benissimo per un coprifilo, che e' un pezzo solo. Il telaio di una
+    porta no: e' un imbotto a U col suo BATTUTA attaccato, e la battuta
+    si innesta sul fianco della U in un nodo di grado tre. Il cammino sul
+    bordo, che a ogni nodo tiene la curva piu' esterna, passa dritto e la
+    battuta la salta -- e nel 3D fra anta e coprifilo restava una fessura
+    aperta larga trenta millimetri.
+
+    Qui invece si percorrono le facce come si deve: da ogni lato
+    ORIENTATO si prosegue con la virata minima a sinistra, e ogni lato
+    orientato appartiene a esattamente una faccia. La regola vale sempre,
+    anche sui rami morti -- li si percorre all'andata e al ritorno, e la
+    faccia si chiude lo stesso. E' il non aver rispettato questo (si
+    saltava il ritorno indietro) che la prima volta faceva uscire zero
+    facce sul Cartesio.
+
+    La faccia esterna esce girata al contrario delle altre: si riconosce
+    dal segno dell'area, e si butta.
+    """
+    nodo = {}
+
+    def id_di(p):
+        k = (round(p[0] / SNAP), round(p[1] / SNAP))
+        if k not in nodo:
+            nodo[k] = (len(nodo), p)
+        return nodo[k][0]
+
+    pos, archi = {}, {}
+    for a, b in segs:
+        ia, ib = id_di(a), id_di(b)
+        if ia == ib:
+            continue
+        pos[ia], pos[ib] = a, b
+        archi.setdefault(ia, set()).add(ib)
+        archi.setdefault(ib, set()).add(ia)
+    if not archi:
+        return []
+
+    # anche qui i capi liberi si cuciono: un contorno che non chiude non
+    # fa faccia, fa un ramo che si percorre andata e ritorno e si chiude
+    # su un'area di zero. (Rami morti veri non danno fastidio: la regola
+    # li attraversa due volte e la faccia si chiude lo stesso, percio'
+    # qui non si pota niente.)
+    liberi = lambda: [n for n in archi if len(archi[n]) == 1]
+    for _ in range(200):
+        soli = liberi()
+        coppia, dist = None, CUCI
+        for i, a in enumerate(soli):
+            for b in soli[i + 1:]:
+                if b in archi[a]:
+                    continue
+                dd = math.hypot(pos[a][0] - pos[b][0], pos[a][1] - pos[b][1])
+                if dd < dist:
+                    coppia, dist = (a, b), dd
+        if not coppia:
+            break
+        a, b = coppia
+        archi[a].add(b)
+        archi[b].add(a)
+
+    ang = lambda a, b: math.atan2(pos[b][1] - pos[a][1], pos[b][0] - pos[a][0])
+    da_fare = {(a, b) for a in archi for b in archi[a]}
+    fuori = []
+    while da_fare:
+        via = next(iter(da_fare))
+        giro, lati, lato = [], [], via
+        for _ in range(40000):
+            a, b = lato
+            lati.append(lato)
+            giro.append(pos[a])
+            entrata = ang(b, a)
+            scelta, meglio = None, 9e9
+            for c in archi[b]:
+                dd = (entrata - ang(b, c)) % (2 * math.pi)
+                # tornare indietro e' virata zero, e a cercare il minimo
+                # vincerebbe sempre: il cammino rimbalzava avanti e
+                # indietro sullo stesso lato e ogni faccia usciva di due
+                # punti e area zero. La marcia indietro va messa in
+                # fondo al giro, non in cima: si prende solo se non c'e'
+                # nient'altro, che e' quello che serve sui rami morti.
+                if dd < 1e-9:
+                    dd = 2 * math.pi
+                if dd < meglio:
+                    meglio, scelta = dd, c
+            lato = (b, scelta)
+            if lato == via:
+                break
+        for l in lati:
+            da_fare.discard(l)
+        if len(giro) >= 3 and abs(area(giro)) > 1:
+            fuori.append(giro)
+    if not fuori:
+        return []
+    # la piu' grande e' il giro di fuori: gira al contrario, e si toglie
+    grande = max(fuori, key=lambda g: abs(area(g)))
+    verso = -1 if area(grande) > 0 else 1
+    dentro = [g for g in fuori if g is not grande and area(g) * verso > 0]
+    dentro.sort(key=lambda g: -abs(area(g)))
+    return [g if area(g) > 0 else g[::-1] for g in dentro]
 
 
 def prepara(percorso, nome=None):

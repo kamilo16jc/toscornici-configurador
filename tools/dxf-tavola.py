@@ -152,11 +152,17 @@ def contorni(ent):
         p = punti(e)
         segs += list(zip(p, p[1:]))
         capi += [p[0], p[-1]]
-    fuori = []
-    for c in profilo.contorno_esterno(profilo.spezza_a_T(segs, capi)):
-        if abs(profilo.area(c)) > 20:
-            fuori.append(c[::-1] if profilo.area(c) < 0 else c)
-    return fuori
+    # Si cuce fino a un centimetro, non fino al millimetro come sui
+    # coprifili. In una sezione d'assieme il disegnatore INTERROMPE il
+    # contorno del legno dove ci va altro: sulla battuta di questo
+    # telaio il profilo resta aperto 10,12 mm, ed e' il posto della
+    # guarnizione, che sta su un altro strato. Con la soglia stretta il
+    # cammino non chiudeva e la battuta spariva: il telaio usciva largo
+    # 71 invece di 104, e nel 3D fra anta e coprifilo si vedeva il muro
+    # per tutta l'altezza. Qui la soglia larga e' sicura -- i capi
+    # liberi sono due, e c'e' un solo modo di unirli.
+    return [c for c in profilo.contorno_esterno(profilo.spezza_a_T(segs, capi), 12.0)
+            if abs(profilo.area(c)) > 20]
 
 
 def isole(ent, aria=6.0):
