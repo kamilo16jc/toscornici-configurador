@@ -125,7 +125,43 @@ const dentro = ([x, y], poly) => {
 const centro = (p) => [p.reduce((a, q) => a + q[0], 0) / p.length,
                        p.reduce((a, q) => a + q[1], 0) / p.length];
 
+/* QUALI FACCE SONO VETRO
+   Il DXF non lo dice: e' tutto su un layer solo, APS_GEOMETRY, legno e
+   vetro insieme. Quindi qui si applica una REGOLA, e va detto che e'
+   una regola nostra e non un dato:
+
+     - la faccia foglia piu' grande e' il riquadro di legno in basso
+       (231192 mm2, il doppio della seconda);
+     - sopra di essa, ogni faccia foglia grande abbastanza da non essere
+       un regolo (>= 12000 mm2) e' un vetro.
+
+   Il margine di 80 mm sopra il riquadro serve a non prendersi la fascia
+   della sua modanatura, che gli sta appiccicata sopra.
+
+   LA SOLUZIONE VERA non e' una regola piu' furba: e' chiedere alla
+   fabbrica di esportare il vetro su un LAYER SUO. Una riga nelle
+   impostazioni di export, e non si indovina piu' niente. */
+const foglia = (f) => !d.facce.some((g) =>
+  g !== f && g.livello > f.livello && area(g.punti) < area(f.punti)
+  && dentro(centro(g.punti), f.punti));
+
+const foglie = d.facce.filter(foglia);
+const riquadro = foglie.reduce((a, b) => (area(a.punti) > area(b.punti) ? a : b));
+const cimaRiquadro = Math.max(...riquadro.punti.map((p) => p[1]));
+// livello >= 2 tiene fuori il TELAIO: il suo traverso alto e' una faccia
+// larga, foglia e in cima, quindi passava tutti gli altri controlli e
+// veniva fuori di vetro -- una porta col telaio trasparente.
+const eVetro = (f) => foglia(f) && f !== riquadro && f.livello >= 2
+  && area(f.punti) >= 12000 && centro(f.punti)[1] > cimaRiquadro + 80;
+
+const vetro = new THREE.MeshPhysicalMaterial({
+  color: 0xdfe8e6, transmission: 0.92, thickness: 4, roughness: 0.08,
+  metalness: 0, ior: 1.5, transparent: true, opacity: 0.42,
+  side: THREE.DoubleSide,
+});
+
 const porta = new THREE.Group();
+let quantiVetri = 0;
 for (const f of d.facce) {
   const forma = new THREE.Shape();
   f.punti.forEach(([x, y], i) => (i ? forma.lineTo(x, y) : forma.moveTo(x, y)));
@@ -140,11 +176,19 @@ for (const f of d.facce) {
     buco.closePath();
     forma.holes.push(buco);
   }
+  // Il vetro e' sottile e sta in mezzo allo spessore, non a filo: e'
+  // una lastra dentro il telaio, non un pieno di legno.
+  const v = eVetro(f);
+  if (v) quantiVetri += 1;
   const geo = new THREE.ExtrudeGeometry(forma, {
-    depth: SPESSORE - f.livello * GRADINO, bevelEnabled: false, curveSegments: 1,
+    depth: v ? 4 : SPESSORE - f.livello * GRADINO,
+    bevelEnabled: false, curveSegments: 1,
   });
+  if (v) geo.translate(0, 0, SPESSORE / 2 - 2);
   geo.computeVertexNormals();
-  porta.add(new THREE.Mesh(geo, mat));
+  const m = new THREE.Mesh(geo, v ? vetro : mat);
+  m.renderOrder = v ? 1 : 0;         // il vetro si disegna dopo il legno
+  porta.add(m);
 }
 porta.position.set(-d.larghezza / 2, -d.altezza / 2, -SPESSORE / 2);
 scena.add(porta);
