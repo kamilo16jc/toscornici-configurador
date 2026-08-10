@@ -348,8 +348,8 @@ if (M) {
   /* Lo scrocco. Non e' nella tavola, ma senza di lui la maniglia si
      abbassa senza che succeda niente, e quello che si vuole far vedere
      e' proprio che si abbassa PER far succedere qualcosa. */
-  var scrocco = new THREE.Mesh(new THREE.BoxGeometry(26, 24, 15), acciaio);
-  scrocco.position.set(-7, M.cy, T / 2);
+  var scrocco = new THREE.Mesh(new THREE.BoxGeometry(24, 24, 15), acciaio);
+  scrocco.position.set(-5, M.cy, T / 2);
   gFerro.add(scrocco);
 }
 
@@ -439,9 +439,17 @@ let prima = performance.now();
   const premi = (adesso > 0 && meta > 0)
     ? fascia(adesso, 0, .06) * (1 - fascia(adesso, .10, .22)) : 0;
   for (const l of levaGiro) l.rotation.z = -premi * 0.62;
-  // lo scrocco sta fuori solo a porta ferma e chiusa
+  /* Lo scrocco: fuori a riposo, dentro quando la maniglia e' premuta.
+     Ma A PORTA CHIUSA non si disegna. Non e' per nasconderlo: a porta
+     chiusa lo scrocco sta DENTRO L'INCONTRO, la scatoletta incassata
+     nello stipite, e da fuori non lo vede nessuno. L'incontro qui non
+     c'e' -- sarebbe una tasca scavata nel telaio -- e senza, la punta
+     restava per aria nella fessura, come un cuneo appiccicato al fianco
+     della porta. Appena l'anta si stacca lo scrocco riappare, ed e'
+     quello che si vede davvero aprendo una porta. */
   if (typeof scrocco !== 'undefined') {
-    scrocco.position.x = -7 + 13 * Math.max(premi, fascia(adesso, 0, .01));
+    scrocco.position.x = -5 + 13 * premi;
+    scrocco.visible = adesso > .03;
   }
 
   controlli.update();
@@ -450,7 +458,8 @@ let prima = performance.now();
 }());
 
 // il banco si guarda anche da fuori, per fare le prove
-window.__banco = { cam, controlli, scena, centro, dati: d };
+window.__banco = { cam, controlli, scena, centro, dati: d,
+                   get angolo() { return perno.rotation.y; } };
 
 /* ── comandi ────────────────────────────────────────────────────────── */
 const gruppi = { telaio: gTelaio, anta: gAnta, pannelli: gPann, ferro: gFerro };
