@@ -63,7 +63,7 @@ const livelli = Math.max(...d.facce.map((f) => f.livello));
 // mai piu' di meta' spessore in tutto: il fondo del rilievo resta legno
 const GRADINO = Math.min(5, (SPESSORE * 0.5) / Math.max(1, livelli));
 // lo smusso del bordo: piccolo, ma senza di lui il rilievo non si vede
-const SMUSSO = Math.min(2.2, GRADINO * 0.55);
+const SMUSSO = Math.min(1.6, GRADINO * 0.4);   // piccolo: la fessura che apre si vede
 
 document.getElementById('riassunto').textContent =
   `${d.larghezza} × ${d.altezza} mm · ${d.facce.length} facce chiuse ricavate `
@@ -169,11 +169,33 @@ const vetro = new THREE.MeshPhysicalMaterial({
   side: THREE.DoubleSide,
 });
 
+/* Il vetro si fa piu' GRANDE del vano che si vede.
+
+   Lo smusso restringe il contorno di ogni faccia, quindi ogni pezzo di
+   legno si tira indietro dal vicino e lungo la giunzione resta una
+   fessura: da li' si vedeva il fondo, e sembravano buchi.
+
+   La cura non e' togliere lo smusso -- senza, il rilievo non si vede
+   piu'. E' che una lastra vera e' sempre piu' grande dell'apertura e va
+   sotto il fermavetro: cosi' nella fessura c'e' vetro, non aria. Qui si
+   allarga di 4 mm per lato, scalando il contorno attorno al suo centro.
+   Sui vani squadrati e' esatto, sui settori del ventaglio e'
+   approssimato -- ma serve solo a infilarsi sotto il legno, non a
+   quotare niente. */
+const SOTTOSQUADRO = 4;
+const allarga = (punti, mm) => {
+  const c = centro(punti);
+  const raggio = Math.max(...punti.map(([x, y]) => Math.hypot(x - c[0], y - c[1])));
+  const k = (raggio + mm) / raggio;
+  return punti.map(([x, y]) => [c[0] + (x - c[0]) * k, c[1] + (y - c[1]) * k]);
+};
+
 const porta = new THREE.Group();
 let quantiVetri = 0;
 for (const f of d.facce) {
+  const punti = eVetro(f) ? allarga(f.punti, SOTTOSQUADRO) : f.punti;
   const forma = new THREE.Shape();
-  f.punti.forEach(([x, y], i) => (i ? forma.lineTo(x, y) : forma.moveTo(x, y)));
+  punti.forEach(([x, y], i) => (i ? forma.lineTo(x, y) : forma.moveTo(x, y)));
   forma.closePath();
   // le figlie DIRETTE: un livello piu' dentro, e col centro qui dentro
   for (const g of d.facce) {
