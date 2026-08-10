@@ -21,6 +21,8 @@
                   background: #fffdf8; border: 1px solid #d8cebc; border-radius: 4px;
                   color: #6b5c4c; }
   .barra button.on { background: #a9472f; border-color: #a9472f; color: #fff; }
+  .etich { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase;
+           color: #9a8b78; align-self: center; margin-right: 4px; }
   .nota { margin-top: 18px; font-size: 12.5px; color: #8d7d6a; background: #fffdf8;
           border: 1px dashed #ccc2b1; border-radius: 6px; padding: 14px 16px;
           max-width: 100ch; }
@@ -48,6 +50,13 @@
   <button data-vedi="ferro" class="on">Ferramenta</button>
   <button id="esploso">Esploso</button>
   <button id="apri">Apri</button>
+</div>
+
+<div class="barra">
+  <span class="etich">Finitura del riquadro</span>
+  <button data-tipo="1" class="on">Tipo 1 · bugnato</button>
+  <button data-tipo="2">Tipo 2 · tondo, piatto</button>
+  <button data-tipo="3">Tipo 3 · vivo, piatto</button>
 </div>
 
 <div class="riq"><h2>Il solido ricavato — trascina per girarlo</h2><canvas id="tela"></canvas></div>
@@ -257,20 +266,120 @@ const metti = (gruppo, geo, giro) => {
   return geo;
 };
 
-/* i montanti: tutta l'altezza dell'anta, come in bottega */
-metti(gAnta, verticale(d.montante.punti, 0, H), false);
-metti(gAnta, verticale(ribalta(d.montante.punti, L), 0, H), false);
+/* ── i tre tipi di finitura ─────────────────────────────────────────── */
+/* La fabbrica ne offre tre, e cambiano DUE cose insieme -- il filo
+   interno del telaio dell'anta e il pannello:
+     1  bastone sagomato, pannello bugnato che esce dal filo
+     2  bastone tondo,    pannello piatto, tutto dentro
+     3  bastone a spigolo vivo, pannello piatto, tutto dentro
+   Del tipo 1 abbiamo la tavola, e infatti e' preso da li' al centesimo.
+   Del 2 e del 3 no: quei DXF non sono ancora arrivati, e questi due
+   profili li abbiamo disegnati noi sul catalogo. Il posto della cava,
+   la sua larghezza e la profondita' del rientro pero' restano quelli
+   veri -- si cambia la forma del labbro, non le misure. */
 
-/* i traversi: da fondo cava a fondo cava, cosi' il loro tenone riempie
-   la cava del montante e sull'angolo non resta uno spiraglio */
-const cavaSx = d.riquadri[0].x0, cavaDx = d.riquadri[0].x1;
-for (const t of d.traversi) metti(gAnta, orizzontale(t.punti, cavaSx, cavaDx), true);
+// il rientro: quanto il bastone entra oltre il fondo della cava
+const RIENTRO = d.montante.larghezza - d.riquadri[0].x0;
+const SPCAVA = d.pannello.bugna[0][1] * 2;          // larghezza della cava
+const ZC = d.pannello.z_centro;
+const CAVA0 = ZC - SPCAVA / 2, CAVA1 = ZC + SPCAVA / 2;
 
-/* i pannelli */
-for (const r of d.riquadri) {
-  metti(gPann, pannello(r, d.pannello.bugna, d.pannello.z_centro,
-                        d.pannello.gioco), false);
+/* Il labbro, dal fondo cava al filo, per i tipi 2 e 3. Si scrive sempre
+   dal basso verso l'alto e poi, se serve, si gira. */
+function labbro(tipo, thr, s, giu, su) {
+  const A = thr + s * RIENTRO;
+  const q = [];
+  if (tipo === 3) {
+    q.push([A, giu], [A, CAVA0], [thr, CAVA0], [thr, CAVA1], [A, CAVA1], [A, su]);
+  } else {
+    const arco = (b0, b1) => {
+      const r = (b1 - b0) / 2, c = b0 + r, x = A - s * r;
+      // mezzo tondo: il colmo tocca il filo, come il bastone tondo vero
+      for (let k = 0; k <= 14; k++) {
+        const t = -Math.PI / 2 + Math.PI * k / 14;
+        q.push([x + s * r * Math.cos(t), c + r * Math.sin(t)]);
+      }
+    };
+    arco(giu, CAVA0);
+    q.push([thr, CAVA0], [thr, CAVA1]);
+    arco(CAVA1, su);
+  }
+  return q;
 }
+
+/* Rifa' il filo di una sezione: si butta via il tratto oltre il fondo
+   cava e ci si mette il labbro nuovo. Il tratto da buttare e' UNO SOLO
+   e contiguo lungo il contorno, percio' basta ruotare l'elenco dei punti
+   perche' non resti spezzato a cavallo della fine. */
+function rifaiFilo(punti, tipo, A, s) {
+  if (tipo === 1) return punti;
+  const thr = A - s * RIENTRO;
+  /* Il mezzo millimetro di tolleranza non e' pigrizia. Il fondo della
+     cava sta ESATTAMENTE sul filo del taglio, e con un confronto secco
+     quei punti finivano fuori: il tratto da sostituire si spezzava in
+     due -- labbro di sotto e labbro di sopra -- e il labbro nuovo ci
+     veniva infilato due volte, lasciando la parte alta del montante
+     senza niente. */
+  const dentro = (p) => s * (p[0] - thr) > -0.5;
+  const base = punti.findIndex((p) => !dentro(p));
+  if (base < 0) return punti;
+  const giro = punti.slice(base).concat(punti.slice(0, base));
+  const fuori = [];
+  for (let i = 0; i < giro.length; ) {
+    if (!dentro(giro[i])) { fuori.push(giro[i]); i++; continue; }
+    const bIn = fuori[fuori.length - 1][1];
+    while (i < giro.length && dentro(giro[i])) i++;
+    const bOut = (i < giro.length ? giro[i] : giro[0])[1];
+    const q = labbro(tipo, thr, s, Math.min(bIn, bOut), Math.max(bIn, bOut));
+    fuori.push(...(bIn > bOut ? q.reverse() : q));
+  }
+  return fuori;
+}
+
+/* Quale filo di un pezzo guarda un riquadro: quello che gli sta davanti
+   esattamente di un rientro. Il montante ne ha uno, il traverso di
+   mezzo due, quelli di cima e di fondo uno per parte. */
+const guarda = (a, bordi) => bordi.some((v) => Math.abs(a - v) < .5);
+
+/* il pannello piatto dei tipi 2 e 3: una tavola dello spessore della
+   cava, che nel vano ci sta dentro tutta */
+function pannelloPiatto(r, gioco) {
+  const g = new THREE.BoxGeometry(r.x1 - r.x0 - 2 * gioco,
+                                  r.y1 - r.y0 - 2 * gioco, SPCAVA);
+  g.translate((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, ZC);
+  return g;
+}
+
+let tipo = 1;
+function montaAnta() {
+  for (const g of [gAnta, gPann]) {
+    for (const m of g.children) m.geometry.dispose();
+    g.clear();
+  }
+  const rx = d.riquadri.map((r) => r.x0);
+  const ry0 = d.riquadri.map((r) => r.y0), ry1 = d.riquadri.map((r) => r.y1);
+
+  // i montanti: tutta l'altezza dell'anta, come in bottega
+  const mo = rifaiFilo(d.montante.punti, tipo, d.montante.larghezza, 1);
+  metti(gAnta, verticale(mo, 0, H), false);
+  metti(gAnta, verticale(ribalta(mo, L), 0, H), false);
+
+  // i traversi: da fondo cava a fondo cava, cosi' il loro tenone riempie
+  // la cava del montante e sull'angolo non resta uno spiraglio
+  for (const t of d.traversi) {
+    let p = t.punti;
+    if (guarda(t.y1 - RIENTRO, ry0)) p = rifaiFilo(p, tipo, t.y1, 1);
+    if (guarda(t.y0 + RIENTRO, ry1)) p = rifaiFilo(p, tipo, t.y0, -1);
+    metti(gAnta, orizzontale(p, d.riquadri[0].x0, d.riquadri[0].x1), true);
+  }
+
+  for (const r of d.riquadri) {
+    metti(gPann, tipo === 1
+      ? pannello(r, d.pannello.bugna, ZC, d.pannello.gioco)
+      : pannelloPiatto(r, d.pannello.gioco), false);
+  }
+}
+montaAnta();
 
 /* Il telaio: la tavola ne da' due stipiti gia' al loro posto -- uno per
    parte, non serve specchiarne uno -- e la traversa alta. Lo stipite
@@ -459,7 +568,9 @@ let prima = performance.now();
 
 // il banco si guarda anche da fuori, per fare le prove
 window.__banco = { cam, controlli, scena, centro, dati: d,
-                   get angolo() { return perno.rotation.y; } };
+                   get angolo() { return perno.rotation.y; },
+                   filo: (t) => rifaiFilo(d.montante.punti, t,
+                                          d.montante.larghezza, 1) };
 
 /* ── comandi ────────────────────────────────────────────────────────── */
 const gruppi = { telaio: gTelaio, anta: gAnta, pannelli: gPann, ferro: gFerro };
@@ -474,6 +585,14 @@ document.getElementById('esploso').addEventListener('click', (ev) => {
   gTelaio.position.z = esploso ? -260 : 0;
   gPann.position.z = esploso ? 260 : 0;
 });
+
+document.querySelectorAll('[data-tipo]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-tipo]').forEach((x) => x.classList.remove('on'));
+  b.classList.add('on');
+  tipo = +b.dataset.tipo;
+  montaAnta();
+  scriviNota();
+}));
 
 const bApri = document.getElementById('apri');
 bApri.addEventListener('click', () => {
@@ -492,16 +611,28 @@ document.getElementById('riassunto').textContent =
   + `${(d.pannello.bugna[0][1] * 2).toFixed(1)}. `
   + `Luce netta ${uno('LUCENETTA')}, esterno telaio ${uno('ESTERNOTELAIO')} × ${uno('EST.TELAIO')}, HT ${uno('HT')}.`;
 
-document.getElementById('nota').innerHTML =
-  '<b>Che differenza fa avere le sezioni.</b> Del 700-C avevamo solo l\'alzato, '
-  + 'e di fronte la profondita\' non si vede: ogni gradino era una nostra stima. '
-  + 'Qui invece ogni pezzo e\' la sua sezione vera tirata per la sua lunghezza — '
-  + 'il montante in verticale, i traversi in orizzontale, il telaio intorno al vano — '
-  + 'e la bugna del pannello e\' la curva letta punto per punto sulla SEZ-B, '
-  + `${d.pannello.bugna.length} campioni dal filo della cava fino al colmo. `
-  + 'Non c\'e\' piu\' niente di inventato, salvo una cosa: la traversa alta del telaio '
-  + 'e\' presa dalla SEZ-A e gli stipiti dalla SEZ-B, e dove si incontrano '
-  + 'la tavola non dice se il giunto e\' in mitra o a sormonto — qui e\' a sormonto.';
+function scriviNota() {
+  const daNoi = tipo === 1
+    ? 'la traversa alta del telaio e\' presa dalla SEZ-A e gli stipiti dalla '
+      + 'SEZ-B, e dove si incontrano la tavola non dice se il giunto e\' in '
+      + 'mitra o a sormonto — qui e\' a sormonto.'
+    : `il <b>tipo ${tipo}</b> e' l'unico pezzo qui dentro DISEGNATO DA NOI: `
+      + 'quel DXF non e\' ancora arrivato, e il labbro '
+      + (tipo === 2 ? 'tondo' : 'a spigolo vivo')
+      + ' e\' ricavato dal catalogo. Restano vere le misure che contano — '
+      + `la cava larga ${SPCAVA} a ${ZC} mm dalla faccia, e il rientro di `
+      + `${RIENTRO}: si cambia la forma del labbro, non dove sta. Quando la `
+      + 'fabbrica manda la sezione, si sostituisce e basta.';
+  document.getElementById('nota').innerHTML =
+    '<b>Che differenza fa avere le sezioni.</b> Del 700-C avevamo solo l\'alzato, '
+    + 'e di fronte la profondita\' non si vede: ogni gradino era una nostra stima. '
+    + 'Qui invece ogni pezzo e\' la sua sezione vera tirata per la sua lunghezza — '
+    + 'il montante in verticale, i traversi in orizzontale, il telaio intorno al vano — '
+    + 'e la bugna del pannello e\' la curva letta punto per punto sulla SEZ-B, '
+    + `${d.pannello.bugna.length} campioni dal filo della cava fino al colmo. `
+    + 'Non c\'e\' quasi niente di inventato: ' + daNoi;
+}
+scriviNota();
 </script>
 </body>
 </html>
