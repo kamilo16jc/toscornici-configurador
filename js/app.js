@@ -1639,6 +1639,11 @@ function refreshUI() {
 
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
+
+  // Sul grezzo la tavolozza non serve: il legno resta a vista e i colori
+  // sarebbero sei bottoni che non fanno niente. Prima stavano sempre in
+  // pagina, e per giunta PRIMA della domanda che li rende sensati.
+  document.getElementById('bloccoLaccati').hidden = state.finitura === 'grezza';
   document.querySelectorAll('.swatch').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.essenza === state.essenza));
   document.querySelectorAll('.lacc').forEach((b) =>
