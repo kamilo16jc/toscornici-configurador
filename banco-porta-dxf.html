@@ -51,10 +51,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const SPESSORE = 44;      // l'anta, in mm
-const GRADINO = 14;       // PROVA: esagerato apposta, per vedere se il rilievo c'e'
+/* Il gradino non si sceglie a caso: moltiplicato per i livelli deve
+   restare dentro lo spessore. A 14 mm su sei livelli le facce piu'
+   interne venivano PROFONDE MENO DI ZERO -- L4 a -12, L5 a -26 -- e
+   quello che si vedeva erano regoli spessi due millimetri con il vetro
+   che galleggiava staccato in mezzo. Si calcola dallo spessore e da
+   quanti livelli ha davvero il disegno. */
 
 const d = await (await fetch('assets/profili/700-c-alzato.json')).json();
 const livelli = Math.max(...d.facce.map((f) => f.livello));
+// mai piu' di meta' spessore in tutto: il fondo del rilievo resta legno
+const GRADINO = Math.min(4, (SPESSORE * 0.45) / Math.max(1, livelli));
 
 document.getElementById('riassunto').textContent =
   `${d.larghezza} × ${d.altezza} mm · ${d.facce.length} facce chiuse ricavate `
@@ -176,15 +183,19 @@ for (const f of d.facce) {
     buco.closePath();
     forma.holes.push(buco);
   }
-  // Il vetro e' sottile e sta in mezzo allo spessore, non a filo: e'
-  // una lastra dentro il telaio, non un pieno di legno.
+  /* Il vetro riempie il vano per tutto lo spessore, non e' una lastrina
+     appesa in mezzo. Prima stava a meta' altezza e i regoli gli
+     arrivavano solo davanti: girando la porta si vedeva il buco fra il
+     legno e il vetro. Il vetro di una porta sta in battuta dentro il
+     telaio, e da qualunque parte la si guardi non c'e' aria in mezzo.
+     Lo SPESSORE OTTICO resta 4 mm -- quello lo dice il materiale, non
+     la geometria. */
   const v = eVetro(f);
   if (v) quantiVetri += 1;
   const geo = new THREE.ExtrudeGeometry(forma, {
-    depth: v ? 4 : SPESSORE - f.livello * GRADINO,
+    depth: v ? SPESSORE : SPESSORE - f.livello * GRADINO,
     bevelEnabled: false, curveSegments: 1,
   });
-  if (v) geo.translate(0, 0, SPESSORE / 2 - 2);
   geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, v ? vetro : mat);
   m.renderOrder = v ? 1 : 0;         // il vetro si disegna dopo il legno
@@ -225,7 +236,8 @@ tela.addEventListener('pointerdown', () => { controlli.autoRotate = false; },
 document.getElementById('avviso').innerHTML =
   '<b>Cosa e\' misurato e cosa e\' inventato.</b> La forma di ogni faccia viene dal '
   + 'DXF, esatta: di fronte questa porta e\' quella vera. La PROFONDITA\' no — '
-  + `il gradino da ${GRADINO} mm e lo spessore da ${SPESSORE} mm li abbiamo scelti noi, `
+  + `il gradino da ${GRADINO.toFixed(1)} mm e lo spessore da ${SPESSORE} mm li abbiamo `
+  + 'scelti noi, ' +
   + 'perche\' un alzato la profondita\' non ce l\'ha. Per averla esatta anche di '
   + 'fianco serve la <b>sezione</b>: un taglio orizzontale sul montante e uno '
   + 'verticale sul traverso e sul riquadro. Con quelle, ogni pezzo diventa '
