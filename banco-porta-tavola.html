@@ -327,11 +327,17 @@ if (M) {
       depth: GROS, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.6,
       bevelOffset: 0, bevelSegments: 2, curveSegments: 2,
     });
-    // la faccia di dietro e' la stessa maniglia vista dall'altra parte:
-    // si gira il gruppo, non si specchia la geometria
+    // La leva di dietro esce dall'altra parte, e basta: si sposta il
+    // solido, non si gira il gruppo.
+    // Girandolo di mezzo giro -- come si faceva -- si ribalta anche in
+    // orizzontale, e la leva puntava verso il filo della serratura
+    // invece che verso il mezzo della porta: sembrava infilata dentro il
+    // telaio. Le due leve stanno sullo stesso quadro, quindi in pianta
+    // puntano dalla stessa parte; e' guardandole da dietro che una
+    // sembra al contrario, non nei fatti.
+    if (faccia < 0) g.translate(0, 0, -GROS);
     const fuori = new THREE.Group();
     fuori.position.set(M.cx, M.cy, z + faccia * SPOR);
-    if (faccia < 0) fuori.rotation.y = Math.PI;
     const dentro = new THREE.Group();
     dentro.add(new THREE.Mesh(g, acciaio));
     fuori.add(dentro);
