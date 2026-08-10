@@ -223,30 +223,64 @@ def contorno_esterno(segs):
             archi[n].clear()
         archi = {n: v for n, v in archi.items() if v}
 
-    if not archi:
-        return []
     ang = lambda a, b: math.atan2(pos[b][1] - pos[a][1], pos[b][0] - pos[a][0])
 
-    # il piu' in basso, e a parita' il piu' a sinistra: sta sul bordo
-    via = min(archi, key=lambda n: (pos[n][1], pos[n][0]))
-    # si arriva da sotto, cioe' da dove non c'e' nessuno
-    entrata = -math.pi / 2
-    giro, a = [], via
-    for _ in range(20000):
-        giro.append(pos[a])
-        scelta, meglio = None, -1.0
-        for c in archi[a]:
-            if len(giro) > 1 and c == prima and len(archi[a]) > 1:
-                continue                      # indietro solo se non c'e' altro
-            d = (entrata - ang(a, c)) % (2 * math.pi)
-            if d > meglio:                    # il piu' orario: resta di fuori
-                meglio, scelta = d, c
-        if scelta is None:
-            break
-        prima, entrata, a = a, ang(scelta, a), scelta
-        if a == via:
-            break
-    return [giro] if len(giro) >= 3 else []
+    def un_giro():
+        """Il bordo del lobo che contiene il punto piu' in basso."""
+        via = min(archi, key=lambda n: (pos[n][1], pos[n][0]))
+        entrata = -math.pi / 2
+        giro, strada, a, prima = [], [], via, None
+        for _ in range(20000):
+            giro.append(pos[a])
+            strada.append(a)
+            scelta, meglio = None, -1.0
+            for c in archi[a]:
+                if prima is not None and c == prima and len(archi[a]) > 1:
+                    continue                  # indietro solo se non c'e' altro
+                dd = (entrata - ang(a, c)) % (2 * math.pi)
+                if dd > meglio:               # il piu' orario: resta di fuori
+                    meglio, scelta = dd, c
+            if scelta is None:
+                break
+            prima, entrata, a = a, ang(scelta, a), scelta
+            if a == via:
+                break
+        return giro, strada
+
+    # UN DISEGNO PUO' CONTENERE PIU' SOLIDI. La sezione di un vano di
+    # porta ne ha due: l'imbotto a U che fascia il muro, e il montante di
+    # battuta contro cui l'anta chiude. Sono legni diversi e vanno
+    # tenuti diversi.
+    #
+    # Separarli PRIMA, guardando quanto distano i capi delle entita', non
+    # funziona: dentro la U i capi distano fino a un millimetro, e con
+    # una soglia stretta la U stessa si spezza in tre. Vanno separati
+    # DOPO aver cucito -- allora i pezzi che si sfiorano ma non si
+    # toccano restano grafi staccati, e la U e' un grafo solo.
+    tutto = list(archi)
+    g = {n: n for n in tutto}
+
+    def trova(n):
+        while g[n] != n:
+            g[n] = g[g[n]]
+            n = g[n]
+        return n
+
+    for n in tutto:
+        for m in archi[n]:
+            g[trova(n)] = trova(m)
+    isolotti = {}
+    for n in tutto:
+        isolotti.setdefault(trova(n), []).append(n)
+
+    interi, fuori = archi, []
+    for nodi in isolotti.values():
+        archi = {n: interi[n] for n in nodi}
+        giro, _ = un_giro()
+        if len(giro) >= 3:
+            fuori.append(giro)
+    fuori.sort(key=lambda g_: -abs(area(g_)))
+    return fuori
 
 
 def prepara(percorso, nome=None):
