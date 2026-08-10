@@ -121,21 +121,27 @@
           <input type="number" id="mH" value="2100" min="1700" max="2800" step="10">
         </label>
       </div>
+      <!-- quote: la luce vista di fronte. Si muove quando il cliente
+           cambia una misura, cosi' si vede COSA e' cambiato. -->
+      <figure class="anim"><svg id="misureAnim" role="img" aria-label="Larghezza e altezza della luce"></svg></figure>
+      <p class="pill-note" id="misureNote"></p>
+    </section>
+
+    <!-- Ante — sezione sua: quante ante non e' una misura, e lo schema
+         qui sotto illustra proprio questa scelta, non le quote. -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">05</span> <span data-t="sez_ante">Ante</span></h2>
       <div class="pills" id="antePills">
         <button class="pill is-active" data-ante="1" data-t="ante_1">1 anta</button>
         <button class="pill" data-ante="2"><span data-t="ante_2">2 ante</span> <span class="en">+100%</span></button>
       </div>
-      <!-- quote: la luce vista di fronte. Si muove quando il cliente
-           cambia una misura, cosi' si vede COSA e' cambiato. -->
-      <figure class="anim"><svg id="misureAnim" role="img" aria-label="Larghezza e altezza della luce"></svg></figure>
       <!-- schema animato: pianta vista dall'alto -->
       <figure class="anim"><svg id="anteAnim" role="img" aria-label="Schema del movimento"></svg></figure>
-      <p class="pill-note" id="misureNote"></p>
     </section>
 
     <!-- Muro e allargato -->
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> <span data-t="sez_muro">Muro e allargato</span></h2>
+      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_muro">Muro e allargato</span></h2>
       <div class="measures">
         <label class="measure"><span data-t="muro_spess">Spessore muro</span> <span class="en">mm</span>
           <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
@@ -157,7 +163,7 @@
 
     <!-- Telaio -->
     <section class="section">
-      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_telaio">Telaio</span></h2>
+      <h2 class="section-title"><span class="num">07</span> <span data-t="sez_telaio">Telaio</span></h2>
       <select class="model-select" id="telaioSelect" aria-label="Telaio"></select>
       <figure class="schema">
         <img id="telaioSchema" src="assets/telai/std.svg" alt="Sezione del telaio">
@@ -168,14 +174,14 @@
 
     <!-- Coprifili -->
     <section class="section">
-      <h2 class="section-title"><span class="num">07</span> <span data-t="sez_coprifili">Coprifili</span></h2>
+      <h2 class="section-title"><span class="num">08</span> <span data-t="sez_coprifili">Coprifili</span></h2>
       <div class="maniglie-grid" id="copriGrid"><!-- generato dal listino --></div>
       <p class="pill-note" id="copriNote">Il coprifilo è un pezzo indipendente dall'anta: il listino lo produce solo in frassino, toulipier e pino. Liscio listellare (90/70) compreso nel prezzo. Con la lente sulla scheda si vede il profilo in grande e si sceglie legno e misura.</p>
     </section>
 
     <!-- Apertura e forma -->
     <section class="section">
-      <h2 class="section-title"><span class="num">08</span> <span data-t="sez_apertura">Apertura e forma</span></h2>
+      <h2 class="section-title"><span class="num">09</span> <span data-t="sez_apertura">Apertura e forma</span></h2>
       <select class="model-select" id="aperturaSelect" aria-label="Apertura"></select>
       <figure class="anim"><svg id="aperturaAnim" role="img" aria-label="Schema del movimento"></svg></figure>
       <select class="model-select" id="formaSelect" aria-label="Forma"></select>
@@ -195,7 +201,7 @@
 
     <!-- Capitello -->
     <section class="section">
-      <h2 class="section-title"><span class="num">09</span> <span data-t="sez_capitello">Capitello</span></h2>
+      <h2 class="section-title"><span class="num">10</span> <span data-t="sez_capitello">Capitello</span></h2>
       <select class="model-select" id="capitelloSelect" aria-label="Capitello"></select>
       <div class="pills" id="capLatiPills">
         <button class="pill is-active" data-lati="1">1 lato</button>
@@ -211,7 +217,7 @@
 
     <!-- Ferramenta -->
     <section class="section">
-      <h2 class="section-title"><span class="num">10</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
+      <h2 class="section-title"><span class="num">11</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
       <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
       <div class="pills" id="serrExtraPills">
         <button class="pill" data-nottolino="1">Predisp. nottolino <span class="en">+€10</span></button>
@@ -236,7 +242,7 @@
 
     <!-- Maniglia -->
     <section class="section">
-      <h2 class="section-title"><span class="num">11</span> <span data-t="sez_finmaniglia">Finitura maniglia</span></h2>
+      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_finmaniglia">Finitura maniglia</span></h2>
       <div class="metals" id="maniglie">
         <button class="metal is-active" data-maniglia="ottone">
           <span class="metal-chip chip-ottone"></span>
@@ -255,7 +261,7 @@
 
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_ambiente">Ambiente</span></h2>
+      <h2 class="section-title"><span class="num">13</span> <span data-t="sez_ambiente">Ambiente</span></h2>
       <div class="pills pills-grid" id="ambienti">
         <button class="pill is-active" data-ambiente="galleria" data-t="amb_galleria">Galleria</button>
         <button class="pill" data-ambiente="ingresso" data-t="amb_ingresso">Ingresso</button>

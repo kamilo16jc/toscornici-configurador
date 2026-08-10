@@ -56,14 +56,35 @@ function quota(da, a, testo, sw, opt) {
          + `${num(by - ny * pu * 0.36)}Z" fill="var(--terra)"/>`;
   };
 
-  let out = `<path d="M${num(p[0])} ${num(p[1])} L${num(q[0])} ${num(q[1])}" `
+  // Quota corta: le frecce non ci stanno dentro e vanno a finire
+  // addosso al numero -- un muro da 108 mm usciva con la punta sopra la
+  // cifra. Come sui disegni tecnici si girano in fuori, la linea sborda
+  // di un pezzetto e il numero si stacca di piu'.
+  const stretta = len < pu * 6;
+  const verso = stretta ? -1 : 1;
+  const sb = stretta ? pu * 2 : 0;                 // sbordo della linea
+
+  // Di quanto staccare il numero dalla linea. Non e' un valore fisso:
+  // dipende da cosa del numero sporge verso la linea. Accanto a una
+  // quota VERTICALE il testo orizzontale sporge di mezza LARGHEZZA --
+  // e "108" e' largo tre cifre -- mentre sopra una quota orizzontale
+  // sporge solo di mezza altezza. Con un valore unico il muro usciva
+  // sempre con la cifra sopra la freccia.
+  const lungoLaLinea = opt.verticale;              // testo girato: corre con lei
+  const orizzontale = Math.abs(ux) > Math.abs(uy);
+  const stacco = (orizzontale || lungoLaLinea)
+    ? 7
+    : 7 + String(testo).length * 4.2;
+
+  let out = `<path d="M${num(p[0] - ux * sb)} ${num(p[1] - uy * sb)} `
+          + `L${num(q[0] + ux * sb)} ${num(q[1] + uy * sb)}" `
           + `stroke="var(--terra)" stroke-width="${num(sw * 1.5)}" fill="none"/>`
-          + punta(p[0], p[1], 1) + punta(q[0], q[1], -1);
+          + punta(p[0], p[1], verso) + punta(q[0], q[1], -verso);
 
   // il numero sta SOPRA la linea, staccato: dentro la porta si
   // confonderebbe con le bugne
-  const mx = (p[0] + q[0]) / 2 + nx * sw * 5.5;
-  const my = (p[1] + q[1]) / 2 + ny * sw * 5.5;
+  const mx = (p[0] + q[0]) / 2 + nx * sw * stacco;
+  const my = (p[1] + q[1]) / 2 + ny * sw * stacco;
   const gira = opt.verticale ? ` transform="rotate(-90 ${num(mx)} ${num(my)})"` : '';
   out += `<text x="${num(mx)}" y="${num(my)}"${gira} fill="var(--terra)" `
        + `text-anchor="middle" dominant-baseline="middle" font-weight="600" `
@@ -187,7 +208,11 @@ function disegnaMuro(svg, w, muro, allargato) {
     componi(svg, [L], (sw) =>
       richiamo([giu - sw * 12, 1, -muro / 2], [w / 2, 1, -muro / 2], sw)
       + richiamo([giu - sw * 12, 1, muro / 2], [w / 2, 1, muro / 2], sw)
-      + quota([giu, 1, -muro / 2], [giu, 1, muro / 2], Math.round(muro), sw),
+      // girato, come l'altezza della luce: accanto a una quota
+      // verticale un numero orizzontale sporge di tutta la sua
+      // larghezza e usciva dal riquadro ("108" diventava "08")
+      + quota([giu, 1, -muro / 2], [giu, 1, muro / 2], Math.round(muro), sw,
+              { verticale: true }),
       0.12,
       [[giu, 1, -muro / 2], [giu, 1, muro / 2]]);
   });

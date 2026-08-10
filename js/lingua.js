@@ -139,6 +139,7 @@
     sez_essenza: { it: 'Essenza', en: 'Wood species' },
     sez_finitura: { it: 'Finitura', en: 'Finish' },
     sez_misure: { it: 'Misure luce', en: 'Opening size' },
+    sez_ante: { it: 'Ante', en: 'Leaves' },
     sez_muro: { it: 'Muro e allargato', en: 'Wall & frame extension' },
     sez_telaio: { it: 'Telaio', en: 'Frame' },
     sez_coprifili: { it: 'Coprifili', en: 'Architraves' },
