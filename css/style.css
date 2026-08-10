@@ -562,6 +562,10 @@ body {
   --f-bin: #b9bcc0;   --f-bin-scuro: #8f9499;
   /* I due lati: appena accennati. Devono dire da che parte si sta
      senza rubare l'occhio alle ante. */
+  /* Il pezzo che l'allargato AGGIUNGE. Terracotta perche' e' quello
+     che si paga: vedere quale pezzo costa 150 euro dice piu' del
+     numero da solo. */
+  --f-agg: #d99a80;   --f-agg-scuro: #b8735a;
   --f-dentro: rgba(169, 71, 47, .08);
   --f-fuori:  rgba(43, 33, 26, .12);
   --floor: rgba(43, 33, 26, .07);

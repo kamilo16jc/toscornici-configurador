@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco · allargato integrale contro imbottino</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body {
+    margin: 0; padding: 26px 30px 60px;
+    background: #f4f1ea; color: #2b211a;
+    font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sotto { color: #7a6c5d; margin: 0 0 22px; max-width: 78ch; font-size: 13.5px; }
+  .comandi {
+    display: flex; flex-wrap: wrap; gap: 22px; align-items: center;
+    border-bottom: 1px solid #ddd5c6; padding-bottom: 14px; margin-bottom: 22px;
+  }
+  .gruppo { display: flex; align-items: center; gap: 8px; }
+  .gruppo > b { font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+                color: #8d7d6a; font-weight: 600; }
+  input[type=range] { width: 260px; accent-color: #a9472f; }
+  button { font: inherit; font-size: 13px; padding: 5px 13px; cursor: pointer;
+           border: 1px solid #c9bfae; background: #fffdf8; border-radius: 3px; }
+  .val { font-variant-numeric: tabular-nums; color: #7a6c5d; min-width: 5em; }
+  .griglia { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  .scheda { background: #fffdf8; border: 1px solid #e2dacb; border-radius: 5px;
+            padding: 14px 16px 18px; }
+  .scheda h2 { font-size: 14.5px; margin: 0 0 2px; }
+  .scheda p.mecc { margin: 0 0 10px; font-size: 12.5px; color: #7a6c5d; min-height: 3em; }
+  .scheda .anim svg { width: 100%; max-width: none; height: 260px; display: block; }
+  .prezzo { margin-top: 8px; font-size: 13px; color: #a9472f; font-weight: 600; }
+  code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<h1>Allargato — integrale contro imbottino</h1>
+<p class="sotto">
+  Dettaglio in pianta di una spalla, tutti e due con lo stesso metro. Le sezioni
+  del listino sono su fogli diversi (191×44 una, 224×153 l'altra) e messe a
+  confronto non dicono niente. In terracotta il pezzo che l'allargato
+  <b>aggiunge</b>: e' quello che si paga. Muovi lo spessore del muro e guarda
+  cosa cresce in ciascuno dei due.
+</p>
+
+<div class="comandi">
+  <div class="gruppo">
+    <b>Spessore muro</b>
+    <input type="range" id="muro" min="90" max="400" step="1" value="108">
+    <span class="val" id="muroVal">108 mm</span>
+  </div>
+  <div class="gruppo"><button id="anima">▶ Falli crescere</button></div>
+</div>
+
+<div class="griglia">
+  <div class="scheda">
+    <h2>Integrale</h2>
+    <p class="mecc">Il telaio e' un pezzo solo, spesso, lungo quanto il muro.
+      Cresce il muro, cresce tutto il pezzo.</p>
+    <figure class="anim" style="margin:0"><svg id="svgInt"></svg></figure>
+    <p class="prezzo" id="przInt"></p>
+  </div>
+  <div class="scheda">
+    <h2>Con imbottino</h2>
+    <p class="mecc">Il telaio resta quello standard da 108 mm. A completare il
+      vano si aggiunge una tavola piu' sottile, appoggiata alla spalla.</p>
+    <figure class="anim" style="margin:0"><svg id="svgImb"></svg></figure>
+    <p class="prezzo" id="przImb"></p>
+  </div>
+</div>
+
+<script type="module">
+import { mostraAllargato } from './js/misure.js';
+
+// le stesse bande del listino (pag. 49), per vedere il prezzo cambiare
+// insieme al disegno
+function extra(muro, sistema) {
+  if (muro <= 108) return 0;
+  if (sistema === 'imbottino') {
+    if (muro <= 158) return 110;
+    if (muro <= 220) return 180;
+    if (muro <= 300) return 310;
+    return 310 + Math.ceil((muro - 300) / 10) * 20;
+  }
+  if (muro <= 118) return 34;
+  if (muro <= 158) return 150;
+  if (muro <= 220) return 250;
+  if (muro <= 300) return 380;
+  return 380 + Math.ceil((muro - 300) / 10) * 25;
+}
+
+const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+const sInt = document.getElementById('svgInt');
+const sImb = document.getElementById('svgImb');
+const muro = document.getElementById('muro');
+const muroVal = document.getElementById('muroVal');
+
+function aggiorna() {
+  const m = +muro.value;
+  muroVal.textContent = m + ' mm';
+  mostraAllargato(sInt, 'integrale', m);
+  mostraAllargato(sImb, 'imbottino', m);
+  const a = extra(m, 'integrale'), b = extra(m, 'imbottino');
+  document.getElementById('przInt').textContent =
+    m <= 108 ? 'Non serve: il telaio standard basta.' : '+ ' + eur.format(a);
+  document.getElementById('przImb').textContent =
+    m <= 108 ? 'Non serve: il telaio standard basta.'
+    : m < 120 ? 'Sotto i 120 mm non ci sta.'
+    : '+ ' + eur.format(b) + (b < a ? '  — piu\' economico di ' + eur.format(a - b) : '');
+}
+
+muro.addEventListener('input', aggiorna);
+
+document.getElementById('anima').addEventListener('click', () => {
+  let m = 108;
+  const passo = () => {
+    m += 4;
+    if (m > 400) return;
+    muro.value = m; aggiorna();
+    setTimeout(passo, 30);
+  };
+  passo();
+});
+
+aggiorna();
+</script>
+</body>
+</html>
