@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
 import { mostraLuce, mostraMuro } from './misure.js';
 import { mostraAllargato, fermaAllargato } from './allargato.js';
+import { apriVisore, chiudiVisore, misureProfilo } from './visore-profilo.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -1496,6 +1497,9 @@ function apriVisoreCopri(id) {
 }
 
 function chiudiVisoreCopri() {
+  // il canvas WebGL si smonta: il browser ne tiene pochi per pagina e
+  // il visore grande della porta ne usa gia' uno
+  chiudiVisore();
   document.getElementById('copriModal').hidden = true;
   document.body.style.overflow = '';
   refreshCopriSelect();
@@ -1511,9 +1515,30 @@ function renderVisoreCopri() {
 
   document.getElementById('copriVisoreTitolo').textContent = cop.label.replace(' — compreso', '');
   const fig = document.getElementById('copriVisoreFig');
-  fig.innerHTML = cop.img
-    ? `<img src="${cop.img}" alt="Coprifilo ${cop.label}">`
-    : '<span class="visore-nofoto">Render non ancora disponibile</span>';
+  const nota3d = document.getElementById('copriVisore3dNota');
+
+  // Prima si prova il 3D: la sezione viene dal DXF di fabbrica, e un
+  // profilo sagomato si capisce girandolo, non guardandone una foto.
+  // Se quel DXF non c'e' ancora, si torna alla foto -- meglio una foto
+  // onesta di un 3D inventato.
+  fig.innerHTML = '<span class="visore-nofoto">…</span>';
+  apriVisore(fig, cop.id, state.copriWood).then((fatto) => {
+    if (fatto) {
+      misureProfilo(cop.id).then((m) => {
+        nota3d.textContent = m
+          ? `Sezione dal disegno di fabbrica — ${m.larghezza} × ${m.spessore} mm. `
+            + 'Trascina per girarlo.'
+          : 'Trascina per girarlo.';
+      });
+      return;
+    }
+    nota3d.textContent = cop.img
+      ? 'Foto di repertorio: il disegno di fabbrica di questo profilo non è ancora arrivato.'
+      : '';
+    fig.innerHTML = cop.img
+      ? `<img src="${cop.img}" alt="Coprifilo ${cop.label}">`
+      : '<span class="visore-nofoto">Render non ancora disponibile</span>';
+  });
 
   document.getElementById('copriVisoreLegni').innerHTML = Object.entries(COPRI_WOOD_LABEL)
     .map(([k, v]) => `<button class="pill${k === state.copriWood ? ' is-active' : ''}"
