@@ -338,6 +338,16 @@ def main():
                  'y0': round(scatola(p)[2], 2), 'y1': round(scatola(p)[3], 2)}
                 for p in riq]
 
+    # La maniglia c'e' nell'alzato: la rosetta e la leva, disegnate come
+    # si vedono di fronte. La forma e la posizione sono sue, la
+    # profondita' no -- di una maniglia la tavola non da' la sezione.
+    picc = [p for p in pAl
+            if 50 < (misura(p)[0] * misura(p)[1]) < 60000 and misura(p)[0] > 20]
+    leva = max(picc, key=lambda p: misura(p)[0]) if picc else None
+    rose = [p for p in picc if p is not leva
+            and abs(misura(p)[0] - misura(p)[1]) < misura(p)[1] * 0.2]
+    rosetta = max(rose, key=lambda p: misura(p)[0]) if rose else None
+
     # L'anta la danno le sezioni, non l'alzato: di fianco i due montanti
     # col loro filo esterno, in alto e in basso il primo e l'ultimo
     # traverso. L'alzato porterebbe dentro anche il telaio e il muro.
@@ -394,6 +404,15 @@ def main():
                  'z1': round(max(scatola(m)[3] for m in mur) - ym0, 2),
                  'x0': round(scatola(mur[0])[1] - ax0, 2),
                  'x1': round(scatola(mur[-1])[0] - ax0, 2)} if mur else None,
+        # la rosetta e' tonda e la tavola la disegna con tre archi che non
+        # chiudono: si prende dal suo ingombro, che di un cerchio dice
+        # tutto
+        'maniglia': ({'leva': [[round(q[0] - ax0, 2), round(q[1] - ay0, 2)]
+                               for q in contorni(leva)[0]],
+                      'cx': round((scatola(rosetta)[0] + scatola(rosetta)[1]) / 2 - ax0, 2),
+                      'cy': round((scatola(rosetta)[2] + scatola(rosetta)[3]) / 2 - ay0, 2),
+                      'r': round(misura(rosetta)[1] / 2, 2)}
+                     if leva and rosetta and contorni(leva) else None),
         'quote': {k: v for k, v in testi(tutte).items()},
     }
     os.makedirs(FUORI, exist_ok=True)
@@ -419,6 +438,10 @@ def main():
             b = [q[1] for q in c]
             print('telaio %-9s %8.1f..%8.1f  x %8.1f..%8.1f  %d punti'
                   % (nome, min(a), max(a), min(b), max(b), len(c)))
+    if d['maniglia']:
+        m = d['maniglia']
+        print('maniglia   rosetta r %.1f @(%.1f, %.1f), leva %d punti'
+              % (m['r'], m['cx'], m['cy'], len(m['leva'])))
     if d['muro']:
         m = d['muro']
         print('muro       spesso %.1f, vano da %.1f a %.1f'

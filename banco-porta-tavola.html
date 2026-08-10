@@ -45,7 +45,9 @@
   <button data-vedi="telaio" class="on">Telaio</button>
   <button data-vedi="anta" class="on">Anta</button>
   <button data-vedi="pannelli" class="on">Pannelli</button>
+  <button data-vedi="ferro" class="on">Ferramenta</button>
   <button id="esploso">Esploso</button>
+  <button id="apri">Apri</button>
 </div>
 
 <div class="riq"><h2>Il solido ricavato — trascina per girarlo</h2><canvas id="tela"></canvas></div>
@@ -233,9 +235,22 @@ function grana(geo, giro) {
   return geo;
 }
 
+/* DA CHE PARTE GIRA, non l'abbiamo scelto noi: lo dice la tavola.
+   La maniglia sta a 59 mm dal filo sinistro -- e' l'entrata della
+   serratura -- quindi la serratura e' a sinistra e le cerniere sono a
+   destra. E il verso: la battuta del telaio sta tutta di la' dalla
+   faccia dell'anta, e contro una battuta non ci si spinge, quindi la
+   porta si apre dall'altra parte, verso chi guarda.
+   Il perno sta appena fuori dallo spigolo, dove sta il nodo di una
+   cerniera vera: se lo si mette sull'asse dell'anta, aprendo, lo
+   spigolo entra nel telaio. */
 const gTelaio = new THREE.Group(), gAnta = new THREE.Group(),
-      gPann = new THREE.Group();
-scena.add(gTelaio, gAnta, gPann);
+      gPann = new THREE.Group(), gFerro = new THREE.Group();
+const perno = new THREE.Group();
+const foglia = new THREE.Group();
+perno.add(foglia);
+foglia.add(gAnta, gPann, gFerro);
+scena.add(gTelaio, perno);
 
 const metti = (gruppo, geo, giro) => {
   gruppo.add(new THREE.Mesh(grana(geo, giro), mat));
@@ -276,6 +291,68 @@ const spor = -Math.min(...bordi(d.telaio, 0));      // quanto sporge dal filo an
 for (const c of d.telaio) metti(gTelaio, verticale(c, 0, telaioAltoY), false);
 for (const c of d.telaio_alto) {
   metti(gTelaio, orizzontale(c, -spor, L + spor), true);
+}
+
+const PERNO_Z = T + 3;
+perno.position.set(L, 0, PERNO_Z);
+foglia.position.set(-L, 0, -PERNO_Z);
+
+/* ── il ferramenta ──────────────────────────────────────────────────── */
+/* La maniglia viene dall'alzato: forma e posizione sono della tavola, la
+   PROFONDITA' no -- di una maniglia il disegno la sezione non la da'.
+   Percio' rosetta e leva stanno fuori dalla faccia di quel tanto che
+   serve a poterle prendere in mano, ed e' l'unica misura qui dentro che
+   ci siamo dati noi. Come le cerniere, che nella tavola non ci sono
+   affatto: ma una porta che gira senza niente sul fianco sembra rotta. */
+const acciaio = new THREE.MeshStandardMaterial({
+  color: 0xc3bdb4, roughness: .3, metalness: .85, envMapIntensity: 1.1,
+});
+const M = d.maniglia;
+const levaGiro = [];              // i due gruppi che si abbassano
+if (M) {
+  const SPOR = 11, GROS = 17;     // quanto sporge la rosetta, e la leva
+  for (const faccia of [1, -1]) {
+    const z = faccia > 0 ? T : 0;
+    const ros = new THREE.Mesh(
+      new THREE.CylinderGeometry(M.r, M.r, SPOR, 48), acciaio);
+    ros.rotation.x = Math.PI / 2;
+    ros.position.set(M.cx, M.cy, z + faccia * SPOR / 2);
+    gFerro.add(ros);
+
+    const s = new THREE.Shape();
+    M.leva.forEach(([x, y], i) => (i ? s.lineTo(x - M.cx, y - M.cy)
+                                    : s.moveTo(x - M.cx, y - M.cy)));
+    s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, {
+      depth: GROS, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.6,
+      bevelOffset: 0, bevelSegments: 2, curveSegments: 2,
+    });
+    // la faccia di dietro e' la stessa maniglia vista dall'altra parte:
+    // si gira il gruppo, non si specchia la geometria
+    const fuori = new THREE.Group();
+    fuori.position.set(M.cx, M.cy, z + faccia * SPOR);
+    if (faccia < 0) fuori.rotation.y = Math.PI;
+    const dentro = new THREE.Group();
+    dentro.add(new THREE.Mesh(g, acciaio));
+    fuori.add(dentro);
+    gFerro.add(fuori);
+    levaGiro.push(dentro);
+  }
+
+  /* Lo scrocco. Non e' nella tavola, ma senza di lui la maniglia si
+     abbassa senza che succeda niente, e quello che si vuole far vedere
+     e' proprio che si abbassa PER far succedere qualcosa. */
+  var scrocco = new THREE.Mesh(new THREE.BoxGeometry(26, 24, 15), acciaio);
+  scrocco.position.set(-7, M.cy, T / 2);
+  gFerro.add(scrocco);
+}
+
+/* Le cerniere, sull'asse su cui gira. Stanno ferme rispetto al telaio o
+   all'anta -- sono tonde, non si vede la differenza. */
+for (const y of [180, H / 2, H - 180]) {
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 95, 24), acciaio);
+  c.position.set(L, y, PERNO_Z);
+  gTelaio.add(c);
 }
 
 /* Il muro. Senza, fra anta e telaio si vede il fondo della pagina
@@ -330,7 +407,37 @@ const riempi = new THREE.DirectionalLight(0xffffff, .35);
 riempi.position.set(1400, 700, 1200);
 scena.add(riempi);
 
-(function anima() {
+/* ── apre e chiude ──────────────────────────────────────────────────── */
+/* L'ordine conta, ed e' quello che si fa con la mano: prima si abbassa
+   la maniglia, lo scrocco rientra, POI la porta parte. Se parte insieme
+   sembra che si apra da sola e la maniglia sia un ornamento.
+   In chiusura la maniglia non si tocca: lo scrocco ha lo smusso e scavalca
+   l'incontro da solo. E' per questo che una porta si chiude con una
+   spinta e si apre no. */
+const APERTURA = Math.PI * 0.44;        // circa 79 gradi
+const DURATA = 2.1;                     // secondi di corsa dell'anta
+let meta = 0, adesso = 0;               // dove deve stare, e dove sta
+const dolce = (u) => u * u * (3 - 2 * u);
+const fascia = (u, a, b) => Math.min(1, Math.max(0, (u - a) / (b - a)));
+
+let prima = performance.now();
+(function anima(ora) {
+  const dt = Math.min(.05, ((ora || prima) - prima) / 1000);
+  prima = ora || prima;
+  const passo = dt / DURATA;
+  adesso += Math.max(-passo, Math.min(passo, meta - adesso));
+
+  perno.rotation.y = dolce(adesso) * APERTURA;
+  // la maniglia e' tutta giu' nel primo quinto dell'apertura, e torna su
+  // subito dopo: si preme per aprire, non per stare aperti
+  const premi = (adesso > 0 && meta > 0)
+    ? fascia(adesso, 0, .06) * (1 - fascia(adesso, .10, .22)) : 0;
+  for (const l of levaGiro) l.rotation.z = -premi * 0.62;
+  // lo scrocco sta fuori solo a porta ferma e chiusa
+  if (typeof scrocco !== 'undefined') {
+    scrocco.position.x = -7 + 13 * Math.max(premi, fascia(adesso, 0, .01));
+  }
+
   controlli.update();
   rend.render(scena, cam);
   requestAnimationFrame(anima);
@@ -340,17 +447,24 @@ scena.add(riempi);
 window.__banco = { cam, controlli, scena, centro, dati: d };
 
 /* ── comandi ────────────────────────────────────────────────────────── */
-const gruppi = { telaio: gTelaio, anta: gAnta, pannelli: gPann };
+const gruppi = { telaio: gTelaio, anta: gAnta, pannelli: gPann, ferro: gFerro };
 document.querySelectorAll('[data-vedi]').forEach((b) => b.addEventListener('click', () => {
   b.classList.toggle('on');
   gruppi[b.dataset.vedi].visible = b.classList.contains('on');
 }));
-let aperto = false;
+let esploso = false;
 document.getElementById('esploso').addEventListener('click', (ev) => {
-  aperto = !aperto;
-  ev.target.classList.toggle('on', aperto);
-  gTelaio.position.z = aperto ? -260 : 0;
-  gPann.position.z = aperto ? 260 : 0;
+  esploso = !esploso;
+  ev.target.classList.toggle('on', esploso);
+  gTelaio.position.z = esploso ? -260 : 0;
+  gPann.position.z = esploso ? 260 : 0;
+});
+
+const bApri = document.getElementById('apri');
+bApri.addEventListener('click', () => {
+  meta = meta > .5 ? 0 : 1;
+  bApri.classList.toggle('on', meta > .5);
+  bApri.textContent = meta > .5 ? 'Chiudi' : 'Apri';
 });
 
 /* ── quello che il file ha detto ────────────────────────────────────── */
