@@ -262,8 +262,17 @@ for (const r of d.riquadri) {
    arriva sotto la traversa e la traversa passa da parte a parte: e' il
    giunto che si vede guardando in alto in un vano di porta. */
 const bordi = (curve, i) => curve.flatMap((c) => c.map((p) => p[i]));
-const telaioAltoY = Math.min(...bordi(d.telaio_alto, 0));
+const telaioAltoY = Math.max(...bordi(d.telaio_alto, 0));
 const spor = -Math.min(...bordi(d.telaio, 0));      // quanto sporge dal filo anta
+/* Gli stipiti arrivano FIN SOPRA, non si fermano sotto la traversa.
+   Fermandoli dove la traversa comincia restava un intaglio nei due
+   angoli alti: la traversa li' comincia con la sola battuta, e le sue
+   ali -- i coprifili, quelli che si vedono -- cominciano tre centimetri
+   piu' su. Fra i due il coprifilo verticale finiva e quello orizzontale
+   non era ancora cominciato.
+   Tirandoli fino in cima si sovrappongono, e la traversa passa sopra:
+   e' anche il giunto vero, il coprifilo orizzontale corre da parte a
+   parte e i due verticali gli vanno sotto. */
 for (const c of d.telaio) metti(gTelaio, verticale(c, 0, telaioAltoY), false);
 for (const c of d.telaio_alto) {
   metti(gTelaio, orizzontale(c, -spor, L + spor), true);
@@ -277,7 +286,9 @@ if (d.muro) {
   const m = d.muro, matMuro = new THREE.MeshStandardMaterial({
     color: 0xe6ded1, roughness: .95, metalness: 0,
   });
-  const alto = telaioAltoY + 40;
+  // l'architrave appoggia sul telaio, con un dito di sovrapposizione: se
+  // parte piu' in alto fra i due resta una striscia di fondo che si vede
+  const alto = telaioAltoY - 10;
   const mattone = (x0, x1, y0, y1) => {
     const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, m.z1 - m.z0);
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (m.z0 + m.z1) / 2);
