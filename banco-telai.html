@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco · i telai, e cosa cambia fra uno e l'altro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { margin: 0; padding: 26px 30px 60px; background: #f4f1ea; color: #2b211a;
+         font: 15px/1.5 Jost, "Segoe UI", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sotto { color: #7a6c5d; margin: 0 0 8px; max-width: 86ch; font-size: 13.5px; }
+  .legenda { display: flex; flex-wrap: wrap; gap: 18px; margin: 14px 0 24px;
+             padding-bottom: 16px; border-bottom: 1px solid #ddd5c6; font-size: 12.5px;
+             color: #7a6c5d; }
+  .legenda b { color: #2b211a; }
+  .griglia { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); }
+  .scheda { background: #fffdf8; border: 1px solid #e2dacb; border-radius: 5px;
+            padding: 15px 17px 17px; }
+  .testa { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .scheda h2 { font-size: 14.5px; margin: 0; }
+  .costo { font-size: 12.5px; color: #a9472f; font-weight: 600; white-space: nowrap; }
+  .scheda p.mecc { margin: 4px 0 10px; font-size: 12.5px; color: #7a6c5d; min-height: 4.2em; }
+  .coppia { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; align-items: center; }
+  .riquadro { background: #fbf8f2; border: 1px solid #ece5d8; border-radius: 4px; padding: 6px; }
+  .riquadro img { display: block; width: 100%; }
+  .riquadro svg { display: block; width: 100%; height: 210px; }
+  .didascalia { font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+                color: #9a8b78; margin: 0 0 4px; }
+  .avviso { margin-top: 26px; font-size: 12.5px; color: #8d7d6a; background: #fffdf8;
+            border: 1px dashed #ccc2b1; border-radius: 5px; padding: 13px 16px; max-width: 92ch; }
+  code { background: #efeade; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<h1>I telai — cosa cambia davvero fra uno e l'altro</h1>
+<p class="sotto">
+  A sinistra la <b>sezione del listino</b>, che dice com'e' fatto il profilo. A
+  destra una <b>pianta schematica</b> che dice cosa fa: dove finisce l'anta
+  rispetto al filo del muro, e cosa la ferma. Messe in fila, le dodici sezioni si
+  somigliano tutte; la differenza sta nel movimento.
+</p>
+<div class="legenda">
+  <span><b>Battuta</b> — lo scalino contro cui l'anta va a fermarsi.</span>
+  <span><b>Complanare</b> — niente scalino: l'anta chiusa sta sul filo del muro.</span>
+  <span><b>A spingere</b> — complanare dal lato da cui si spinge, e li' non c'e'
+    piu' niente che la fermi.</span>
+</div>
+
+<div class="griglia" id="griglia"></div>
+
+<p class="avviso">
+  La sezione di sinistra e' della fabbrica. La pianta di destra e' <b>uno schema
+  nostro</b>: le proporzioni sono indicative e servono a spiegare il
+  comportamento, non a quotare il profilo. Se un telaio si comporta diversamente
+  da come e' scritto qui, il dato da correggere sta in <code>CARATTERE</code>,
+  dentro <code>js/telai.js</code>.
+</p>
+
+<script type="module">
+import { mostraTelaio, CARATTERE } from './js/telai.js';
+
+/* Le voci del listino, con quello che il configuratore gia' sa. La riga
+   'mecc' e' quello che lo schema deve far capire: se guardandolo non si
+   arriva a quella frase, lo schema non sta lavorando. */
+const TELAI = [
+  { id: 'std', nome: 'Standard', costo: 'compreso',
+    mecc: 'La battuta c\'e\': l\'anta rientra nel vano e ci si ferma contro. Il coprifilo e\' sagomato.' },
+  { id: 'alpha', nome: 'ALPHA — piatti 70/90', costo: '+ 30 €',
+    mecc: 'Stessa battuta dello standard. Cambia il coprifilo, che qui e\' piatto.' },
+  { id: 'alpha_comp', nome: 'ALPHA COMPLANARE', costo: '+ 50 €',
+    mecc: 'Niente battuta sul lato a filo: chiusa, l\'anta sta sullo stesso piano del muro. Si apre a tirare.' },
+  { id: 'alpha_comp_sp', nome: 'ALPHA COMPLANARE SPINGERE', costo: '+ 200 € + 20 €',
+    mecc: 'A filo dalla parte da cui si spinge. Li\' lo scalino non c\'e\' proprio dove servirebbe a fermarla: il fermaporta a pavimento non e\' un accessorio, e\' la conseguenza (voce 74).' },
+  { id: 'design', nome: 'DESIGN', costo: '+ 80 €',
+    mecc: 'Profilo DESIGN, ma NON complanare: la battuta resta, l\'anta rientra.' },
+  { id: 'design_comp', nome: 'DESIGN COMPLANARE', costo: '+ 90 €',
+    mecc: 'Il DESIGN nella versione a filo: via la battuta, anta sul piano del muro.' },
+  { id: 'passaggio90', nome: 'Passaggio listellare, coprifili 90', costo: '+ 250 €',
+    mecc: 'Non e\' una porta: e\' un vano rifinito. Nessuna anta, nessuna battuta — si paga la finitura del passaggio.' },
+  { id: 'r10', nome: 'R10', costo: '+ 40 €',
+    mecc: 'Profilo con lo spigolo tondo. Battuta normale. I coprifili sono esclusi dal prezzo.' },
+  { id: 'r10b', nome: 'R10 BAROCCO', costo: '+ 60 €',
+    mecc: 'Lo stesso R10 con la modanatura barocca. Coprifili esclusi.' },
+  { id: 'moderno', nome: 'MODERNO', costo: '+ 90 €',
+    mecc: 'Profilo a gradini, squadrato. Coprifili esclusi.' },
+  { id: 'madonna', nome: 'A MADONNA sagomato 44×79', costo: '+ 70 €',
+    mecc: 'Profilo sagomato da 44×79, di quelli classici. Battuta normale.' },
+  { id: 'madonna_mod', nome: 'A MADONNA MODERNO 44×79', costo: '+ 80 €',
+    mecc: 'La stessa misura in versione moderna, con lo smusso invece della sagoma.' },
+];
+
+const griglia = document.getElementById('griglia');
+for (const t of TELAI) {
+  const d = document.createElement('div');
+  d.className = 'scheda';
+  d.innerHTML = `
+    <div class="testa"><h2>${t.nome}</h2><span class="costo">${t.costo}</span></div>
+    <p class="mecc">${t.mecc}</p>
+    <div class="coppia">
+      <div class="riquadro">
+        <p class="didascalia">Sezione di listino</p>
+        <img src="assets/telai/${t.id}.svg" alt="Sezione ${t.nome}">
+      </div>
+      <div class="riquadro anim">
+        <p class="didascalia">Come si comporta</p>
+        <svg data-telaio="${t.id}"></svg>
+      </div>
+    </div>`;
+  griglia.appendChild(d);
+}
+
+for (const svg of document.querySelectorAll('svg[data-telaio]')) {
+  mostraTelaio(svg, svg.dataset.telaio);
+}
+
+// controllo: ogni voce del listino deve avere il suo carattere, se no
+// lo schema disegna lo standard e nessuno se ne accorge
+const orfani = TELAI.filter((t) => !CARATTERE[t.id]).map((t) => t.id);
+if (orfani.length) console.error('telai senza CARATTERE:', orfani);
+</script>
+</body>
+</html>
