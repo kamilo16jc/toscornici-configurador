@@ -104,6 +104,12 @@ const TELAI = [
 ];
 const FERMAPORTA = 20; // obbligatorio con complanare a spingere (voce 74)
 
+// Sotto questo spessore di muro si puo' fare solo l'allargato
+// integrale: l'imbottino ha bisogno di piu' profondita' per esistere.
+// Il listino lo dice a modo suo, con una banda "integrale 108→118" che
+// l'imbottino non ha. La fabbrica arrotonda a 120.
+const SOGLIA_IMBOTTINO = 120;
+
 // Allargato per muri oltre 108 mm (pag. 49)
 function allargatoExtra(muro, sistema) {
   if (muro <= 108) return { extra: 0, label: 'muro ≤ 108 mm (standard)' };
@@ -1592,17 +1598,43 @@ function refreshUI() {
   else if (state.w < 700) misureNote.textContent = '⚠ Luce minima 700 mm: sotto, occorre cambiare modello.';
   else misureNote.textContent = 'Misura standard di listino (900×2100).';
 
+  // Tre zone, non due:
+  //   fino a 108   il telaio standard basta, l'allargato non serve
+  //   108 → 120    ci vuole l'allargato ma l'imbottino non ci sta
+  //   oltre 120    tutti e due
+  // La soglia di mezzo la da la fabbrica. Il listino la mette a 118
+  // (la banda "integrale 108→118" esiste apposta): 120 e' quel numero
+  // arrotondato, e fra i due valori cambia solo quale bottone e'
+  // cliccabile, non il prezzo.
+  const serve = state.muro > 108;
+  const soloIntegrale = state.muro < SOGLIA_IMBOTTINO;
+  if (soloIntegrale && state.allargato !== 'integrale') state.allargato = 'integrale';
+
   const allPills = document.getElementById('allargatoPills');
-  allPills.hidden = state.muro <= 108;
+  allPills.hidden = !serve;
+  document.getElementById('allargatoTitolo').hidden = !serve;
+  // Il bottone resta in vista ma spento: sparire e ricomparire mentre
+  // si scrive lo spessore fa saltare il pannello, e non dice PERCHE'.
+  document.querySelector('[data-allargato="imbottino"]').disabled = soloIntegrale;
+
   // l'allargato ha la sua sezione di listino, una per tipo
   const allFig = document.getElementById('allargatoFig');
-  allFig.hidden = allPills.hidden;
-  if (!allFig.hidden)
+  allFig.hidden = !serve;
+  if (serve) {
     document.getElementById('allargatoSchema').src =
       `assets/telai/allargato_${state.allargato}.svg`;
-  document.getElementById('muroNote').textContent = state.muro <= 108
-    ? 'Il telaio standard copre muri fino a 108 mm.'
-    : `Allargato ${allargatoExtra(state.muro, state.allargato).label}: + ${eur.format(allargatoExtra(state.muro, state.allargato).extra)}.`;
+  }
+
+  const all = allargatoExtra(state.muro, state.allargato);
+  document.getElementById('muroNote').textContent = serve
+    ? `Muro da ${state.muro} mm: serve l'allargato, nel telaio qui sotto.`
+    : 'Il telaio standard copre muri fino a 108 mm.';
+  document.getElementById('allargatoNote').textContent = !serve ? ''
+    : (soloIntegrale
+        ? `Sotto ${SOGLIA_IMBOTTINO} mm di muro c'e' solo l'integrale: `
+          + "l'imbottino non ci sta. "
+        : '')
+      + `Allargato ${all.label}: + ${eur.format(all.extra)}.`;
 
   // le sezioni sono ritagliate dal listino (pagg. 48–50): sono i disegni di
   // fabbrica. Lo standard non ce l'ha, e l'unico ridisegnato da noi.

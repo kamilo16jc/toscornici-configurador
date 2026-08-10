@@ -142,7 +142,7 @@
 
     <!-- Muro e allargato -->
     <section class="section">
-      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_muro">Muro e allargato</span></h2>
+      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_muro">Spessore del muro</span></h2>
       <div class="measures">
         <label class="measure"><span data-t="muro_spess">Spessore muro</span> <span class="en">mm</span>
           <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
@@ -151,18 +151,13 @@
       <!-- quote: lo spessore del muro, in pianta. Di frontale non si
            vedrebbe affatto. -->
       <figure class="anim"><svg id="muroAnim" role="img" aria-label="Spessore del muro"></svg></figure>
-      <div class="pills" id="allargatoPills" hidden>
-        <button class="pill is-active" data-allargato="integrale" data-t="all_integrale">Integrale</button>
-        <button class="pill" data-allargato="imbottino" data-t="all_imbottino">Con imbottino</button>
-      </div>
-      <figure class="schema" id="allargatoFig" hidden>
-        <img id="allargatoSchema" src="" alt="Sezione dell’allargato">
-        <figcaption>Sezione dal listino</figcaption>
-      </figure>
       <p class="pill-note" id="muroNote"></p>
     </section>
 
-    <!-- Telaio -->
+    <!-- Telaio — qui dentro anche l'allargato: il tipo di allargato e'
+         un pezzo del telaio, e quale si possa fare dipende dallo
+         spessore del muro. Tenerli in due sezioni diverse costringeva a
+         saltare avanti e indietro per capire cosa cambiava cosa. -->
     <section class="section">
       <h2 class="section-title"><span class="num">07</span> <span data-t="sez_telaio">Telaio</span></h2>
       <select class="model-select" id="telaioSelect" aria-label="Telaio"></select>
@@ -171,6 +166,17 @@
         <figcaption id="telaioSchemaNota"></figcaption>
       </figure>
       <p class="pill-note" id="telaioNote"></p>
+
+      <p class="lacc-title" id="allargatoTitolo" data-t="all_titolo" hidden>Allargato</p>
+      <div class="pills" id="allargatoPills" hidden>
+        <button class="pill is-active" data-allargato="integrale" data-t="all_integrale">Integrale</button>
+        <button class="pill" data-allargato="imbottino" data-t="all_imbottino">Con imbottino</button>
+      </div>
+      <figure class="schema" id="allargatoFig" hidden>
+        <img id="allargatoSchema" src="" alt="Sezione dell’allargato">
+        <figcaption>Sezione dal listino</figcaption>
+      </figure>
+      <p class="pill-note" id="allargatoNote"></p>
     </section>
 
     <!-- Coprifili -->
