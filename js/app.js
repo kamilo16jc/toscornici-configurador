@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
 import { mostraLuce, mostraMuro } from './misure.js';
+import { mostraAllargato, fermaAllargato } from './allargato.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -1620,9 +1621,21 @@ function refreshUI() {
   // l'allargato ha la sua sezione di listino, una per tipo
   const allFig = document.getElementById('allargatoFig');
   allFig.hidden = !serve;
+  const allSvg = document.getElementById('allargatoSchema');
   if (serve) {
-    document.getElementById('allargatoSchema').src =
-      `assets/telai/allargato_${state.allargato}.svg`;
+    mostraAllargato(allSvg, state.allargato);
+    document.getElementById('allargatoDidascalia').textContent =
+      state.allargato === 'imbottino'
+        ? 'Quattro pezzi: il telaio con la battuta, la tavola che prosegue lo '
+          + 'stipite, e i due coprifili — uno per faccia del muro. Dove la tavola '
+          + 'incontra il telaio resta una giunta. Tracciati dal listino.'
+        : 'Un pezzo solo: la battuta a un capo, con la guarnizione, e poi il '
+          + 'profilo corre liscio fino in fondo al muro. Non c’è nessuna '
+          + 'giunta da nascondere. Tracciato dal listino.';
+  } else {
+    // fuori dal ciclo quando la sezione sparisce: se no continua a
+    // ridisegnare uno schema che nessuno guarda
+    fermaAllargato(allSvg);
   }
 
   const all = allargatoExtra(state.muro, state.allargato);

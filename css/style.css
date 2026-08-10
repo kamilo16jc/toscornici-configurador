@@ -26,6 +26,17 @@
   --gold: #a9472f;
   --sabbia: #d8cdbb;
 
+  /* Il pezzo che l'allargato AGGIUNGE. Terracotta perche' e' quello che
+     si paga: vedere QUALE pezzo costa 180 euro dice piu' del numero da
+     solo. Sta in :root e non in .anim perche' serve anche allo schema
+     dell'allargato, che vive in una figure.schema. */
+  --f-agg: #d99a80;   --f-agg-scuro: #b8735a;
+
+  /* Il muro negli schemi dell'allargato. Tratteggiato e smorto apposta:
+     nei fogli del listino il muro NON c'e', e' un'aggiunta nostra per
+     dare un posto ai pezzi — non deve sembrare un pezzo di legno. */
+  --f-muro-tratto: rgba(125, 134, 127, .13);
+
   --serif: "Barlow Condensed", "Arial Narrow", sans-serif;
   --sans: "Barlow", "Segoe UI", sans-serif;
 }
@@ -562,10 +573,6 @@ body {
   --f-bin: #b9bcc0;   --f-bin-scuro: #8f9499;
   /* I due lati: appena accennati. Devono dire da che parte si sta
      senza rubare l'occhio alle ante. */
-  /* Il pezzo che l'allargato AGGIUNGE. Terracotta perche' e' quello
-     che si paga: vedere quale pezzo costa 150 euro dice piu' del
-     numero da solo. */
-  --f-agg: #d99a80;   --f-agg-scuro: #b8735a;
   --f-dentro: rgba(169, 71, 47, .08);
   --f-fuori:  rgba(43, 33, 26, .12);
   --floor: rgba(43, 33, 26, .07);
@@ -1379,3 +1386,20 @@ input[type="email"], input[type="tel"], input[type="number"] {
 }
 .lingue--chiare .lingua-scelta:hover { color: var(--brass); }
 .lingue--chiare .lingua-scelta.is-attiva { background: var(--brass); color: #fff; }
+
+
+/* ==================== SCHEMA DELL'ALLARGATO ====================
+   I tracciati arrivano dai file del listino, che si portano dietro le
+   loro classi (.p il legno, .g la guarnizione, .d i tratti fini) ma NON
+   il loro <style>: quello resta nel file, e prendendo solo i path le
+   classi resterebbero senza vestito. Quindi si ridichiarano qui, con
+   gli stessi valori dei file originali. */
+.schema-allargato { display: block; width: 100%; height: 250px; }
+.schema-allargato .p {
+  fill: #fdfbf6; stroke: #4a3c30; stroke-width: 2.15;
+  stroke-linejoin: round; stroke-linecap: round;
+}
+.schema-allargato .g { fill: #a8843c; stroke: none; }
+.schema-allargato .d { stroke: #4a3c30; stroke-width: 1.5; fill: none; }
+/* il pezzo che l'imbottino aggiunge: e' quello che si paga */
+.schema-allargato .agg .p { fill: var(--f-agg); }

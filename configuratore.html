@@ -172,9 +172,13 @@
         <button class="pill is-active" data-allargato="integrale" data-t="all_integrale">Integrale</button>
         <button class="pill" data-allargato="imbottino" data-t="all_imbottino">Con imbottino</button>
       </div>
+      <!-- I tracciati veri del listino, che si smontano da soli: e' li'
+           che si vede la differenza fra i due, cioe' quanti pezzi ci
+           vogliono e dove finisce la giunta. -->
       <figure class="schema" id="allargatoFig" hidden>
-        <img id="allargatoSchema" src="" alt="Sezione dell’allargato">
-        <figcaption>Sezione dal listino</figcaption>
+        <svg class="schema-allargato" id="allargatoSchema" role="img"
+             aria-label="Sezione dell’allargato, smontata"></svg>
+        <figcaption id="allargatoDidascalia"></figcaption>
       </figure>
       <p class="pill-note" id="allargatoNote"></p>
     </section>
