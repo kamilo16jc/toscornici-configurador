@@ -33,19 +33,27 @@ const VISTE = {
   libro_simmetrica:  { view: 32, tilt: 0.72 },
   libro_asimmetrica: { view: 32, tilt: 0.72 },
 };
+/* La pianta e' un'altra cosa, non un'assonometria molto inclinata.
+   Guardando dall'alto la profondita' non e' piu' il fondo della stanza
+   ma l'ALTEZZA: quello che sta piu' in alto va disegnato per ultimo. Se
+   si continuasse a ordinare per z, il pavimento finirebbe sopra le ante.
+   E' la vista in cui la fabbrica disegna le porte a libro, perche' e'
+   l'unica dove le cerniere e la piega si leggono senza interpretare. */
+export const PIANTA = { view: 0, tilt: 1, pianta: true };
 const VISTA_BASE = { view: VIEW, tilt: TILT };
 let vista = VISTA_BASE;
 let cosV = Math.cos(VIEW * Math.PI / 180);
 let sinV = Math.sin(VIEW * Math.PI / 180);
 
-function guarda(tipo) {
-  vista = VISTE[tipo] || VISTA_BASE;
+function guarda(tipo, richiesta) {
+  vista = richiesta || VISTE[tipo] || VISTA_BASE;
   cosV = Math.cos(vista.view * Math.PI / 180);
   sinV = Math.sin(vista.view * Math.PI / 180);
 }
 
 export const proj = (x, y, z) => {
   const dp = x * sinV + z * cosV;
+  if (vista.pianta) return [x * cosV - z * sinV, dp, y];
   return [x * cosV - z * sinV, -y + dp * vista.tilt, dp];
 };
 
@@ -281,7 +289,10 @@ function ventola(u) {                    // di la, torna, di qua, torna
 
 function scena(tipo, u, opt) {
   opt = opt || {};
-  guarda(tipo);        // ogni tipo ha il punto di vista da cui si legge
+  // ogni tipo ha il punto di vista da cui si legge, e chi chiama puo'
+  // chiederne un altro: e' cosi' che lo stesso schema si mostra in
+  // assonometria e in pianta senza duplicare niente
+  guarda(tipo, opt.vista);
   // La mano non e' una decorazione: se il cliente sceglie SX e lo
   // schema mostra DX, lo schema mente. s = -1 ribalta il lato delle
   // cerniere, ed e' lo stesso trucco che la porta a due ante usa da
@@ -471,7 +482,9 @@ function inquadra(tipo, opt) {
   opt = opt || {};
   // la chiave porta anche mano e verso: la stessa porta a destra o a
   // sinistra occupa lo spazio dall'altra parte
-  const key = `${tipo}|${opt.mano || 'dx'}|${opt.verso || 'spingere'}`;
+  const v = opt.vista;
+  const key = `${tipo}|${opt.mano || 'dx'}|${opt.verso || 'spingere'}`
+            + `|${v ? (v.pianta ? 'p' : '') + v.view + ':' + v.tilt : ''}`;
   if (vbCache[key]) return vbCache[key];
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   for (const u of [0.02, 0.20, 0.30, 0.48, 0.65, 0.75, 0.86]) {
@@ -485,6 +498,14 @@ function inquadra(tipo, opt) {
           if (y < y0) y0 = y; if (y > y1) y1 = y;
         }
       }
+    }
+    // Le scritte contano: sono contenuto, non contorno. Senza, ESTERNO
+    // finiva fuori dal riquadro e non si vedeva -- sta oltre il muro, e
+    // il muro e' l'ultima cosa che il calcolo conosceva.
+    for (const tx of sc.testi || []) {
+      const q = proj(tx.p[0], tx.p[1], tx.p[2]);
+      if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0];
+      if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1];
     }
   }
   const m = 130;
@@ -546,8 +567,17 @@ function disegna(svg, tipo, u, opt) {
            '<circle cx="' + r[0].toFixed(1) + '" cy="' + r[1].toFixed(1) +
            '" r="' + (sw*3).toFixed(1) + '" fill="var(--brass)"/>';
   }
-  out = scritte(sc.testi, (P) => P[2] < 0, sw) + out
-      + scritte(sc.testi, (P) => P[2] >= 0, sw);
+  // Il corpo del testo si misura sul lato CORTO. Con quello lungo la
+  // pianta, che e' larga e bassa, si ritrovava le scritte grosse il
+  // doppio dell'assonometria.
+  const tw = Math.min(vb[2], vb[3]) / 330;
+  if (vista.pianta) {
+    // Dall'alto niente copre il pavimento: le scritte vanno tutte sopra.
+    out += scritte(sc.testi, () => true, tw);
+  } else {
+    out = scritte(sc.testi, (P) => P[2] < 0, tw) + out
+        + scritte(sc.testi, (P) => P[2] >= 0, tw);
+  }
   svg.innerHTML = out;
 }
 
@@ -569,25 +599,40 @@ function scritte(testi, quali, sw) {
 }
 
 /* ---- un solo ciclo per tutti gli schemi visibili ------------------- */
-const attivi = [];          // { svg, draw }
+const attivi = [];          // { svg, draw, dur }
 const fermo = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let t = 0, last = performance.now(), avviato = false;
+
+// Le porte a libro hanno piu' da guardare -- due ante che piegano, il
+// carrello che corre, le cerniere del giunto che lavorano -- e a 5.5
+// secondi non si fa in tempo a seguirle. Le altre restano com'erano:
+// quella cadenza e' stata approvata col cliente.
+const DURATE = { libro_battente: 9.5, libro_simmetrica: 9.5,
+                 libro_asimmetrica: 9.5 };
+
+// Un solo cronometro, e ognuno ci legge il proprio giro. Cosi' due
+// schemi con la stessa durata restano in passo -- e' quello che tiene
+// insieme l'assonometria e la pianta della stessa porta -- e uno piu'
+// lento non trascina gli altri.
+let trascorso = 0, last = performance.now(), avviato = false;
 
 function loop(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
-  t = (t + dt / DUR) % 1;
-  for (const a of attivi) if (a.svg.isConnected) a.draw(t);
+  trascorso += dt;
+  for (const a of attivi) {
+    if (a.svg.isConnected) a.draw((trascorso / a.dur) % 1);
+  }
   requestAnimationFrame(loop);
 }
 
 /** Iscrive un <svg> al ciclo comune. draw(u) ridisegna il fotogramma. */
-export function registra(svg, draw) {
+export function registra(svg, draw, dur) {
   if (!svg) return;
   let a = attivi.find((x) => x.svg === svg);
-  if (!a) { a = { svg, draw }; attivi.push(a); }
+  if (!a) { a = { svg, draw, dur: dur || DUR }; attivi.push(a); }
   a.draw = draw;
-  draw(fermo ? 0.5 : t);                    // fermo: si mostra a meta' corsa
+  a.dur = dur || DUR;
+  draw(fermo ? 0.5 : (trascorso / a.dur) % 1);   // fermo: a meta' corsa
   if (!fermo && !avviato) { avviato = true; requestAnimationFrame(loop); }
 }
 
@@ -597,7 +642,7 @@ export function registra(svg, draw) {
  * Senza opt si comporta come prima: chi la chiamava non deve cambiare.
  */
 export function mostraApertura(svg, tipo, opt) {
-  registra(svg, (u) => disegna(svg, tipo, u, opt));
+  registra(svg, (u) => disegna(svg, tipo, u, opt), DURATE[tipo]);
 }
 
 /** Un fotogramma fermo, per il banco di prova: u da 0 (chiusa) a 1. */

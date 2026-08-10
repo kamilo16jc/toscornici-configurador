@@ -56,9 +56,13 @@
     margin: 0 0 10px; font-size: 12.5px; color: #7a6c5d; min-height: 3.1em;
   }
   /* .anim porta le variabili di tinta: e' la stessa classe del sito */
-  .scheda .anim svg {
-    width: 100%; max-width: none; height: 300px; display: block;
+  .scheda .anim.vista { margin: 0 0 6px; }
+  .scheda .anim figcaption {
+    font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+    color: #9a8b78; margin-bottom: 2px;
   }
+  .scheda .anim svg { width: 100%; max-width: none; height: 250px; display: block; }
+  .scheda .anim svg.alto { height: 190px; }
   .fabbrica { margin-top: 34px; }
   .fabbrica img {
     max-width: 100%; border: 1px solid #e2dacb; border-radius: 5px;
@@ -115,7 +119,7 @@
 </div>
 
 <script type="module">
-import { fotogramma } from './js/aperture.js';
+import { fotogramma, PIANTA } from './js/aperture.js';
 
 // I tre casi della tavola. La riga "mecc" e' quello che lo schema deve
 // far vedere: se guardandolo non si capisce questa frase, lo schema non
@@ -142,10 +146,17 @@ const griglia = document.getElementById('griglia');
 for (const c of CASI) {
   const d = document.createElement('div');
   d.className = 'scheda';
+  // Due viste della stessa porta, non due schemi: stesso tipo, stesso
+  // fotogramma, punto di vista diverso. L'assonometria dice com'e'
+  // fatta, la pianta dice come funziona -- ed e' in pianta che le
+  // cerniere si vedono lavorare.
   d.innerHTML = `<h2>${c.titolo}</h2><p class="mecc">${c.mecc}</p>
-                 <figure class="anim" style="margin:0"><svg></svg></figure>`;
+     <figure class="anim vista"><figcaption>Assonometria</figcaption><svg></svg></figure>
+     <figure class="anim vista"><figcaption>Pianta, dall'alto</figcaption><svg class="alto"></svg></figure>`;
   griglia.appendChild(d);
-  svgs.push({ el: d.querySelector('svg'), id: c.id });
+  const due = d.querySelectorAll('svg');
+  svgs.push({ el: due[0], id: c.id });
+  svgs.push({ el: due[1], id: c.id, vista: PIANTA });
 }
 
 // La corsa dello slider copre solo l'andata: 0 chiusa, 1 spalancata.
@@ -154,8 +165,10 @@ for (const c of CASI) {
 const U_CHIUSA = 0.06, U_APERTA = 0.36;
 
 function disegnaTutti(u) {
-  const opt = { mano: stato.mano, verso: stato.verso };
-  for (const s of svgs) fotogramma(s.el, s.id, u, opt);
+  for (const s of svgs) {
+    fotogramma(s.el, s.id, u,
+               { mano: stato.mano, verso: stato.verso, vista: s.vista });
+  }
 }
 
 let t = U_CHIUSA, ultimo = performance.now();
@@ -163,7 +176,7 @@ function loop(ora) {
   const dt = Math.min((ora - ultimo) / 1000, 0.1);
   ultimo = ora;
   if (stato.gira) {
-    t = (t + (dt / 5.5) * stato.vel) % 1;
+    t = (t + (dt / 9.5) * stato.vel) % 1;   // come DURATE nel motore
     disegnaTutti(t);
   }
   requestAnimationFrame(loop);
