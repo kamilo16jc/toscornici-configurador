@@ -507,7 +507,13 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
 // FOV contenuto (30°): meno distorsione prospettica con la porta aperta
-const camera = new THREE.PerspectiveCamera(30, viewerEl.clientWidth / viewerEl.clientHeight, 0.05, 60);
+/* Il campo di profondita' e' stretto APPOSTA. Da 0,05 a 60 metri fanno
+   milleduecento a uno, e con quel buffer l'occlusione non distingue piu'
+   cosa sta davanti a cosa: misurata, PEGGIORAVA il rilievo invece di
+   aiutarlo -- il gradino di luce sulla modanatura scendeva da 16,7 a
+   11,3 e il buio degli angoli SALIVA da 107 a 112. La scena e' larga tre
+   metri: 0,3..12 bastano, e sono quaranta a uno. */
+const camera = new THREE.PerspectiveCamera(30, viewerEl.clientWidth / viewerEl.clientHeight, 0.3, 12);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -692,6 +698,12 @@ function disposeSubtree(root) {
 }
 
 function clearModel() {
+  // la cameretta delle ombre e i limiti torneranno come li vuole un GLB
+  key.shadow.camera.left = key.shadow.camera.bottom = -4.5;
+  key.shadow.camera.right = key.shadow.camera.top = 4.5;
+  key.shadow.camera.updateProjectionMatrix();
+  controls.minPolarAngle = Math.PI * 0.22;
+  controls.maxPolarAngle = Math.PI * 0.55;
   if (portaGen) { portaGen.dispose(); scene.remove(portaGen.gruppo); portaGen = null; apGen = 0; }
   if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
@@ -731,8 +743,8 @@ function frameCamera(size) {
   controls.update();
 }
 
-async function costruisciPorta(key, mio) {
-  const d = await caricaPorta(key);
+async function costruisciPorta(modello, mio) {
+  const d = await caricaPorta(modello);
   if (mio !== numeroCarico) return;
   // le texture del configuratore si ripetono REPEAT volte: il passo
   // delle UV va moltiplicato altrettanto, se no il legno va a scacchi
@@ -766,7 +778,20 @@ async function costruisciPorta(key, mio) {
   doorOpenAngle = 1;
   doorBtn.hidden = false;
 
+  /* La cameretta delle ombre si stringe: ±4,5 m servono agli ambienti
+     con i mobili, ma qui la scena sta in due metri e mezzo, e i 4096
+     texel spalmati sul doppio danno un'ombra grossa il triplo. */
+  key.shadow.camera.left = key.shadow.camera.bottom = -1.9;
+  key.shadow.camera.right = key.shadow.camera.top = 1.9;
+  key.shadow.camera.updateProjectionMatrix();
+
   frameCamera(size);
+  /* E la camera gira libera, come sul banco: senza tetto ne' pavimento
+     si puo' guardare la porta anche da sotto, che e' come si controlla
+     se lo scrocco e le cerniere stanno al loro posto. */
+  controls.minPolarAngle = 0.02;
+  controls.maxPolarAngle = Math.PI - 0.02;
+
   applyEssenza();
   doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
   if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
@@ -1091,9 +1116,15 @@ const destino = new THREE.WebGLRenderTarget(1, 1, {
 const compositore = new EffectComposer(renderer, destino);
 compositore.addPass(new RenderPass(scene, camera));
 const sao = new SAOPass(scene, camera);
-sao.params.saoBias = 2.5;
+/* Questi due sono in UNITA' DEL MONDO, e li avevo copiati dal banco --
+   che lavora in millimetri. Qui la scena e' in metri: saoScale 60
+   voleva dire sessanta METRI, cioe' cercare il buio in tutta la stanza,
+   e quello che tornava era una velatura uniforme. Misurato: con
+   l'occlusione il gradino di luce SCENDEVA da 19,2 a 13,3.
+   Il raggio del nucleo invece e' in pixel di schermo e non si tocca. */
+sao.params.saoBias = 0.0025;        // 2,5 mm
 sao.params.saoIntensity = 0.012;
-sao.params.saoScale = 60;
+sao.params.saoScale = 0.06;         // 60 mm
 sao.params.saoKernelRadius = 28;
 sao.params.saoBlur = true;
 sao.params.saoBlurRadius = 6;

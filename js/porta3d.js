@@ -714,7 +714,19 @@ function montaFerro() {
     mattone(VANO.sx - 900, VANO.sx, 0, alto + 700);
     mattone(VANO.dx, VANO.dx + 900, 0, alto + 700);
     mattone(VANO.sx, VANO.dx, alto, alto + 700);
+      /* E il pavimento. Senza, la porta galleggia e manca l'ombra a
+         terra -- che e' quella che dice a occhio quanto lo stipite
+         sporge dal muro. Nove metri: deve arrivare oltre l'inquadratura
+         da qualunque parte la si guardi. */
+      const suolo = new THREE.Mesh(
+        new THREE.PlaneGeometry(9000, 9000),
+        new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: .9 }));
+      suolo.rotation.x = -Math.PI / 2;
+      suolo.position.set(L / 2, 0, 0);
+      gMuro.add(suolo);
+
       ombreggiaGruppo(gMuro);
+      suolo.castShadow = false;        // il pavimento la riceve e basta
       return gMuro;
     },
 
