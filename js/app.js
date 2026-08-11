@@ -698,6 +698,7 @@ function disposeSubtree(root) {
 }
 
 function clearModel() {
+  if (shadowPlane) shadowPlane.visible = true;
   // la cameretta delle ombre e i limiti torneranno come li vuole un GLB
   key.shadow.camera.left = key.shadow.camera.bottom = -4.5;
   key.shadow.camera.right = key.shadow.camera.top = 4.5;
@@ -770,6 +771,10 @@ async function costruisciPorta(modello, mio) {
      telaio, quindi non e' scenografia: e' il vano vero. */
   const gMuro = portaGen.muro();
   if (gMuro) portaGen.gruppo.add(gMuro);
+  /* Via il raccoglitore di ombre del configuratore: il pavimento della
+     porta sta esattamente sullo stesso piano, e due piani complanari se
+     lo contendono -- si vedeva una riga scura a filo del pavimento. */
+  if (shadowPlane) shadowPlane.visible = false;
   scene.add(model);
 
   // il click sull'anta apre e chiude, come sugli altri modelli

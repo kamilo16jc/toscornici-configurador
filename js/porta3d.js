@@ -721,12 +721,12 @@ function montaFerro() {
       const suolo = new THREE.Mesh(
         new THREE.PlaneGeometry(9000, 9000),
         new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: .9 }));
+      suolo.userData.soloRiceve = true;
       suolo.rotation.x = -Math.PI / 2;
       suolo.position.set(L / 2, 0, 0);
       gMuro.add(suolo);
 
       ombreggiaGruppo(gMuro);
-      suolo.castShadow = false;        // il pavimento la riceve e basta
       return gMuro;
     },
 
@@ -759,7 +759,15 @@ function legnoDiSerie() {
 }
 
 function ombreggiaGruppo(g) {
-  g.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+  g.traverse((o) => {
+    if (!o.isMesh) return;
+    o.receiveShadow = true;
+    /* Il pavimento la riceve e basta. Se la getta, essendo largo nove
+       metri, si stampa sul muro come una fascia scura all'altezza del
+       battiscopa -- e siccome ombreggia() rigira tutto a ogni cambio di
+       coprifilo, il divieto va scritto qui, non una volta sola. */
+    o.castShadow = !o.userData.soloRiceve;
+  });
 }
 
 const dolce = (u) => u * u * (3 - 2 * u);
