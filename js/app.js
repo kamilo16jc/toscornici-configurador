@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { caricaPorta, creaPorta } from './porta3d.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { SAOPass } from 'three/addons/postprocessing/SAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { mostraApertura } from './aperture.js';
 import { mostraLuce, mostraMuro } from './misure.js';
 import { mostraAllargato, fermaAllargato } from './allargato.js';
@@ -740,10 +744,20 @@ async function costruisciPorta(key, mio) {
 
   model = portaGen.gruppo;
   model.scale.setScalar(1 / 1000);          // il disegno e' in millimetri
+  // si misura la PORTA, non il muro: se no la camera inquadra il muro e
+  // la porta finisce in un angolo
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
   model.position.sub(center);
+
+  /* Il MURO attorno al vano. Sul banco c'era e qui l'avevo lasciato
+     fuori pensando che la stanza bastasse: non basta. Senza, la porta
+     galleggia, il coprifilo non appoggia su niente e la fessura fra anta
+     e telaio lascia vedere lo sfondo. E' fatto delle stesse quote del
+     telaio, quindi non e' scenografia: e' il vano vero. */
+  const gMuro = portaGen.muro();
+  if (gMuro) portaGen.gruppo.add(gMuro);
   scene.add(model);
 
   // il click sull'anta apre e chiude, come sugli altri modelli
@@ -1059,12 +1073,41 @@ function setAmbiente(nome) {
    RENDER LOOP
    ============================================================ */
 
+/* ── l'occlusione ambientale ────────────────────────────────────────────
+   Le ombre che getta la luce fanno il grosso del rilievo, ma restano
+   chiare proprio dove l'occhio si aspetta il buio: in fondo alla cava
+   del pannello, fra bugna e riquadro, dietro al coprifilo. Li' non manca
+   la luce diretta -- manca il cielo, perche' le due facce si fanno ombra
+   a vicenda. Misurato sul banco: il buio degli angoli scende da 88 a 66.
+
+   IL DESTINO VUOLE IL MULTICAMPIONAMENTO. `antialias: true` lisca i
+   bordi solo quando si disegna dritto sullo schermo; passando da un
+   compositore la scena finisce prima in un buffer intermedio, e se
+   quello nasce senza campioni ogni sagoma esce col bordo a scaletta e
+   girando luccica. Costato un pomeriggio, sul banco. */
+const destino = new THREE.WebGLRenderTarget(1, 1, {
+  samples: 4, type: THREE.HalfFloatType,
+});
+const compositore = new EffectComposer(renderer, destino);
+compositore.addPass(new RenderPass(scene, camera));
+const sao = new SAOPass(scene, camera);
+sao.params.saoBias = 2.5;
+sao.params.saoIntensity = 0.012;
+sao.params.saoScale = 60;
+sao.params.saoKernelRadius = 28;
+sao.params.saoBlur = true;
+sao.params.saoBlurRadius = 6;
+compositore.addPass(sao);
+compositore.addPass(new OutputPass());
+
 function resize() {
   const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  compositore.setSize(w, h);
 }
+resize();
 window.addEventListener('resize', resize);
 
 renderer.setAnimationLoop(() => {
@@ -1075,7 +1118,7 @@ renderer.setAnimationLoop(() => {
   } else if (doorPivot) {
     doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
   }
-  renderer.render(scene, camera);
+  compositore.render();
 });
 
 // click sulla porta → apri/chiudi (senza interferire con l'orbita)
