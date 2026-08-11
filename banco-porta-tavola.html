@@ -442,8 +442,15 @@ function montaAnta() {
          Con mezzo millimetro si separano, ed e' anche la misura vera --
          un pannello in una cava da 6 e' spesso 5, se no col tempo la
          spinge e spacca il riquadro. */
+      /* I campioni della bugna si diradano un po': il DXF ne da' uno
+         ogni nove decimi di millimetro e non servono a niente, la bugna
+         sale con dolcezza. Provato anche a diradarli molto di piu' --
+         quattro millimetri -- pensando che le fasce sotto il pixel
+         fossero la causa del tratteggio che resta lungo il giro del
+         riquadro: non cambia niente, quindi non e' quello, e non vale
+         la pena di rovinare la curva. */
       ? pannello(r, dirada(d.pannello.bugna.map(([u, v]) => [u, Math.max(.1, v - .5)]),
-                           1.2, 12), ZC, d.pannello.gioco)
+                           1.5, 12), ZC, d.pannello.gioco)
       : pannelloPiatto(r, d.pannello.gioco), false);
   }
   ombre();
@@ -832,7 +839,23 @@ ombre();
    da 44 a 53. Alzare ancora l'angolo o abbassare il riempimento dava
    un altro 4 e 1,5 per cento -- briciole. L'occlusione lavora invece
    dove nessuna delle due arriva. */
-compositore = new EffectComposer(rend);
+/* IL DESTINO DEL COMPOSITORE VUOLE IL MULTICAMPIONAMENTO, e senza era
+   il difetto peggiore di tutti.
+   `WebGLRenderer({antialias: true})` lisca i bordi solo quando disegna
+   DRITTO SULLO SCHERMO. Appena si passa da un EffectComposer la scena
+   finisce prima in un buffer intermedio, e quel buffer nasce senza
+   campioni: ogni sagoma esce col bordo a scaletta dura, e siccome il
+   disegno degli scalini si rifa' a ogni fotogramma, girando la scena
+   luccica. Era il tratteggio che si vedeva lungo tutti i contorni --
+   anche contro il muro e contro il fondo, non solo fra i pezzi.
+   E' anche il motivo per cui sette prove di fila erano tornate negative:
+   tutte e sette lasciavano il compositore nella catena. Spegnere
+   l'occlusione spegne il PASSO, non il compositore -- la scena cadeva
+   lo stesso nello stesso buffer liscio come una scala. */
+const destino = new THREE.WebGLRenderTarget(1, 1, {
+  samples: 4, type: THREE.HalfFloatType,
+});
+compositore = new EffectComposer(rend, destino);
 compositore.addPass(new RenderPass(scena, cam));
 const sao = new SAOPass(scena, cam);
 sao.params.saoBias = 2.5;
@@ -843,6 +866,9 @@ sao.params.saoBlur = true;
 sao.params.saoBlurRadius = 6;
 compositore.addPass(sao);
 compositore.addPass(new OutputPass());
+// la misura era gia' stata presa quando il compositore non c'era
+// ancora: si ridomanda, se no il suo destino resta grande un pixel
+misura();
 
 /* ── apre e chiude ──────────────────────────────────────────────────── */
 /* L'ordine conta, ed e' quello che si fa con la mano: prima si abbassa
@@ -889,7 +915,8 @@ let prima = performance.now();
 }());
 
 // il banco si guarda anche da fuori, per fare le prove
-window.__banco = { cam, controlli, scena, centro, dati: d, sao,
+window.__banco = { cam, controlli, scena, centro, dati: d, sao, rend,
+                   get compositore() { return compositore; },
                    get angolo() { return perno.rotation.y; },
                    gCopri,
                    filo: (t) => rifaiFilo(d.montante.punti, t,
