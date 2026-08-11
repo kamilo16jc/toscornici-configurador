@@ -1099,6 +1099,7 @@ sao.params.saoBlur = true;
 sao.params.saoBlurRadius = 6;
 compositore.addPass(sao);
 compositore.addPass(new OutputPass());
+window.__sao = sao;   // per le prove
 
 function resize() {
   const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
