@@ -113,9 +113,37 @@ const L = d.anta.larghezza, H = d.anta.altezza, T = d.spessore;
    si ruota tutta. Le rotazioni sono vere rotazioni e non specchi: uno
    specchio inverte il verso dei triangoli e la luce entrerebbe dalla
    parte sbagliata. */
+/* I contorni arrivano dal DXF con gli archi spezzati ogni due gradi: su
+   un raccordo da cinque millimetri fanno segmenti da 0,17 mm. Il
+   montante ha 283 punti e 271 distano meno di mezzo millimetro, con
+   passo mediano di un decimo.
+   Estruderli cosi' produce, lungo ogni modanatura, centinaia di strisce
+   di triangoli PIU' STRETTE DI UN PIXEL: il rasterizzatore ne prende una
+   o l'altra a seconda di dove cade il centro del pixel, e girando la
+   scena l'assegnazione cambia. Sono le righe tratteggiate che
+   sfarfallavano -- non erano ombre, non era l'occlusione, non erano
+   piani complanari, era che il solido e' descritto molto piu' fine di
+   quanto lo schermo possa mostrare.
+   Si diradano: un punto si tiene se dista almeno mezzo millimetro dal
+   precedente, oppure se li' il contorno gira davvero -- cosi' gli
+   spigoli restano vivi e le curve restano curve. */
+function dirada(punti, passo = .5, virata = 20) {
+  const g = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const fuori = [punti[0]];
+  for (let i = 1; i < punti.length; i++) {
+    const p = punti[i], u = fuori[fuori.length - 1];
+    const lontano = Math.hypot(p[0] - u[0], p[1] - u[1]) >= passo;
+    const prossimo = punti[(i + 1) % punti.length];
+    let gira = Math.abs(g(u, p) - g(p, prossimo)) * 180 / Math.PI;
+    if (gira > 180) gira = 360 - gira;
+    if (lontano || gira >= virata) fuori.push(p);
+  }
+  return fuori;
+}
+
 function sagoma(punti) {
   const s = new THREE.Shape();
-  punti.forEach(([a, b], i) => (i ? s.lineTo(a, b) : s.moveTo(a, b)));
+  dirada(punti).forEach(([a, b], i) => (i ? s.lineTo(a, b) : s.moveTo(a, b)));
   s.closePath();
   return s;
 }
@@ -383,16 +411,39 @@ function montaAnta() {
 
   // i traversi: da fondo cava a fondo cava, cosi' il loro tenone riempie
   // la cava del montante e sull'angolo non resta uno spiraglio
+  /* I traversi entrano nella cava del montante -- ci va il loro tenone,
+     ed e' quello che chiude il giunto. Ma cosi' le loro facce davanti e
+     dietro cadono sullo STESSO PIANO di quelle del montante, e due piani
+     coincidenti si contendono il pixel: erano le righe tratteggiate
+     lungo i giunti, quelle che sfarfallavano girando.
+     Si assottigliano di due decimi in tutto. Non si vede -- e' un
+     quinto di millimetro su quarantacinque -- e i due piani non
+     coincidono piu'. Fermarli invece al filo del montante, provato,
+     lascia in vista la testa modanata del traverso: peggio del difetto.
+  */
+  const magro = (p) => p.map(([y, z]) => [y, T / 2 + (z - T / 2) * .9956]);
   for (const t of d.traversi) {
     let p = t.punti;
     if (guarda(t.y1 - RIENTRO, ry0)) p = rifaiFilo(p, tipo, t.y1, 1);
     if (guarda(t.y0 + RIENTRO, ry1)) p = rifaiFilo(p, tipo, t.y0, -1);
-    metti(gAnta, orizzontale(p, d.riquadri[0].x0, d.riquadri[0].x1), true);
+    metti(gAnta, orizzontale(magro(p), d.riquadri[0].x0, d.riquadri[0].x1), true);
   }
 
   for (const r of d.riquadri) {
     metti(gPann, tipo === 1
-      ? pannello(r, d.pannello.bugna, ZC, d.pannello.gioco)
+      /* MEZZO MILLIMETRO DI GIOCO PER FACCIA nello spessore, ed e' la
+         cosa che ha risolto le righe tratteggiate.
+         La linguetta usciva spessa quanto la cava al centesimo, quindi
+         la sua faccia e quella del labbro erano lo stesso piano lungo
+         tutto il giro del riquadro: due superfici complanari si
+         contendono il pixel e girando la scena l'assegnazione cambia --
+         il tratteggio che sfarfallava. Con due decimi non bastava: a
+         quella distanza, di sbieco, la fessura sta sotto il pixel.
+         Con mezzo millimetro si separano, ed e' anche la misura vera --
+         un pannello in una cava da 6 e' spesso 5, se no col tempo la
+         spinge e spacca il riquadro. */
+      ? pannello(r, dirada(d.pannello.bugna.map(([u, v]) => [u, Math.max(.1, v - .5)]),
+                           1.2, 12), ZC, d.pannello.gioco)
       : pannelloPiatto(r, d.pannello.gioco), false);
   }
   ombre();
@@ -666,7 +717,9 @@ if (d.muro) {
      mangiava -- ma quei dodici sono il PIEDE del coprifilo, che entra
      nel vano: il dorso appoggia sul muro e il piede scavalca l'imbotto.
      Le facce a 30 e -88 sono giuste, ed e' l'ala a partire piu' dentro. */
-  const mz0 = d.muro.z0, mz1 = d.muro.z1;
+  // e il muro si tira indietro di tre decimi: il dorso del coprifilo ci
+  // appoggia sopra, e appoggiare vuol dire complanare
+  const mz0 = d.muro.z0 + .3, mz1 = d.muro.z1 - .3;
   const mattone = (x0, x1, y0, y1) => {
     const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, mz1 - mz0);
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (mz0 + mz1) / 2);
@@ -836,7 +889,7 @@ let prima = performance.now();
 }());
 
 // il banco si guarda anche da fuori, per fare le prove
-window.__banco = { cam, controlli, scena, centro, dati: d,
+window.__banco = { cam, controlli, scena, centro, dati: d, sao,
                    get angolo() { return perno.rotation.y; },
                    gCopri,
                    filo: (t) => rifaiFilo(d.montante.punti, t,
