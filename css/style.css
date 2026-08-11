@@ -1415,34 +1415,3 @@ input[type="email"], input[type="tel"], input[type="number"] {
 .schema-allargato .d { stroke: #4a3c30; stroke-width: 1.5; fill: none; }
 /* il pezzo che l'imbottino aggiunge: e' quello che si paga */
 .schema-allargato .agg .p { fill: var(--f-agg); }
-
-/* ── i comandi del 3D ──────────────────────────────────────────────────
-   Stanno sopra al viewer e devono farsi dimenticare: la porta e' la
-   protagonista. Punti, non parole -- il nome arriva col title quando
-   uno ci passa sopra. */
-.cmd3d {
-  position: absolute;
-  left: 50%;
-  bottom: 76px;
-  transform: translateX(-50%);
-  z-index: 3;
-  display: flex;
-  gap: 6px;
-}
-.cmd3d button {
-  appearance: none;
-  width: 26px; height: 26px;
-  border: 1px solid color-mix(in srgb, var(--espresso) 22%, transparent);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--espresso);
-  font: 500 9.5px/1 var(--sans);
-  letter-spacing: .04em;
-  cursor: pointer;
-  opacity: .5;
-  transition: opacity .2s, border-color .2s, background .2s;
-}
-.cmd3d button:hover { opacity: 1; border-color: var(--brass); }
-.cmd3d button.is-off { opacity: .22; text-decoration: line-through; }
-.viewer.is-dark .cmd3d button { color: var(--ivory);
-  border-color: color-mix(in srgb, var(--ivory) 30%, transparent); }
