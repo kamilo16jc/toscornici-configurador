@@ -69,6 +69,7 @@ const state = {
   telaio: 'std',
   copriWood: 'toulipier', copri: 'listellare', copriMisura: null, manFinitura: null,
   apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
+  finituraRiquadro: 1,
   capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
   cilindro: 'no', nottolino: false, oroSerr: false, oroCern: false,
@@ -698,6 +699,10 @@ function disposeSubtree(root) {
 }
 
 function clearModel() {
+  cmd3dEl.hidden = true;
+  tipoPills.hidden = true;
+  tipoNote.hidden = true;
+  esploso = false;
   if (shadowPlane) shadowPlane.visible = true;
   // la cameretta delle ombre e i limiti torneranno come li vuole un GLB
   key.shadow.camera.left = key.shadow.camera.bottom = -4.5;
@@ -732,6 +737,50 @@ let numeroCarico = 0;
    per pezzo: cosi' il coprifilo, la mano e la finitura del riquadro
    restano scelte vive, che in un GLB sarebbero cotte dentro. */
 const COSTRUITE = new Set(['siena']);
+
+/* I comandi del 3D. Compaiono solo sulle porte costruite, perche' solo
+   li' c'e' qualcosa da accendere e spegnere: un GLB e' un pezzo unico.
+   Sono pastiglie da ventisei pixel senza etichetta -- il nome esce dal
+   title al passaggio del mouse, che e' anche quello che legge un lettore
+   di schermo. Sotto una porta una barra di pulsanti scritti ruberebbe
+   la scena a quello che si deve guardare. */
+const CMD3D = [
+  { id: 'telaio',   sigla: 'T', nome: 'Telaio e coprifilo / Frame and architrave' },
+  { id: 'anta',     sigla: 'A', nome: 'Anta: montanti e traversi / Leaf: stiles and rails' },
+  { id: 'pannelli', sigla: 'P', nome: 'Pannelli / Panels' },
+  { id: 'ferro',    sigla: 'F', nome: 'Maniglia e cerniere / Handle and hinges' },
+  { id: 'esploso',  sigla: 'E', nome: 'Vista esplosa / Exploded view' },
+];
+const cmd3dEl = document.getElementById('cmd3d');
+const tipoPills = document.getElementById('tipoPills');
+const tipoNote = document.getElementById('tipoNote');
+document.querySelectorAll('#tipoPills .pill').forEach((b) =>
+  b.addEventListener('click', () => {
+    state.finituraRiquadro = +b.dataset.tipo;
+    refreshUI();
+  }));
+let esploso = false;
+
+function montaComandi3d() {
+  cmd3dEl.innerHTML = CMD3D.map((c) =>
+    `<button data-cmd="${c.id}" title="${c.nome}" aria-label="${c.nome}">${c.sigla}</button>`
+  ).join('');
+  cmd3dEl.querySelectorAll('[data-cmd]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.cmd;
+    if (id === 'esploso') {
+      esploso = !esploso;
+      b.classList.toggle('is-off', !esploso);
+      portaGen.parti.telaio.position.z = esploso ? -0.26 : 0;
+      portaGen.parti.pannelli.position.z = esploso ? 0.26 : 0;
+      return;
+    }
+    const g = portaGen.parti[id];
+    g.visible = !g.visible;
+    b.classList.toggle('is-off', !g.visible);
+  }));
+  cmd3dEl.querySelector('[data-cmd="esploso"]').classList.add('is-off');
+  cmd3dEl.hidden = false;
+}
 
 /* L'inquadratura: la stessa per una porta caricata e per una costruita,
    se no cambiando modello la camera saltava. */
@@ -797,6 +846,9 @@ async function costruisciPorta(modello, mio) {
   controls.minPolarAngle = 0.02;
   controls.maxPolarAngle = Math.PI - 0.02;
 
+  montaComandi3d();
+  tipoPills.hidden = false;
+  tipoNote.hidden = false;
   applyEssenza();
   doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
   if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
@@ -1904,6 +1956,17 @@ function refreshUI() {
 
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.mano === state.mano));
+  document.querySelectorAll('#tipoPills .pill').forEach((b) =>
+    b.classList.toggle('is-active', +b.dataset.tipo === state.finituraRiquadro));
+  if (!tipoNote.hidden) {
+    /* Il tipo 1 e' preso dalla tavola della fabbrica al centesimo. Il 2
+       e il 3 li abbiamo disegnati noi sul catalogo -- quei DXF non sono
+       ancora arrivati -- e non hanno un prezzo a listino: si dice, che
+       il cliente sta guardando qualcosa che potrebbe comprare. */
+    tipoNote.textContent = state.finituraRiquadro === 1
+      ? 'Sezione dalla tavola di fabbrica.'
+      : 'Profilo ricavato dal catalogo: la sezione di fabbrica non è ancora arrivata e la finitura non modifica il prezzo.';
+  }
   document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
     b.classList.toggle('is-active', +b.dataset.lati === state.capLati));
   document.querySelectorAll('#capComplPills .pill').forEach((b) =>

@@ -44,6 +44,11 @@
       </svg>
     </div>
 
+    <!-- I comandi del 3D: minuscoli e senza etichetta, che sotto una
+         porta non ci va una barra di pulsanti. Il nome esce al
+         passaggio del mouse, dal title, che e' anche quello che legge
+         un lettore di schermo. -->
+    <div class="cmd3d" id="cmd3d" hidden></div>
     <button class="door-btn" id="doorBtn" hidden
             title="Apri la porta / Open the door" aria-label="Apri la porta">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
@@ -208,6 +213,16 @@
         <button class="pill" data-mano="sx"><span data-t="mano_sx">Mano SX</span> <span class="en" data-t="mano_sx_sub">spinge a sinistra</span></button>
       </div>
       <p class="pill-note" id="aperturaNote"></p>
+
+      <!-- La finitura del riquadro: cambia il bastone attorno al pannello
+           e il pannello stesso. Solo sulle porte costruite, che sugli
+           altri modelli non c'e' niente da cambiare. -->
+      <div class="pills" id="tipoPills" hidden>
+        <button class="pill is-active" data-tipo="1">Tipo 1 <span class="en">bugnato</span></button>
+        <button class="pill" data-tipo="2">Tipo 2 <span class="en">tondo, piatto</span></button>
+        <button class="pill" data-tipo="3">Tipo 3 <span class="en">vivo, piatto</span></button>
+      </div>
+      <p class="pill-note" id="tipoNote" hidden></p>
     </section>
 
     <!-- Capitello -->
