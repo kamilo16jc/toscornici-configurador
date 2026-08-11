@@ -414,6 +414,23 @@ const bordi = (curve, i) => curve.flatMap((c) => c.map((p) => p[i]));
 const telaioAltoY = Math.max(...bordi(d.telaio_alto_imbotto, 0));
 const spor = -Math.min(...bordi(d.telaio, 0));      // quanto sporge dal filo anta
 
+/* IL BORDO DEL VANO, UNO SOLO PER TUTTI E TRE.
+   Qui si incontrano tre cose: l'imbotto che finisce, il muro che
+   comincia, e il coprifilo che ci va davanti a coprire il giunto -- che
+   e' esattamente il suo mestiere, e da li' prende il nome.
+   Se ognuno prende la sua quota da una fonte diversa bastano decimi di
+   millimetro perche' fra due di loro si apra un filo, e un filo di muro
+   in mezzo al legno si vede benissimo. Percio' la quota si calcola QUI,
+   una volta, dall'imbotto -- che e' il pezzo vero, misurato -- e la
+   usano tutti e tre. Cosi' non c'e' niente da allineare: combaciano
+   perche' sono lo stesso numero. */
+const filiX = bordi(d.telaio_imbotto, 0);
+const VANO = {
+  sx: Math.min(...filiX),
+  dx: Math.max(...filiX),
+  su: Math.max(...bordi(d.telaio_alto_imbotto, 0)),
+};
+
 /* Gli stipiti arrivano FIN SOPRA, non si fermano sotto la traversa.
    Fermandoli dove la traversa comincia restava un intaglio nei due
    angoli alti. Tirandoli fino in cima si sovrappongono, e la traversa
@@ -532,9 +549,8 @@ async function montaCoprifili() {
   // il 90 va sulla faccia della porta, il 70 dall'altra: e' come si
   // monta un pacchetto 90/70 di listino
   const sez = await Promise.all(slug.map(sezione));
-  const sx = Math.max(...d.ali.flat().map((a) => a.a).filter((v) => v < L / 2));
-  const dx = Math.min(...d.ali.flat().map((a) => a.a).filter((v) => v > L / 2));
-  const su = d.ali_alto.flat()[0].a;
+  // il bordo del vano e' quello di tutti: vedi VANO, piu' su
+  const { sx, dx, su } = VANO;
   /* Il coprifilo appoggia sulla FACCIA DEL MURO, non sul filo interno
      dell'ala. Sono due piani diversi, distanti quanto il piede: il piede
      entra nel vano e scavalca l'imbotto, il dorso resta fuori sul muro.
@@ -634,7 +650,7 @@ if (d.muro) {
      striscia chiara larga un paio di centimetri, che sembrava un buco e
      non lo era. Fessura non ne resta: quel giunto lo copre il coprifilo,
      che gli sta davanti. */
-  const alto = telaioAltoY;
+  const alto = VANO.su;
   /* Il muro e' quello del tratteggio: 118. Per un momento era sembrato
      troppo -- sporgeva dodici millimetri oltre l'ala del telaio e se la
      mangiava -- ma quei dodici sono il PIEDE del coprifilo, che entra
@@ -646,15 +662,14 @@ if (d.muro) {
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (mz0 + mz1) / 2);
     gTelaio.add(new THREE.Mesh(g, matMuro));
   };
-  /* E il vano del muro lo danno gli STIPITI, non il tratteggio. Il
-     tratteggio si ferma tredici millimetri prima -- e' un disegno di
-     sezione, mica un rilievo -- e li' restava una fessura fra muro e
-     imbotto, aperta per tutta l'altezza dietro al coprifilo. */
-  const vx0 = Math.max(...bordi(d.telaio_imbotto, 0).filter((v) => v < L / 2));
-  const vx1 = Math.min(...bordi(d.telaio_imbotto, 0).filter((v) => v > L / 2));
-  mattone(vx0 - 900, vx0, 0, alto + 700);
-  mattone(vx1, vx1 + 900, 0, alto + 700);
-  mattone(vx0, vx1, alto, alto + 700);
+  /* E il vano del muro e' quello di tutti gli altri: VANO, calcolato una
+     volta sola piu' su. Il tratteggio del disegno non va bene -- si
+     ferma tredici millimetri prima, e' una sezione, mica un rilievo --
+     e nemmeno il filo verso la luce, che preso al contrario manda il
+     muro davanti all'anta. */
+  mattone(VANO.sx - 900, VANO.sx, 0, alto + 700);
+  mattone(VANO.dx, VANO.dx + 900, 0, alto + 700);
+  mattone(VANO.sx, VANO.dx, alto, alto + 700);
 }
 
 /* ── inquadratura ───────────────────────────────────────────────────── */
