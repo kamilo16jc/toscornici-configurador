@@ -75,6 +75,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 // la stessa tabella che usa il configuratore: quale DXF per quale
 // coprifilo, e per quale misura di listino
 import { PROFILI } from './js/visore-profilo.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { SAOPass } from 'three/addons/postprocessing/SAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* ============================================================
    UN MOTORE SOLO: LA SEZIONE CHE CORRE LUNGO IL SUO ASSE
@@ -224,6 +228,9 @@ function legno() {
     map: carica('albedo.jpg', true),
     normalMap: carica('normal.jpg'),
     roughnessMap: carica('roughness.jpg'),
+    // la venatura non deve competere col rilievo: il configuratore tiene
+    // la normale a 0,8 per lo stesso motivo
+    normalScale: new THREE.Vector2(.8, .8),
     roughness: .62, metalness: 0, envMapIntensity: .5,
   });
 }
@@ -261,6 +268,8 @@ function grana(geo, giro) {
    Il perno sta appena fuori dallo spigolo, dove sta il nodo di una
    cerniera vera: se lo si mette sull'asse dell'anta, aprendo, lo
    spigolo entra nel telaio. */
+let suolo = null;                    // il pavimento, montato piu' sotto
+let compositore = null;              // e la catena di resa, con l'occlusione
 const gTelaio = new THREE.Group(), gAnta = new THREE.Group(),
       gPann = new THREE.Group(), gFerro = new THREE.Group();
 const perno = new THREE.Group();
@@ -386,6 +395,7 @@ function montaAnta() {
       ? pannello(r, d.pannello.bugna, ZC, d.pannello.gioco)
       : pannelloPiatto(r, d.pannello.gioco), false);
   }
+  ombre();
 }
 montaAnta();
 
@@ -674,15 +684,21 @@ if (d.muro) {
 
 /* ── inquadratura ───────────────────────────────────────────────────── */
 const centro = new THREE.Vector3(L / 2, H / 2, T / 2);
-const cam = new THREE.PerspectiveCamera(26, 1, 5, 20000);
+const cam = new THREE.PerspectiveCamera(26, 1, 120, 14000);
 const controlli = new OrbitControls(cam, tela);
 controlli.enableDamping = true;
 controlli.dampingFactor = .08;
+/* Non si entra dentro il piano vicino della camera. Quel piano e' stato
+   avvicinato a 120 mm apposta -- da 5 a 20000 il buffer di profondita'
+   non ha risoluzione e l'occlusione usciva a chiazze bianche -- ma cosi'
+   avvicinandosi troppo il legno verrebbe tagliato via. */
+controlli.minDistance = 260;
 controlli.target.copy(centro);
 
 function misura() {
   const w = tela.clientWidth, h = tela.clientHeight;
   rend.setSize(w, h, false);
+  if (compositore) compositore.setSize(w, h);
   cam.aspect = w / h;
   const mezzoV = cam.fov * Math.PI / 360;
   const mezzoO = Math.atan(Math.tan(mezzoV) * cam.aspect);
@@ -696,12 +712,84 @@ function misura() {
 misura();
 addEventListener('resize', misura);
 
+/* ── la luce, che qui e' meta' del rilievo ──────────────────────────── */
+/* La porta sembrava piatta, e non era la geometria: era da dove veniva
+   la luce. Misurato sui due impianti -- questo banco e il configuratore
+   grande, che invece il rilievo lo mostra:
+     configuratore   luce a 72 gradi dalla normale della porta: RADENTE
+     banco (prima)   luce a 40 gradi: quasi in faccia
+   A quaranta gradi una modanatura inclinata di dieci cambia il chiaro di
+   due punti e non si vede; a settantadue ne cambia un terzo. E' tutta li'
+   la differenza.
+   Piu' le OMBRE, che qui non c'erano affatto: una bugna si legge
+   soprattutto dall'ombra che la sua modanatura getta sul campo, e senza
+   ombre quell'ombra non c'e'. */
+rend.shadowMap.enabled = true;
+rend.shadowMap.type = THREE.PCFSoftShadowMap;
+
 const chiave = new THREE.DirectionalLight(0xffffff, 2.1);
-chiave.position.set(-900, 1800, 2400);
-scena.add(chiave);
-const riempi = new THREE.DirectionalLight(0xffffff, .35);
-riempi.position.set(1400, 700, 1200);
+chiave.position.set(-2600, 2900, 1300);      // 72 gradi, come il configuratore
+chiave.castShadow = true;
+chiave.shadow.mapSize.set(4096, 4096);
+chiave.shadow.bias = -0.0004;
+chiave.shadow.normalBias = 1.2;              // in mm: qui si lavora in mm
+chiave.shadow.radius = 3;
+const campo = 1700;                          // mezza scena, in mm
+chiave.shadow.camera.left = chiave.shadow.camera.bottom = -campo;
+chiave.shadow.camera.right = chiave.shadow.camera.top = campo;
+chiave.shadow.camera.near = 500;
+chiave.shadow.camera.far = 9000;
+chiave.target.position.set(L / 2, H / 2, 0);
+scena.add(chiave, chiave.target);
+
+// il riempimento resta basso apposta: se lo si alza, riempie le ombre e
+// il rilievo torna piatto -- e' l'errore che si fa per «vedere meglio»
+const riempi = new THREE.DirectionalLight(0xffffff, .28);
+riempi.position.set(2200, 900, 1800);
 scena.add(riempi);
+
+/* Tutto fa ombra e la riceve, muro compreso. Va richiamata dopo ogni
+   rimontaggio: l'anta e i coprifili si rifanno quando si cambia tipo o
+   modello, e i pezzi nuovi nascono senza. */
+function ombre() {
+  scena.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+  if (suolo) suolo.castShadow = false;   // il pavimento la riceve e basta
+}
+
+/* Un pavimento. Non e' scenografia: senza, la porta galleggia, e manca
+   l'ombra a terra -- che e' quella che dice a occhio quanto lo stipite
+   sporge dal muro. Costa un piano e una riga. */
+suolo = new THREE.Mesh(
+  new THREE.PlaneGeometry(9000, 9000),
+  new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: .9 }));
+suolo.rotation.x = -Math.PI / 2;
+suolo.position.set(L / 2, 0, 0);
+scena.add(suolo);
+
+ombre();
+
+/* ── l'occlusione: il buio dove due superfici si incontrano ─────────── */
+/* L'ultima cosa che mancava, e l'unica che non tocca un millimetro della
+   porta. Le ombre che getta la luce fanno il grosso, ma restano chiare
+   proprio dove un occhio si aspetta il buio: in fondo alla cava del
+   pannello, nell'angolo fra bugna e riquadro, dietro al coprifilo. Li'
+   non e' che manchi la luce diretta -- manca il CIELO, perche' le due
+   facce si fanno ombra a vicenda.
+   Misurato: la luce radente aveva gia' portato il salto sulla modanatura
+   da 44 a 53. Alzare ancora l'angolo o abbassare il riempimento dava
+   un altro 4 e 1,5 per cento -- briciole. L'occlusione lavora invece
+   dove nessuna delle due arriva. */
+compositore = new EffectComposer(rend);
+compositore.addPass(new RenderPass(scena, cam));
+const sao = new SAOPass(scena, cam);
+sao.params.saoBias = 2.5;
+sao.params.saoIntensity = 0.012;
+sao.params.saoScale = 60;        // in mm: il raggio entro cui cerca il buio
+sao.params.saoKernelRadius = 28;
+sao.params.saoBlur = true;
+sao.params.saoBlurRadius = 6;
+compositore.addPass(sao);
+compositore.addPass(new OutputPass());
 
 /* ── apre e chiude ──────────────────────────────────────────────────── */
 /* L'ordine conta, ed e' quello che si fa con la mano: prima si abbassa
@@ -743,7 +831,7 @@ let prima = performance.now();
   }
 
   controlli.update();
-  rend.render(scena, cam);
+  compositore.render();
   requestAnimationFrame(anima);
 }());
 
