@@ -220,8 +220,27 @@ def stacca(c, ali, asse, verso_luce):
         fuor = z1 if muro == z0 else z0
         seggi.append({'a': luce, 'z': muro, 'verso': 1 if fuor > muro else -1})
         tagli.append(luce)
-    taglio = max(tagli) if verso_luce > 0 else min(tagli)
-    return taglia(c, asse, taglio, verso_luce), seggi
+    # Mezzo millimetro DENTRO, non esattamente sul filo dell'ala. Una
+    # delle due ali finisce proprio li': tagliando sul filo la retta le
+    # e' tangente, i due punti d'incrocio cadono uno sull'altro e il
+    # contorno esce con un ponte di lunghezza zero. Un contorno cosi' non
+    # e' piu' semplice, e il triangolatore di Three lo scarta senza dire
+    # niente -- l'imbotto spariva dalla scena e al suo posto si vedeva il
+    # muro, per tutta la larghezza sopra la porta.
+    taglio = (max(tagli) if verso_luce > 0 else min(tagli)) + .5 * verso_luce
+    return netto(taglia(c, asse, taglio, verso_luce)), seggi
+
+
+def netto(c):
+    """Via i punti doppi: il taglio ne lascia, e non servono a nessuno."""
+    fuori = []
+    for q in c:
+        if not fuori or math.hypot(q[0] - fuori[-1][0], q[1] - fuori[-1][1]) > .01:
+            fuori.append(q)
+    while len(fuori) > 2 and math.hypot(fuori[0][0] - fuori[-1][0],
+                                        fuori[0][1] - fuori[-1][1]) < .01:
+        fuori.pop()
+    return fuori
 
 
 def taglia(c, asse, quota, tieni):

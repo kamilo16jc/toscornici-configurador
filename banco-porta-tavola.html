@@ -626,9 +626,15 @@ if (d.muro) {
   const m = d.muro, matMuro = new THREE.MeshStandardMaterial({
     color: 0xe6ded1, roughness: .95, metalness: 0,
   });
-  // l'architrave appoggia sul telaio, con un dito di sovrapposizione: se
-  // parte piu' in alto fra i due resta una striscia di fondo che si vede
-  const alto = telaioAltoY - 10;
+  /* L'architrave comincia ESATTAMENTE dove finisce il telaio, senza
+     sovrapposizione. Prima gliene davo un centimetro per non lasciare
+     una fessura, ma in quel centimetro muro e imbotto hanno la faccia
+     sullo stesso piano -- tutti e due a z 30 -- e due superfici
+     complanari se le contendono a chiazze: sopra la porta usciva una
+     striscia chiara larga un paio di centimetri, che sembrava un buco e
+     non lo era. Fessura non ne resta: quel giunto lo copre il coprifilo,
+     che gli sta davanti. */
+  const alto = telaioAltoY;
   /* Il muro e' quello del tratteggio: 118. Per un momento era sembrato
      troppo -- sporgeva dodici millimetri oltre l'ala del telaio e se la
      mangiava -- ma quei dodici sono il PIEDE del coprifilo, che entra
@@ -640,9 +646,15 @@ if (d.muro) {
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (mz0 + mz1) / 2);
     gTelaio.add(new THREE.Mesh(g, matMuro));
   };
-  mattone(m.x0 - 900, m.x0, 0, alto + 700);
-  mattone(m.x1, m.x1 + 900, 0, alto + 700);
-  mattone(m.x0, m.x1, alto, alto + 700);
+  /* E il vano del muro lo danno gli STIPITI, non il tratteggio. Il
+     tratteggio si ferma tredici millimetri prima -- e' un disegno di
+     sezione, mica un rilievo -- e li' restava una fessura fra muro e
+     imbotto, aperta per tutta l'altezza dietro al coprifilo. */
+  const vx0 = Math.max(...bordi(d.telaio_imbotto, 0).filter((v) => v < L / 2));
+  const vx1 = Math.min(...bordi(d.telaio_imbotto, 0).filter((v) => v > L / 2));
+  mattone(vx0 - 900, vx0, 0, alto + 700);
+  mattone(vx1, vx1 + 900, 0, alto + 700);
+  mattone(vx0, vx1, alto, alto + 700);
 }
 
 /* ── inquadratura ───────────────────────────────────────────────────── */
