@@ -108,7 +108,18 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
    angoli si tagliano a 45 senza che nessuno glielo dica.
    ============================================================ */
 
-const d = await (await fetch('assets/profili/base-ht789-tavola.json')).json();
+/* TRE CATALOGHI, NON UNO. Il disegno della porta e' suo; il telaio e i
+   coprifili sono di tutti.
+   Un coprifilo non appartiene all'anta -- sta sul muro, e l'anta non lo
+   tocca nemmeno. Il telaio nemmeno: la fabbrica non ne vende
+   quarantaquattro, ne vende due o tre. Percio' stanno in cataloghi
+   separati e il modello dice solo QUALE monta.
+   Aggiungere una porta nuova vuol dire un file da cinquanta chilobyte:
+   coprifili, telaio, mani, finiture e animazione se li trova gia'
+   fatti. */
+const anta = await (await fetch('assets/porte/siena/anta.json')).json();
+const telaio = await (await fetch(`assets/telai/${anta.telaio}.json`)).json();
+const d = { ...anta, ...telaio, nome: anta.nome };
 const L = d.anta.larghezza, H = d.anta.altezza, T = d.spessore;
 
 /* ── le due estrusioni ──────────────────────────────────────────────── */
@@ -604,7 +615,7 @@ function cornice(sez, xL, xR, yT, zMuro, verso) {
 const cacheSez = {};
 async function sezione(slug) {
   if (!cacheSez[slug]) {
-    cacheSez[slug] = fetch(`assets/profili/${slug}.json`).then((r) => r.json())
+    cacheSez[slug] = fetch(`assets/coprifili/${slug}.json`).then((r) => r.json())
       .then((j) => assetta(j.punti, j.larghezza));
   }
   return cacheSez[slug];

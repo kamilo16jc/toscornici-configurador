@@ -20,7 +20,7 @@ I TRE CASI, per non riscoprirli fra sei mesi
       cos'e'.
 
 Quindi qui la mappa e' scritta a mano, per RUOLO, e i JSON escono col
-nome del ruolo: chi legge assets/profili vede a cosa serve un file, non
+nome del ruolo: chi legge assets/coprifili vede a cosa serve un file, non
 come lo aveva chiamato chi lo ha esportato.
 
 Le chiavi sono <coprifilo>-<id misura> di COPRI_MISURE in js/app.js.
@@ -109,7 +109,7 @@ def main():
         # pancia, percio' il misurato puo' superare il nominale di qualche
         # decimo -- se lo supera di piu' c'e' da guardarci
         scarto = max(abs(d['spessore'] - sp), abs(d['larghezza'] - lg))
-        with open(os.path.join(RADICE, 'assets', 'profili', ruolo + '.json'),
+        with open(os.path.join(RADICE, 'assets', 'coprifili', ruolo + '.json'),
                   'w', encoding='utf8') as g:
             import json
             json.dump(d, g, ensure_ascii=False)

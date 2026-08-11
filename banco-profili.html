@@ -66,7 +66,7 @@ const LUNGHEZZA = 420;          // mm di barra da mostrare
 window.__glb = {};              // il banco lo legge per salvare i file
 
 for (const nome of PROFILI) {
-  const d = await (await fetch(`assets/profili/${nome}.json`)).json();
+  const d = await (await fetch(`assets/coprifili/${nome}.json`)).json();
 
   const scheda = document.createElement('div');
   scheda.className = 'scheda';

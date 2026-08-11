@@ -78,7 +78,7 @@ const cacheContorno = {};
 
 async function contorno(file) {
   if (!cacheContorno[file]) {
-    cacheContorno[file] = fetch(`assets/profili/${file}.json`).then((r) => r.json());
+    cacheContorno[file] = fetch(`assets/coprifili/${file}.json`).then((r) => r.json());
   }
   return cacheContorno[file];
 }

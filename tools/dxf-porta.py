@@ -185,9 +185,9 @@ def main():
                   for g, L in zip(f, livello)],
     }
     fuori = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                         'assets', 'profili')
+                         'assets', 'porte', d['nome'].lower().replace(' ', '-'))
     os.makedirs(fuori, exist_ok=True)
-    nome = d['nome'].lower().replace(' ', '-') + '-alzato.json'
+    nome = 'alzato.json'
     with io.open(os.path.join(fuori, nome), 'w', encoding='utf8') as g:
         json.dump(d, g, ensure_ascii=False)
     print('%s   %.0f x %.0f mm' % (nome, d['larghezza'], d['altezza']))

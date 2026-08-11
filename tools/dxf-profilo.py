@@ -39,7 +39,7 @@ import os
 import sys
 
 FUORI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     'assets', 'profili')
+                     'assets', 'coprifili')
 PASSO_ARCO = 2.0     # gradi per segmento: sotto il decimo di mm sul raggio
 SNAP = 0.01          # due punti piu' vicini di cosi' sono gia' lo stesso nodo
 CUCI = 1.0           # e fin qui si cuce, ma solo fra due capi liberi

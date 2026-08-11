@@ -33,7 +33,7 @@ QUELLO CHE SI RICAVA
   quote         luce netta, esterno telaio, HT -- lette dai testi
 
 USO
-    python tools/dxf-tavola.py <tavola.dxf>
+    python tools/dxf-tavola.py <tavola.dxf> [--modello nome]
 """
 
 import importlib.util
@@ -50,8 +50,7 @@ _s = importlib.util.spec_from_file_location('dxfprofilo',
 profilo = importlib.util.module_from_spec(_s)
 _s.loader.exec_module(profilo)
 
-FUORI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     'assets', 'profili')
+RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PASSO_ARCO = 2.0
 LEGNO = 'APS_GEOMETRY'
 AIUTO = 'COSTRUZIONI'
@@ -342,9 +341,18 @@ def testi(ent):
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.exit('Uso: python tools/dxf-tavola.py <tavola.dxf>')
-    f = sys.argv[1]
+    arg = sys.argv[1:]
+    # il nome del disegno non e' il nome del modello a catalogo: la
+    # BASE_HT789 e' la Siena. Si dice con --modello, se no si usa il
+    # nome del file.
+    modello = None
+    if '--modello' in arg:
+        i = arg.index('--modello')
+        modello = arg[i + 1]
+        arg = arg[:i] + arg[i + 2:]
+    if not arg:
+        sys.exit('Uso: python tools/dxf-tavola.py <tavola.dxf> [--modello nome]')
+    f = arg[0]
     tutte = leggi(f)
     dis = [e for e in tutte if e.get(8) in (LEGNO, AIUTO) and e['tipo'] != 'TEXT']
 
@@ -547,10 +555,33 @@ def main():
                      if leva and rosetta and contorni(leva) else None),
         'quote': {k: v for k, v in testi(tutte).items()},
     }
-    os.makedirs(FUORI, exist_ok=True)
-    slug = d['nome'].lower().replace('_', '-') + '-tavola.json'
-    with io.open(os.path.join(FUORI, slug), 'w', encoding='utf8') as g:
-        json.dump(d, g, ensure_ascii=False)
+    # ── tre cataloghi, non un file solo ──────────────────────────────
+    # Il disegno dell'anta e' di questo modello; il TELAIO e i COPRIFILI
+    # sono di tutti. La fabbrica non vende quarantaquattro telai, ne
+    # vende due o tre, e un coprifilo non appartiene a nessuna porta --
+    # sta sul muro, e l'anta non lo tocca nemmeno.
+    # Percio' la tavola si divide: quello che e' della porta va nella sua
+    # cartella, quello che e' del telaio nel catalogo dei telai. Il
+    # modello dice solo QUALE telaio monta, e per adesso montano tutti
+    # quello standard.
+    DEL_TELAIO = ('telaio', 'telaio_alto', 'telaio_imbotto',
+                  'telaio_alto_imbotto', 'ali', 'ali_alto', 'muro')
+    slug = modello or d['nome'].lower().replace('_', '-')
+    tel = {'nome': slug, 'origine': d['nome'], 'spessore_anta': d['spessore']}
+    tel.update({k: d[k] for k in DEL_TELAIO})
+    porta = {k: v for k, v in d.items() if k not in DEL_TELAIO}
+    porta['telaio'] = 'standard'
+
+    dove = os.path.join(RADICE, 'assets', 'porte', slug)
+    os.makedirs(dove, exist_ok=True)
+    os.makedirs(os.path.join(RADICE, 'assets', 'telai'), exist_ok=True)
+    with io.open(os.path.join(dove, 'anta.json'), 'w', encoding='utf8') as g:
+        json.dump(porta, g, ensure_ascii=False)
+    # il telaio estratto si scrive col nome del modello, NON sopra quello
+    # standard: serve a confrontarlo. Se e' uguale, un telaio in meno.
+    with io.open(os.path.join(RADICE, 'assets', 'telai', slug + '.json'),
+                 'w', encoding='utf8') as g:
+        json.dump(tel, g, ensure_ascii=False)
 
     print('anta       %.1f x %.1f mm, spessa %.1f'
           % (d['anta']['larghezza'], d['anta']['altezza'], d['spessore']))
@@ -579,7 +610,9 @@ def main():
         print('muro       spesso %.1f, vano da %.1f a %.1f'
               % (m['z1'] - m['z0'], m['x0'], m['x1']))
     print('quote      %s' % d['quote'])
-    print('-> %s' % slug)
+    print('-> assets/porte/%s/anta.json   (monta il telaio "%s")'
+          % (slug, porta['telaio']))
+    print('   assets/telai/%s.json   da confrontare con lo standard' % slug)
 
 
 if __name__ == '__main__':

@@ -58,7 +58,7 @@ const SPESSORE = 44;      // l'anta, in mm
    che galleggiava staccato in mezzo. Si calcola dallo spessore e da
    quanti livelli ha davvero il disegno. */
 
-const d = await (await fetch('assets/profili/700-c-alzato.json')).json();
+const d = await (await fetch('assets/porte/700-c/alzato.json')).json();
 const livelli = Math.max(...d.facce.map((f) => f.livello));
 // mai piu' di meta' spessore in tutto: il fondo del rilievo resta legno
 const GRADINO = Math.min(5, (SPESSORE * 0.5) / Math.max(1, livelli));
