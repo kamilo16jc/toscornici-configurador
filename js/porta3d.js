@@ -107,7 +107,7 @@ export async function sezioneCoprifilo(slug) {
  *   PROFILI    la tabella coprifilo -> misura -> disegno (visore-profilo.js)
  *   materiale  il legno. Se non si passa, se lo fa da se'
  */
-export function creaPorta(d, PROFILI, materiale) {
+export function creaPorta(d, PROFILI, materiale, passoUV) {
   const L = d.anta.larghezza, H = d.anta.altezza, T = d.spessore;
   const mat = materiale || legnoDiSerie();
 
@@ -273,7 +273,11 @@ function pannello(r, bugna, zc, gioco) {
    un traverso corre per il lungo del traverso, come il tavolame da cui
    e' stato tagliato. E' la cosa che, guardando una porta vera, dice
    subito che i pezzi sono pezzi e non un disegno stampato sopra. */
-const PASSO = 760;                  // quanto misura, in mm, una piastrella
+  /* Quanto misura una piastrella di legno, in mm. Chi ci mette il suo
+     materiale deve dirlo: il configuratore fa ripetere le sue texture
+     sei volte sulle UV, e se qui si lasciasse la misura vera il legno
+     uscirebbe a scacchiera. */
+  const PASSO = passoUV || 760;
 function grana(geo, giro) {
   const p = geo.attributes.position, uv = new Float32Array(p.count * 2);
   for (let i = 0; i < p.count; i++) {

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { caricaPorta, creaPorta } from './porta3d.js';
 import { mostraApertura } from './aperture.js';
 import { mostraLuce, mostraMuro } from './misure.js';
 import { mostraAllargato, fermaAllargato } from './allargato.js';
@@ -647,6 +648,11 @@ let currentModelKey = null;
 
 // apertura della porta: perno sulle cerniere
 let doorPivot = null;
+/* Le porte COSTRUITE (non caricate da GLB) hanno il loro perno e la loro
+   ferramenta: l'apertura la guidano loro, perche' la maniglia e lo
+   scrocco devono muoversi con l'anta e un perno da solo non lo sa fare. */
+let portaGen = null;
+let apGen = 0;
 let doorTargetAngle = 0;
 let doorOpenAngle = 0;
 let leafParts = [];
@@ -682,6 +688,7 @@ function disposeSubtree(root) {
 }
 
 function clearModel() {
+  if (portaGen) { portaGen.dispose(); scene.remove(portaGen.gruppo); portaGen = null; apGen = 0; }
   if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   for (const k of Object.keys(nodes)) delete nodes[k];
@@ -703,6 +710,56 @@ function clearModel() {
 // in scena soltanto l'ultimo partito.
 let numeroCarico = 0;
 
+/* Le porte che si COSTRUISCONO invece di caricarle. La Siena viene dalla
+   tavola di fabbrica -- alzato piu' le due sezioni -- e si monta pezzo
+   per pezzo: cosi' il coprifilo, la mano e la finitura del riquadro
+   restano scelte vive, che in un GLB sarebbero cotte dentro. */
+const COSTRUITE = new Set(['siena']);
+
+/* L'inquadratura: la stessa per una porta caricata e per una costruita,
+   se no cambiando modello la camera saltava. */
+function frameCamera(size) {
+  const dist = size.y * 2.0;      // compensa il FOV piu' stretto
+  camera.position.set(dist * 0.65, size.y * 0.12, dist);
+  controls.target.set(0, 0, 0);
+  controls.minDistance = dist * 0.5;
+  controls.maxDistance = dist * 2.2;
+  controls.update();
+}
+
+async function costruisciPorta(key, mio) {
+  const d = await caricaPorta(key);
+  if (mio !== numeroCarico) return;
+  // le texture del configuratore si ripetono REPEAT volte: il passo
+  // delle UV va moltiplicato altrettanto, se no il legno va a scacchi
+  portaGen = creaPorta(d, PROFILI, woodMat, 760 * REPEAT);
+  portaGen.verso(state.mano === 'dx' ? 1 : -1);
+  portaGen.finitura(state.finituraRiquadro || 1);
+  await portaGen.coprifilo(state.copri, state.copriMisura);
+  if (mio !== numeroCarico) { portaGen.dispose(); portaGen = null; return; }
+
+  model = portaGen.gruppo;
+  model.scale.setScalar(1 / 1000);          // il disegno e' in millimetri
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  model.position.sub(center);
+  scene.add(model);
+
+  // il click sull'anta apre e chiude, come sugli altri modelli
+  doorPivot = portaGen.perno;
+  leafParts = [portaGen.foglia];
+  doorOpenAngle = 1;
+  doorBtn.hidden = false;
+
+  frameCamera(size);
+  applyEssenza();
+  doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
+  if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
+  loaderEl.classList.add('is-hidden');
+  refreshUI();
+}
+
 function loadModel(key) {
   const mio = ++numeroCarico;
   currentModelKey = key;
@@ -710,6 +767,7 @@ function loadModel(key) {
   clearModel();
   loaderEl.classList.remove('is-hidden');
   loaderFill.style.width = '0%';
+  if (COSTRUITE.has(key)) { costruisciPorta(key, mio); return; }
 
   gltfLoader.load(
     def.file,
@@ -752,12 +810,7 @@ function loadModel(key) {
       model.position.sub(center);
       scene.add(model);
 
-      const dist = size.y * 2.0; // compensa il FOV più stretto
-      camera.position.set(dist * 0.65, size.y * 0.12, dist);
-      controls.target.set(0, 0, 0);
-      controls.minDistance = dist * 0.5;
-      controls.maxDistance = dist * 2.2;
-      controls.update();
+      frameCamera(size);
 
       // piano d'ombra (uno solo, riposizionato per modello)
       if (!shadowPlane) {
@@ -1016,7 +1069,10 @@ window.addEventListener('resize', resize);
 
 renderer.setAnimationLoop(() => {
   controls.update();
-  if (doorPivot) {
+  if (portaGen) {
+    apGen += ((doorTargetAngle === 0 ? 0 : 1) - apGen) * 0.07;
+    portaGen.apertura(apGen);
+  } else if (doorPivot) {
     doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
   }
   renderer.render(scene, camera);
@@ -1608,7 +1664,33 @@ function refreshAnim() {
              state.muro > 108 ? state.allargato : null);
 }
 
+/* La porta costruita segue le scelte del cliente. Si guarda cosa e'
+   cambiato davvero prima di rifare: cambiare coprifilo rifa' un anello,
+   cambiare mano rimonta la ferramenta, e farlo a ogni refresh
+   dell'interfaccia sarebbe lavoro buttato trenta volte al minuto. */
+const ultimoStato = { copri: null, misura: null, mano: null, finitura: null };
+function sincronizzaPorta() {
+  if (!portaGen) return;
+  if (state.copri !== ultimoStato.copri || state.copriMisura !== ultimoStato.misura) {
+    ultimoStato.copri = state.copri;
+    ultimoStato.misura = state.copriMisura;
+    portaGen.coprifilo(state.copri, state.copriMisura);
+  }
+  const m = state.mano === 'dx' ? 1 : -1;
+  if (m !== ultimoStato.mano) {
+    ultimoStato.mano = m;
+    // si richiude prima: cambiare mano ad anta aperta la farebbe saltare
+    // da una parte all'altra del vano
+    if (doorTargetAngle !== 0) toggleDoor();
+    apGen = 0;
+    portaGen.verso(m);
+  }
+  const f = state.finituraRiquadro || 1;
+  if (f !== ultimoStato.finitura) { ultimoStato.finitura = f; portaGen.finitura(f); }
+}
+
 function refreshUI() {
+  sincronizzaPorta();
   refreshAnim();
   const prev = computePreventivo();
 
