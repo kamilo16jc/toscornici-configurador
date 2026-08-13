@@ -442,6 +442,18 @@ def main():
     riq = [p for p in pAl if legno(p) and misura(p)[0] > 200 and misura(p)[1] > 200]
     riq = [p for p in riq if misura(p)[0] < forma(alzato)[0] - 100]
     riq.sort(key=lambda p: -scatola(p)[2])
+    # VIA LE FACCE CHE NE CONTENGONO ALTRE. Su Cosenza ne usciva una in
+    # piu' -- alta 1074 dal piede -- che si sovrapponeva agli altri due
+    # riquadri: e' un contorno che il disegno chiude per altri motivi,
+    # non un vano. Si riconosce da sola: un riquadro vero non ne
+    # contiene un altro.
+    def contiene(a, b):
+        A, B = scatola(a), scatola(b)
+        return (A[0] <= B[0] + 1 and A[1] >= B[1] - 1
+                and A[2] <= B[2] + 1 and A[3] >= B[3] - 1
+                and (A[1] - A[0]) * (A[3] - A[2]) > (B[1] - B[0]) * (B[3] - B[2]) * 1.2)
+    riq = [p for p in riq if not any(contiene(p, q) for q in riq if q is not p)]
+    riq.sort(key=lambda p: -scatola(p)[2])
     riquadri = [{'x0': round(scatola(p)[0], 2), 'x1': round(scatola(p)[1], 2),
                  'y0': round(scatola(p)[2], 2), 'y1': round(scatola(p)[3], 2)}
                 for p in riq]
