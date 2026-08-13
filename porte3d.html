@@ -54,9 +54,9 @@
 
 <header>
   <b>Porte 3D</b>
-  <span class="nome" id="nome">— trascina qui un DXF</span>
+  <span class="nome" id="nome">— arrastra aquí un DXF</span>
   <span class="dx">
-    <button id="salva" disabled>Salva il modello</button>
+    <button id="salva" disabled>Guardar el modelo</button>
   </span>
 </header>
 
@@ -64,8 +64,8 @@
   <div class="telo">
     <canvas id="piano"></canvas>
     <div class="ruoli" id="ruoli"></div>
-    <div class="vuoto" id="vuoto"><b>Trascina un DXF</b>
-      dxf/tavole-complete — o qualunque tavola di fabbrica</div>
+    <div class="vuoto" id="vuoto"><b>Arrastra un DXF</b>
+      dxf/tavole-complete — o cualquier plano de fábrica</div>
     <div class="aiuto" id="aiuto"></div>
   </div>
   <div class="telo"><canvas id="solido"></canvas></div>
@@ -359,13 +359,20 @@ function segmenti(ent) {
    torneremmo a un solido che non combacia con quello che si fabbrica.
    ============================================================ */
 
+/* I NOMI SI VEDONO IN SPAGNOLO, LE CHIAVI RESTANO IN ITALIANO.
+   Chi usa il programma ragiona in spagnolo e deve riconoscere il pezzo a
+   colpo d'occhio; ma le chiavi finiscono nel JSON che legge porta3d.js,
+   dove i riquadri si chiamano riquadri da sempre -- tradurle vorrebbe
+   dire rinominare tutto il motore per niente. Il termine italiano resta
+   nel suggerimento: e' quello che c'e' scritto sul listino e sui disegni
+   della fabbrica, e prima o poi gli serve. */
 const RUOLI = [
-  { id: 'anta',     et: 'Anta',      col: '#a9472f' },
-  { id: 'riquadro', et: 'Riquadro',  col: '#1f6f4a' },
-  { id: 'telaio',   et: 'Telaio',    col: '#2a5d9e' },
-  { id: 'montante', et: 'Montante',  col: '#8a5a1f' },
-  { id: 'traverso', et: 'Traverso',  col: '#7a3f8f' },
-  { id: 'ignora',   et: 'Non serve', col: '#b9b2a5' },
+  { id: 'anta',     et: 'Hoja',       it: 'anta',     col: '#a9472f' },
+  { id: 'riquadro', et: 'Entrepaño',  it: 'riquadro', col: '#1f6f4a' },
+  { id: 'telaio',   et: 'Marco',      it: 'telaio',   col: '#2a5d9e' },
+  { id: 'montante', et: 'Larguero',   it: 'montante', col: '#8a5a1f' },
+  { id: 'traverso', et: 'Travesaño',  it: 'traverso', col: '#7a3f8f' },
+  { id: 'ignora',   et: 'No sirve',   it: 'non serve', col: '#b9b2a5' },
 ];
 
 const piano = document.getElementById('piano');
@@ -402,7 +409,7 @@ function carica(testo, nomeFile) {
     ruolo: f.map(() => null),
   };
   document.getElementById('nome').textContent =
-    `${disegno.nome} — ${f.length} facce chiuse`;
+    `${disegno.nome} — ${f.length} contornos cerrados`;
   document.getElementById('vuoto').hidden = true;
   document.getElementById('salva').disabled = false;
   scriviRuoli();
@@ -485,7 +492,8 @@ function scriviRuoli() {
   const c = document.getElementById('ruoli');
   c.innerHTML = RUOLI.map((r) => {
     const n = disegno ? disegno.ruolo.filter((x) => x === r.id).length : 0;
-    return `<button data-ruolo="${r.id}"${r.id === ruoloAttivo ? ' class="on"' : ''}>`
+    return `<button data-ruolo="${r.id}" title="${r.it}"`
+         + `${r.id === ruoloAttivo ? ' class="on"' : ''}>`
          + `<span style="color:${r.id === ruoloAttivo ? '#fff' : r.col}">■</span> `
          + `${r.et}<span class="conta">${n || ''}</span></button>`;
   }).join('');
@@ -500,9 +508,9 @@ function aggiornaAiuto() {
   const q = Object.entries(disegno.quote)
     .map(([k, v]) => `${k.toLowerCase()} ${v.join('×')}`).join(' · ');
   const fatti = disegno.ruolo.filter(Boolean).length;
-  a.innerHTML = `Scegli il ruolo, poi clicca la faccia sul disegno. `
-    + `Si prende sempre la piu' piccola che contiene il punto.<br>`
-    + `<b>${fatti}</b> di ${disegno.facce.length} assegnate. ${q ? '— ' + q : ''}`;
+  a.innerHTML = `Elige la parte y haz clic sobre el dibujo. Coge siempre `
+    + `el contorno más pequeño que contiene el punto.<br>`
+    + `<b>${fatti}</b> de ${disegno.facce.length} asignados. ${q ? '— ' + q : ''}`;
 }
 
 /* ── trascinare un file ─────────────────────────────────────────────── */
