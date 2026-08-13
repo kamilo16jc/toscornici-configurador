@@ -211,48 +211,120 @@ const ribalta = (punti, attorno) =>
    lungo il rientro la superficie deve essere liscia, ma sull'angolo no,
    li' ci va lo spigolo netto della mitra. Un solo pezzo cucito darebbe
    una bugna che agli angoli si arrotonda, che nel legno non succede. */
+/* RIENTRARE UN CONTORNO QUALUNQUE, non piu' solo un rettangolo.
+   Su un rettangolo bastava sommare il rientro alle quattro coordinate, e
+   la mitra veniva da sola. Ma il catalogo ha porte con l'ovale e con
+   l'arco -- Cosenza, Matera-S, Potenza, la 100-C -- e li' quel trucco
+   appiattisce la curva in una scatola: e' quello che aveva fatto sparire
+   l'arco della Piccadilly.
+   La regola generale e' la stessa cosa scritta per bene: ogni vertice si
+   sposta lungo la BISETTRICE dei due lati che ci arrivano. Su uno
+   spigolo retto la bisettrice e' la diagonale e si ritrova la mitra di
+   prima; su una curva e' quasi la normale, e la curva resta curva.
+   Il fattore 1/coseno serve perche' sullo spigolo il vertice deve
+   camminare piu' del rientro: se no l'angolo si smussa. */
+function rientra(p, d) {
+  const n = p.length, fuori = [];
+  for (let i = 0; i < n; i++) {
+    const a = p[(i - 1 + n) % n], b = p[i], c = p[(i + 1) % n];
+    let ux = b[0] - a[0], uy = b[1] - a[1];
+    const lu = Math.hypot(ux, uy) || 1; ux /= lu; uy /= lu;
+    let vx = c[0] - b[0], vy = c[1] - b[1];
+    const lv = Math.hypot(vx, vy) || 1; vx /= lv; vy /= lv;
+    // contorno antiorario: il dentro sta a sinistra del cammino
+    const ax = -uy, ay = ux, bx2 = -vy, by2 = vx;
+    let sx = ax + bx2, sy = ay + by2;
+    const ls = Math.hypot(sx, sy);
+    if (ls < 1e-9) { fuori.push([b[0], b[1]]); continue; }
+    sx /= ls; sy /= ls;
+    const cos = Math.max(0.25, sx * ax + sy * ay);
+    fuori.push([b[0] + sx * d / cos, b[1] + sy * d / cos]);
+  }
+  return fuori;
+}
+
+/* Il contorno del riquadro: quello vero se il disegno ce l'ha dato,
+   se no il rettangolo, che e' il caso di gran lunga piu' comune. */
+function contornoRiquadro(r, gioco) {
+  const p = r.punti && r.punti.length > 3
+    ? r.punti.map(([x, y]) => [x, y])
+    : [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]];
+  // sempre antiorario, che la bisettrice guardi dentro
+  let a = 0;
+  for (let i = 0; i < p.length; i++) {
+    const q = p[(i + 1) % p.length];
+    a += p[i][0] * q[1] - q[0] * p[i][1];
+  }
+  const giro = a < 0 ? p.reverse() : p;
+  return gioco ? rientra(giro, gioco) : giro;
+}
+
 function pannello(r, bugna, zc, gioco) {
-  const x0 = r.x0 + gioco, x1 = r.x1 - gioco;
-  const y0 = r.y0 + gioco, y1 = r.y1 - gioco;
+  const bordo = contornoRiquadro(r, gioco);
   const pos = [], idx = [], uv = [];
   let n = 0;
+  /* Dove la superficie si spezza: sugli spigoli veri, non sulle curve.
+     Prima si spezzava a ogni lato -- erano quattro -- e andava bene
+     finche' i lati erano quattro. Su un ovale, spezzare a ogni segmento
+     lo farebbe uscire sfaccettato come un diamante. Si guarda quanto
+     gira il contorno: oltre venti gradi e' uno spigolo e ci va il taglio,
+     sotto e' curva e si tiene liscia. */
+  const spigolo = bordo.map((b, i) => {
+    const a = bordo[(i - 1 + bordo.length) % bordo.length];
+    const c = bordo[(i + 1) % bordo.length];
+    const t1 = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const t2 = Math.atan2(c[1] - b[1], c[0] - b[0]);
+    let dd = Math.abs(t2 - t1) % (2 * Math.PI);
+    if (dd > Math.PI) dd = 2 * Math.PI - dd;
+    return dd > 0.35;
+  });
+  const anelli = bugna.map(([dist]) => rientra(bordo, dist));
+  const metti = (q, z) => { pos.push(q[0], q[1], z); uv.push(q[0] / 1000, q[1] / 1000); return n++; };
 
-  // i quattro lati, come coppie di angoli in funzione del rientro
-  const LATI = [
-    (t) => [[x0 + t, y0 + t], [x1 - t, y0 + t]],   // sotto
-    (t) => [[x1 - t, y0 + t], [x1 - t, y1 - t]],   // destra
-    (t) => [[x1 - t, y1 - t], [x0 + t, y1 - t]],   // sopra
-    (t) => [[x0 + t, y1 - t], [x0 + t, y0 + t]],   // sinistra
-  ];
-  const metti = (p, z) => { pos.push(p[0], p[1], z); uv.push(p[0] / 1000, p[1] / 1000); return n++; };
+  // la superficie si spezza solo sugli spigoli: fra uno e l'altro
+  // corre liscia, curva o dritta che sia
+  const N = bordo.length;
+  const tagli = [];
+  for (let i = 0; i < N; i++) if (spigolo[i]) tagli.push(i);
+  if (!tagli.length) tagli.push(0);
+  const tratti = tagli.map((a2, k) => {
+    const b2 = tagli[(k + 1) % tagli.length];
+    const seq = [];
+    for (let i = a2; ; i = (i + 1) % N) { seq.push(i); if (i === b2) break; }
+    return seq;
+  });
 
   for (const verso of [1, -1]) {
-    for (const lato of LATI) {
-      const base = n;
-      for (const [dist, z] of bugna) {
-        const [a, b] = lato(dist);
-        metti(a, zc + verso * z);
-        metti(b, zc + verso * z);
+    for (const seq of tratti) {
+      const base = n, m = seq.length;
+      for (let j = 0; j < bugna.length; j++) {
+        const z = zc + verso * bugna[j][1];
+        for (const i of seq) metti(anelli[j][i], z);
       }
-      for (let i = 0; i + 1 < bugna.length; i++) {
-        const p = base + i * 2;
-        if (verso > 0) idx.push(p, p + 1, p + 3, p, p + 3, p + 2);
-        else idx.push(p, p + 3, p + 1, p, p + 2, p + 3);
+      for (let j = 0; j + 1 < bugna.length; j++) {
+        for (let k = 0; k + 1 < m; k++) {
+          const q = base + j * m + k;
+          if (verso > 0) idx.push(q, q + 1, q + m + 1, q, q + m + 1, q + m);
+          else idx.push(q, q + m + 1, q + 1, q, q + m, q + m + 1);
+        }
       }
     }
     // il piano in mezzo, dove la bugna ha finito di salire
-    const t = bugna[bugna.length - 1][0], z = zc + verso * bugna[bugna.length - 1][1];
-    const c = [metti([x0 + t, y0 + t], z), metti([x1 - t, y0 + t], z),
-               metti([x1 - t, y1 - t], z), metti([x0 + t, y1 - t], z)];
-    if (verso > 0) idx.push(c[0], c[1], c[2], c[0], c[2], c[3]);
-    else idx.push(c[0], c[2], c[1], c[0], c[3], c[2]);
+    const ult = anelli[anelli.length - 1];
+    const z = zc + verso * bugna[bugna.length - 1][1];
+    const c = ult.map((q) => metti(q, z));
+    for (let i = 1; i + 1 < c.length; i++) {
+      if (verso > 0) idx.push(c[0], c[i], c[i + 1]);
+      else idx.push(c[0], c[i + 1], c[i]);
+    }
   }
   // il fianco che sta dentro la cava
-  const zt = bugna[0][1];
-  for (const lato of LATI) {
-    const [a, b] = lato(0);
-    const p = [metti(a, zc + zt), metti(b, zc + zt), metti(a, zc - zt), metti(b, zc - zt)];
-    idx.push(p[0], p[2], p[1], p[1], p[2], p[3]);
+  const zt = bugna[0][1], a0 = anelli[0];
+  const su = a0.map((q) => metti(q, zc + zt));
+  const giu = a0.map((q) => metti(q, zc - zt));
+  for (let i = 0; i < a0.length; i++) {
+    const j = (i + 1) % a0.length;
+    idx.push(su[i], giu[i], su[j], su[j], giu[i], giu[j]);
   }
 
   const g = new THREE.BufferGeometry();
