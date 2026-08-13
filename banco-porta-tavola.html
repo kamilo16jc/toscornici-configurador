@@ -59,6 +59,12 @@
 </div>
 
 <div class="barra">
+  <span class="etich">Modello</span>
+  <button data-porta="siena" class="on">Siena</button>
+  <button data-porta="piccadilly">Piccadilly</button>
+</div>
+
+<div class="barra">
   <span class="etich">Finitura del riquadro</span>
   <button data-tipo="1" class="on">Tipo 1 · bugnato</button>
   <button data-tipo="2">Tipo 2 · tondo, piatto</button>
@@ -118,7 +124,12 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
    Aggiungere una porta nuova vuol dire un file da cinquanta chilobyte:
    coprifili, telaio, mani, finiture e animazione se li trova gia'
    fatti. */
-const d = await caricaPorta('siena');
+/* Il modello si sceglie. E' l'unica cosa che cambia da una porta
+   all'altra: la Piccadilly eredita dalla Siena montante, traverso,
+   bugna e telaio, perche' il suo disegno storico e' un alzato solo --
+   SEZ-A e SEZ-B non ce le ha. */
+const modello = new URLSearchParams(location.search).get('porta') || 'siena';
+const d = await caricaPorta(modello);
 const L = d.anta.larghezza, H = d.anta.altezza, T = d.spessore;
 
 /* ── la scena ───────────────────────────────────────────────────────── */
@@ -351,6 +362,12 @@ document.querySelectorAll('[data-copri]').forEach((b) => b.addEventListener('cli
   b.classList.add('on');
   await porta.coprifilo(b.dataset.copri);
 }));
+
+document.querySelectorAll('[data-porta]').forEach((b) => b.addEventListener('click', () => {
+  location.search = `?porta=${b.dataset.porta}`;
+}));
+document.querySelectorAll('[data-porta]').forEach((b) =>
+  b.classList.toggle('on', b.dataset.porta === modello));
 
 document.querySelectorAll('[data-tipo]').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('[data-tipo]').forEach((x) => x.classList.remove('on'));
