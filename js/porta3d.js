@@ -482,11 +482,33 @@ function montaAnta() {
      lascia in vista la testa modanata del traverso: peggio del difetto.
   */
   const magro = (p) => p.map(([y, z]) => [y, T / 2 + (z - T / 2) * .9956]);
-  for (const t of d.traversi) {
-    let p = t.punti;
-    if (guarda(t.y1 - RIENTRO, ry0)) p = rifaiFilo(p, tipo, t.y1, 1);
-    if (guarda(t.y0 + RIENTRO, ry1)) p = rifaiFilo(p, tipo, t.y0, -1);
-    metti(gAnta, orizzontale(magro(p), d.riquadri[0].x0, d.riquadri[0].x1), true);
+  /* I TRAVERSI NON SONO ESTRUSIONI, quando i vani sono curvi.
+     Un'estrusione dritta ha per forza il canto dritto: e' cosi' che
+     erano venuti i due traversi di Cosenza, con i pannelli sopra e sotto
+     che seguivano l'arco e loro no. Il canto di un traverso NON e' una
+     forma sua: e' il bordo del vano che ci sta accanto, e quello il
+     disegno lo da'.
+     Percio' invece di tre traversi si fa una TAVOLA sola, da montante a
+     montante, con i vani ritagliati dentro secondo il loro giro vero.
+     Il canto si curva da solo perche' e' il vano. */
+  {
+    const s0 = new THREE.Shape();
+    const yGiu = Math.min(...d.traversi.map((t) => t.y0));
+    const ySu = Math.max(...d.traversi.map((t) => t.y1));
+    const x0 = d.riquadri[0].x0, x1 = d.riquadri[0].x1;
+    s0.moveTo(x0, yGiu); s0.lineTo(x1, yGiu);
+    s0.lineTo(x1, ySu); s0.lineTo(x0, ySu); s0.closePath();
+    for (const r of d.riquadri) {
+      const giro = contornoRiquadro(r, 0);
+      const h = new THREE.Path();
+      giro.forEach(([x, y], i) => (i ? h.lineTo(x, y) : h.moveTo(x, y)));
+      h.closePath();
+      s0.holes.push(h);
+    }
+    const g = new THREE.ExtrudeGeometry(s0, {
+      depth: T, bevelEnabled: false, curveSegments: 1,
+    });
+    metti(gAnta, g, true);
   }
 
   for (const r of d.riquadri) {
