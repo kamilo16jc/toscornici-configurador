@@ -164,6 +164,45 @@ def contorni(ent):
             if abs(profilo.area(c)) > 20]
 
 
+def allarga(c, d):
+    """Allarga un contorno di d millimetri, spingendo in fuori.
+
+    E' la stessa regola del rientro che sta nel motore 3D, col segno
+    cambiato: ogni vertice cammina lungo la BISETTRICE dei due lati che
+    ci arrivano, di d diviso il coseno -- e su uno spigolo il vertice
+    deve camminare piu' di d, se no l'angolo si smussa.
+
+    Serve perche' la faccia che il disegno chiude e' il CAMPO A VISTA del
+    pannello, quello dentro al bastone; il vano vero e' il fondo della
+    cava, sedici millimetri piu' in la'. Usando la faccia com'e' il
+    pannello usciva stretto di sedici per lato e agli angoli si vedeva
+    attraverso.
+    """
+    n = len(c)
+    fuori = []
+    for i in range(n):
+        a, b, e = c[(i - 1) % n], c[i], c[(i + 1) % n]
+        ux, uy = b[0] - a[0], b[1] - a[1]
+        lu = math.hypot(ux, uy) or 1.0
+        ux, uy = ux / lu, uy / lu
+        vx, vy = e[0] - b[0], e[1] - b[1]
+        lv = math.hypot(vx, vy) or 1.0
+        vx, vy = vx / lv, vy / lv
+        # contorno antiorario: il dentro sta a sinistra, quindi in fuori
+        # e' a destra
+        n1x, n1y = uy, -ux
+        n2x, n2y = vy, -vx
+        sx, sy = n1x + n2x, n1y + n2y
+        ls = math.hypot(sx, sy)
+        if ls < 1e-9:
+            fuori.append((b[0], b[1]))
+            continue
+        sx, sy = sx / ls, sy / ls
+        cos = max(0.25, sx * n1x + sy * n1y)
+        fuori.append((b[0] + sx * d / cos, b[1] + sy * d / cos))
+    return fuori
+
+
 def ali_di(ent):
     """Le ALI del telaio, cioe' i coprifili che ci sono gia' sopra.
 
@@ -491,6 +530,68 @@ def main():
                          'y1': round(y_b + rientro0, 2)})
     riquadri.sort(key=lambda r: -r['y0'])
 
+    # ── il GIRO di ogni riquadro, curve comprese ────────────────────
+    # I riquadri sono gia' stati TROVATI: si sa dove stanno. Qui si va
+    # solo a prendere il loro contorno vero. La differenza conta: non si
+    # chiede al programma di riconoscere un vano fra otto facce
+    # concentriche -- che e' un giudizio -- ma di dare il giro di un vano
+    # che gia' conosciamo, che e' una misura.
+    segsA, capiA = [], []
+    for e in alzato:
+        qq = punti(e)
+        segsA += list(zip(qq, qq[1:]))
+        capiA += [qq[0], qq[-1]]
+    facceA = profilo.facce(profilo.spezza_a_T(segsA, capiA))
+    rientro0 = (xm1 - xm0) - (riquadri[0]['x0'] - fianco0) if riquadri else 16.0
+    for r in riquadri:
+        meglio, punteggio = None, 0.0
+        for c in facceA:
+            xs = [q[0] for q in c]; ys = [q[1] for q in c]
+            fx0, fx1, fy0, fy1 = min(xs), max(xs), min(ys), max(ys)
+            ix = max(0.0, min(fx1, r['x1']) - max(fx0, r['x0']))
+            iy = max(0.0, min(fy1, r['y1']) - max(fy0, r['y0']))
+            inter = ix * iy
+            un = ((fx1 - fx0) * (fy1 - fy0)
+                  + (r['x1'] - r['x0']) * (r['y1'] - r['y0']) - inter)
+            v = inter / un if un > 0 else 0.0
+            if v > punteggio:
+                punteggio, meglio = v, c
+        # La soglia sta poco sopra la meta', non al novanta per cento, e
+        # non e' una resa: di una faccia CURVA la scatola e' molto piu'
+        # grande della faccia, quindi nemmeno l'accoppiamento giusto
+        # arriva vicino a uno. Su Cosenza la lente prende 0,66 e ha
+        # novantaquattro punti; i due dritti 0,53 e 0,62. Quello che
+        # tiene lontano l'accoppiamento sbagliato non e' la soglia -- e'
+        # che si cerca solo dentro un vano gia' trovato.
+        if meglio is not None and punteggio > 0.45 and len(meglio) > 4:
+            # QUANTO allargare non si suppone: lo dice il vano stesso.
+            # La faccia e' il campo a vista, il vano e' il fondo della
+            # cava, e la differenza fra le due larghezze -- diviso due,
+            # che sono i due lati -- e' esattamente il tratto da
+            # recuperare. Mettendoci sedici a occhio restava un bordo
+            # chiaro tutt'attorno al pannello.
+            xs = [q[0] for q in meglio]
+            quanto = ((r['x1'] - r['x0']) - (max(xs) - min(xs))) / 2
+            grande = allarga(meglio, max(0.0, quanto))
+            # UN CONTORNO CONCAVO NON SI PUO' ALLARGARE COSI'. Spingendo
+            # ogni vertice lungo la sua bisettrice, dove il giro rientra
+            # i lati si scavalcano e la figura si ripiega: il pannello a
+            # lente di Cosenza usciva strappato, e attraverso lo strappo
+            # si vedeva il muro. Allargare un concavo per bene vuol dire
+            # tagliare i cappi che si formano, e non e' cosa da
+            # aggiungere di corsa. Finche' non c'e', quel vano resta
+            # rettangolare: un rettangolo onesto e' meglio di una lente
+            # bucata.
+            gira = 0.0
+            for i in range(len(meglio)):
+                a1, b1, c1 = meglio[i - 1], meglio[i], meglio[(i + 1) % len(meglio)]
+                z = ((b1[0] - a1[0]) * (c1[1] - b1[1])
+                     - (b1[1] - a1[1]) * (c1[0] - b1[0]))
+                gira += -1 if z < -1e-9 else (1 if z > 1e-9 else 0)
+            concavo = abs(gira) < len(meglio) * 0.20
+            if not concavo:
+                r['punti'] = [[round(q[0], 2), round(q[1], 2)] for q in grande]
+
     # L'anta la danno le sezioni, non l'alzato: di fianco i due montanti
     # col loro filo esterno, in alto e in basso il primo e l'ultimo
     # traverso. L'alzato porterebbe dentro anche il telaio e il muro.
@@ -548,8 +649,12 @@ def main():
                       'y1': round(scatola(t)[3] - ay0, 2),
                       'punti': yz(c)}
                      for t, c in zip(trav, ct)],
-        'riquadri': [{'x0': round(r['x0'] - ax0, 2), 'x1': round(r['x1'] - ax0, 2),
-                      'y0': round(r['y0'] - ay0, 2), 'y1': round(r['y1'] - ay0, 2)}
+        # il giro viaggia insieme alle quote: il dizionario finale si
+        # riscrive, e senza questa riga la curva resta indietro
+        'riquadri': [dict({'x0': round(r['x0'] - ax0, 2), 'x1': round(r['x1'] - ax0, 2),
+                           'y0': round(r['y0'] - ay0, 2), 'y1': round(r['y1'] - ay0, 2)},
+                          **({'punti': [[round(q[0] - ax0, 2), round(q[1] - ay0, 2)]
+                                        for q in r['punti']]} if 'punti' in r else {}))
                      for r in riquadri],
         # z_centro: dove sta la mezzeria del pannello dentro lo spessore
         # dell'anta. Non e' esattamente meta': la cava e' un filo piu'
