@@ -63,8 +63,10 @@ def rettangoli(pezzi, mis):
         x0, x1, y0, y1 = tav.scatola(p)
         if (x1 - x0) < 40 or (y1 - y0) < 40:
             continue
+        c = tav.contorni(p)
         fuori.append({'x0': x0, 'x1': x1, 'y0': y0, 'y1': y1,
-                      'area': (x1 - x0) * (y1 - y0)})
+                      'area': (x1 - x0) * (y1 - y0),
+                      'contorno': c[0] if c else None})
     fuori.sort(key=lambda r: -r['area'])
     return fuori
 
@@ -94,9 +96,25 @@ def main():
                        tav.scatola(p)[3] - tav.scatola(p)[2])
     alzato = max(viste, key=lambda p: forma(p)[0] * forma(p)[1])
 
-    pezzi = tav.pezzi(alzato, 1.2)
-    mis = lambda p: forma(p)
-    ret = rettangoli(pezzi, mis)
+    # LE FACCE, NON I PEZZI. In questo alzato tutto si tocca -- e' un
+    # disegno solo, di cinquantasette linee -- quindi raggruppando per
+    # contatto viene fuori un pezzo unico grande come la porta. Le
+    # facce chiuse invece sono proprio i riquadri, l'anta, il telaio:
+    # una per ogni cosa che il disegno racchiude.
+    segs, capi = [], []
+    for e in alzato:
+        q = tav.punti(e)
+        segs += list(zip(q, q[1:]))
+        capi += [q[0], q[-1]]
+    ret = []
+    for c in tav.profilo.facce(tav.profilo.spezza_a_T(segs, capi)):
+        xs = [q[0] for q in c]; ys = [q[1] for q in c]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        if (x1 - x0) < 40 or (y1 - y0) < 40:
+            continue
+        ret.append({'x0': x0, 'x1': x1, 'y0': y0, 'y1': y1,
+                    'area': (x1 - x0) * (y1 - y0), 'contorno': c})
+    ret.sort(key=lambda r: -r['area'])
     if not ret:
         sys.exit('%s: nessun rettangolo nell alzato' % f)
 
@@ -148,10 +166,23 @@ def main():
     #    traversi. Quello si', cambia da un modello all'altro. 
     rx0 = base['riquadri'][0]['x0']
     rx1 = L - rx0
-    d['riquadri'] = [{'x0': rx0, 'x1': rx1,
-                      'y0': round((r['y0'] - ay0) * ky, 2),
-                      'y1': round((r['y1'] - ay0) * ky, 2)}
-                     for r in riq]
+    # IL CONTORNO, NON LA SCATOLA. Prendendo la scatola, l'arco a tutto
+    # sesto della 100-C diventava un rettangolo e la porta usciva uguale
+    # alla Siena: si buttava via l'unica cosa che cambia.
+    d['riquadri'] = []
+    for r in riq:
+        c = r.get('contorno')
+        if not c:
+            continue
+        Rx0, Rx1 = r['x0'], r['x1']
+        kx2 = (rx1 - rx0) / (Rx1 - Rx0)
+        d['riquadri'].append({
+            'x0': rx0, 'x1': rx1,
+            'y0': round((r['y0'] - ay0) * ky, 2),
+            'y1': round((r['y1'] - ay0) * ky, 2),
+            'punti': [[round(rx0 + (q[0] - Rx0) * kx2, 2),
+                       round((q[1] - ay0) * ky, 2)] for q in c],
+        })
     # i traversi stanno FRA i riquadri: sopra il primo, fra l'uno e
     # l'altro, sotto l'ultimo. Le loro sezioni sono quelle in prestito.
     rientro = base['montante']['larghezza'] - base['riquadri'][0]['x0']
