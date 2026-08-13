@@ -468,6 +468,29 @@ def main():
             and abs(misura(p)[0] - misura(p)[1]) < misura(p)[1] * 0.2]
     rosetta = max(rose, key=lambda p: misura(p)[0]) if rose else None
 
+    # FRA DUE TRAVERSI C'E' SEMPRE UN VANO. Su Cosenza il pannello di
+    # mezzo -- quello a lente -- non veniva riconosciuto: il suo contorno
+    # curvo si aggancia a mezza porta e il raggruppamento lo perde. Ma
+    # non serve riconoscerlo per sapere che c'e': se due traversi si
+    # susseguono e in mezzo non c'e' riquadro, quel vano esiste, e i suoi
+    # fili sono quelli dei traversi rientrati del bastone.
+    # (Il contorno curvo vero resta da leggere; intanto il vano c'e' e
+    # non si vede piu' attraverso la porta.)
+    # il bastone entra sempre di sedici: e la larghezza del montante
+    # meno la distanza del fondo cava dal suo filo esterno
+    rientro0 = (xm1 - xm0) - (riquadri[0]['x0'] - fianco0) if riquadri else 16
+    for i in range(len(trav) - 1):
+        y_a = scatola(trav[i])[3]
+        y_b = scatola(trav[i + 1])[2]
+        if y_b - y_a < 60:
+            continue
+        if any(r['y0'] < y_b - 5 and r['y1'] > y_a + 5 for r in riquadri):
+            continue
+        riquadri.append({'x0': riquadri[0]['x0'], 'x1': riquadri[0]['x1'],
+                         'y0': round(y_a - rientro0, 2),
+                         'y1': round(y_b + rientro0, 2)})
+    riquadri.sort(key=lambda r: -r['y0'])
+
     # L'anta la danno le sezioni, non l'alzato: di fianco i due montanti
     # col loro filo esterno, in alto e in basso il primo e l'ultimo
     # traverso. L'alzato porterebbe dentro anche il telaio e il muro.
