@@ -2087,7 +2087,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 200",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA31_ROMA.glb?v=eeb151d0",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta31_ROMA"

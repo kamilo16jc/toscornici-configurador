@@ -734,7 +734,7 @@ let numeroCarico = 0;
    tavola di fabbrica -- alzato piu' le due sezioni -- e si monta pezzo
    per pezzo: cosi' il coprifilo, la mano e la finitura del riquadro
    restano scelte vive, che in un GLB sarebbero cotte dentro. */
-const COSTRUITE = new Set(['siena']);
+const COSTRUITE = new Set(['siena', 'roma']);
 
 const tipoPills = document.getElementById('tipoPills');
 const tipoNote = document.getElementById('tipoNote');
@@ -823,7 +823,11 @@ function loadModel(key) {
   clearModel();
   loaderEl.classList.remove('is-hidden');
   loaderFill.style.width = '0%';
-  if (COSTRUITE.has(key)) { costruisciPorta(key, mio); return; }
+  /* Senza GLB si costruisce, punto: e' l'unico modo di averla. Vale
+     anche come rete -- togliendo una porta da COSTRUITE per sbaglio, il
+     caricatore andrebbe a cercare un file che non c'e' piu' e resterebbe
+     lo schermo vuoto senza dire perche'. */
+  if (COSTRUITE.has(key) || !def.file) { costruisciPorta(key, mio); return; }
 
   gltfLoader.load(
     def.file,
