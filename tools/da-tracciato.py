@@ -51,6 +51,17 @@ vani = [(fx(p['x']), fx(p['x'] + p['w']), fy(p['y']), fy(p['y'] + p['h']))
 if not vani:
     sys.exit('nessun vano: il tracciato non ha pezzi «bugnato»')
 
+# Quel che si lascia fuori si dice, non si tace: montanti e traversi
+# ricalcati non servono -- il corpo dell'anta li ritrova da solo -- ma se
+# un giorno arrivasse un ruolo nuovo, sparirebbe senza un fiato.
+scartati = {}
+for q in pz:
+    if q.get('papel') != 'bugnato':
+        scartati[q.get('papel')] = scartati.get(q.get('papel'), 0) + 1
+if scartati:
+    print('lasciati fuori: ' + ', '.join('%d %s' % (n, k) for k, n in sorted(scartati.items()))
+          + '   (il legno fra i vani viene da se)')
+
 # 2. si raddrizza: le righe sulla media, i fili verticali specchiati
 def gruppi(vals, tol=20):
     """I valori vicini sono lo stesso filo: se ne tiene la media."""
