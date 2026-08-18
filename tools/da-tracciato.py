@@ -51,24 +51,36 @@ vani = [(fx(p['x']), fx(p['x'] + p['w']), fy(p['y']), fy(p['y'] + p['h']))
 if not vani:
     sys.exit('nessun vano: il tracciato non ha pezzi «bugnato»')
 
-# 2. si raddrizza: righe sulla media, colonne specchiate sulla mezzeria
-def raggruppa(vals, tol=20):
+# 2. si raddrizza: le righe sulla media, i fili verticali specchiati
+def gruppi(vals, tol=20):
+    """I valori vicini sono lo stesso filo: se ne tiene la media."""
     vals = sorted(vals); gr = [[vals[0]]]
     for v in vals[1:]:
-        (gr[-1] if v - gr[-1][-1] <= tol else gr.append([]) or gr[-1]).append(v)
+        if v - gr[-1][-1] <= tol: gr[-1].append(v)
+        else: gr.append([v])
     return [sum(g) / len(g) for g in gr]
 
-righe = list(zip(raggruppa([v[2] for v in vani]), raggruppa([v[3] for v in vani])))
-col0 = raggruppa([v[0] for v in vani])[0]     # la colonna di sinistra
-col1 = raggruppa([v[1] for v in vani])[0]
-colonne = [(col0, col1)]
-if len(raggruppa([v[0] for v in vani])) > 1:  # specchiata, non ri-misurata
-    colonne.append((L - col1, L - col0))
+def accosta(v, griglia):
+    return min(griglia, key=lambda g: abs(g - v))
 
-riquadri = [{'x0': round(a, 1), 'x1': round(b, 1), 'y0': round(c, 1), 'y1': round(e, 1)}
-            for c, e in righe for a, b in colonne]
+# NON si incrociano righe e colonne. Roma ha due colonne su tutte e tre
+# le righe, ma Ragusa in mezzo ha UN vano solo largo quanto la porta:
+# incrociando, quel vano si spaccherebbe in due. Ogni vano resta dov'e';
+# quel che si raddrizza sono i FILI su cui i vani si appoggiano.
+righe = list(zip(gruppi([v[2] for v in vani]), gruppi([v[3] for v in vani])))
+fili = gruppi([v[0] for v in vani] + [v[1] for v in vani])
+# specchiati sulla mezzeria: una porta e' simmetrica, la mano no
+fili = [(f + (L - fili[len(fili) - 1 - i])) / 2 for i, f in enumerate(fili)]
 
-# 3. i traversi sono il complemento: fra due vani c'e' sempre del legno
+riquadri = []
+for a, b, c, e in vani:
+    riga = min(righe, key=lambda r: abs(r[0] - c) + abs(r[1] - e))
+    riquadri.append({'x0': round(accosta(a, fili), 1), 'x1': round(accosta(b, fili), 1),
+                     'y0': round(riga[0], 1), 'y1': round(riga[1], 1)})
+riquadri.sort(key=lambda r: (r['y0'], r['x0']))
+
+# 3. i traversi sono il complemento: fra due file di vani c'e' sempre
+#    del legno, e ai due capi il traverso arriva al filo dell'anta
 tagli = [0.0] + [q for r in righe for q in r] + [H]
 traversi = [{'y0': round(tagli[i], 1), 'y1': round(tagli[i + 1], 1)}
             for i in range(0, len(tagli) - 1, 2)]
