@@ -2205,7 +2205,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 300",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA32_RAGUSA.glb?v=5968a487",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta32_RAGUSA"
@@ -2323,7 +2323,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 400",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA33_ENNA.glb?v=3772027a",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta33_ENNA001"
@@ -2441,7 +2441,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 600",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA34_FAENZA.glb?v=3aff5acf",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta34_FAENZA"
