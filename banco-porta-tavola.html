@@ -40,7 +40,7 @@
 </head>
 <body>
 
-<h1>BASE HT789 — dalla tavola di fabbrica</h1>
+<h1 id="titolo">Banco della porta</h1>
 <p class="sotto" id="riassunto">…</p>
 
 <div class="barra">
@@ -63,6 +63,7 @@
   <button data-porta="siena" class="on">Siena</button>
   <button data-porta="piccadilly">Piccadilly</button>
   <button data-porta="cosenza">Cosenza</button>
+  <button data-porta="roma">Roma</button>
 </div>
 
 <div class="barra">
@@ -400,11 +401,20 @@ bApri.addEventListener('click', () => {
 
 /* ── quello che il file ha detto ────────────────────────────────────── */
 const q = d.quote;
-const uno = (k) => (q[k] || []).join(' / ');
+/* Il titolo lo dice la porta, non l'HTML: era scritto «BASE HT789» a
+   mano e restava li' anche guardando Roma. */
+/* `origine` no: ce l'ha gia' il telaio, e caricaPorta fonde i due
+   dizionari -- il campo del telaio finiva nel titolo di ogni porta. */
+document.getElementById('titolo').textContent = d.tracciato
+  ? `${d.nome} — ${d.tracciato}` : `${d.nome} — dalla tavola di fabbrica`;
+/* Una porta puo' non avere quote: quelle vengono dai testi del DXF, e
+   una porta ricalcata a mano non ne ha nessuna. Senza questo `|| {}` il
+   banco moriva prima di disegnare -- schermo nero e basta. */
+const uno = (k) => ((q || {})[k] || []).join(' / ') || '—';
 document.getElementById('riassunto').textContent =
   `Anta ${L} × ${H} × ${T} mm — due montanti larghi ${d.montante.larghezza}, `
-  + `tre traversi (${d.traversi.map((t) => Math.round(t.y1 - t.y0)).join(', ')}), `
-  + `due pannelli bugnati spessi ${d.pannello.spessore} che in cava scendono a `
+  + `${d.traversi.length} traversi (${d.traversi.map((t) => Math.round(t.y1 - t.y0)).join(', ')}), `
+  + `${d.riquadri.length} pannelli bugnati spessi ${d.pannello.spessore} che in cava scendono a `
   + `${(d.pannello.bugna[0][1] * 2).toFixed(1)}. `
   + `Luce netta ${uno('LUCENETTA')}, esterno telaio ${uno('ESTERNOTELAIO')} × ${uno('EST.TELAIO')}, HT ${uno('HT')}.`;
 

@@ -495,7 +495,15 @@ function montaAnta() {
     const s0 = new THREE.Shape();
     const yGiu = Math.min(...d.traversi.map((t) => t.y0));
     const ySu = Math.max(...d.traversi.map((t) => t.y1));
-    const x0 = d.riquadri[0].x0, x1 = d.riquadri[0].x1;
+    /* Da dove a dove va la tavola: dal vano piu' a sinistra a quello
+       piu' a destra, non da quelli del PRIMO vano. Con una colonna sola
+       -- Siena, Cosenza -- e' lo stesso numero; con due colonne, come
+       Roma, prendendo il primo la tavola copriva mezza porta e la
+       colonna di destra restava per aria.
+       E il montante di mezzo non si disegna: e' il legno che avanza fra
+       le due colonne di vani, e viene da se'. */
+    const x0 = Math.min(...d.riquadri.map((r) => r.x0));
+    const x1 = Math.max(...d.riquadri.map((r) => r.x1));
     s0.moveTo(x0, yGiu); s0.lineTo(x1, yGiu);
     s0.lineTo(x1, ySu); s0.lineTo(x0, ySu); s0.closePath();
     for (const r of d.riquadri) {
