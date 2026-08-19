@@ -26,7 +26,7 @@ TRE COSE CHE NON SI COPIANO E BASTA:
    quindi le colonne si specchiano e le righe si allineano sulla media.
    E' l'unica cosa che questo programma da' per scontata.
 """
-import json, io, sys, os
+import json, io, sys, os, math
 
 SORG = sys.argv[1] if len(sys.argv) > 1 else r'C:\Users\Julic\Downloads\Roma.json'
 SLUG = sys.argv[2] if len(sys.argv) > 2 else 'roma'
@@ -37,8 +37,12 @@ L = float(d['plantilla']['ancho']); H = float(d['plantilla']['alto'])
 pz = [p for p in d['piezas'] if p.get('visible', True)]
 
 # 1. la scatola di quel che e' ricalcato -> le misure dell'anta
-xs = [p['x'] for p in pz] + [p['x'] + p['w'] for p in pz]
-ys = [p['y'] for p in pz] + [p['y'] + p['h'] for p in pz]
+def _giro(p):
+    if p['tipo'] != 'trazado':
+        return [(p['x'], p['y']), (p['x'] + p['w'], p['y'] + p['h'])]
+    return [(q['x'], q['y']) for q in p['nodos']]
+xs = [q[0] for p in pz for q in _giro(p)]
+ys = [q[1] for p in pz for q in _giro(p)]
 X0, X1, Y0, Y1 = min(xs), max(xs), min(ys), max(ys)
 sx, sy = L / (X1 - X0), H / (Y1 - Y0)
 fx = lambda x: (x - X0) * sx
@@ -46,8 +50,65 @@ fy = lambda y: (y - Y0) * sy
 print('ricalcato %.1f x %.1f  ->  anta %.0f x %.0f  (x %.4f, y %.4f)'
       % (X1 - X0, Y1 - Y0, L, H, sx, sy))
 
-vani = [(fx(p['x']), fx(p['x'] + p['w']), fy(p['y']), fy(p['y'] + p['h']))
-        for p in pz if p.get('papel') == 'bugnato']
+def arco(p0, p1, b, passo=2.0):
+    """I punti di un arco fra due nodi, dato il suo BOMBO.
+
+    Il bombo e' la tangente di un quarto dell'angolo dell'arco: 1 e' un
+    mezzo cerchio, ed e' quel che ha New England. La freccia -- quanto
+    l'arco si stacca dalla corda -- e' bombo per meta' corda.
+
+    DA CHE PARTE VA. Sul contorno di New England, che gira in senso
+    antiorario, va a DESTRA del cammino, cioe' in fuori: il colmo sale a
+    1925,4 e trova sopra di se' i novantadue millimetri di legno della
+    traversa ricalcata. Dall'altra parte l'arco morderebbe dentro il
+    vano e quella traversa non coprirebbe niente.
+    Sta scritto qui perche' e' calibrato su una porta sola: se un giorno
+    ne arriva una con l'arco che rientra, si vedra' al primo render --
+    che e' il modo giusto per accorgersene.
+    """
+    (x0, y0), (x1, y1) = p0, p1
+    corda = math.hypot(x1 - x0, y1 - y0)
+    if corda < 1e-9 or abs(b) < 1e-9:
+        return []
+    ang = 4 * math.atan(abs(b))                  # l'angolo che l'arco copre
+    r = corda / (2 * math.sin(ang / 2))
+    ux, uy = (x1 - x0) / corda, (y1 - y0) / corda
+    nx, ny = uy, -ux                             # a destra del cammino
+    if b < 0:
+        nx, ny = -nx, -ny
+    # il centro sta sulla mediana, dall'altra parte rispetto al colmo
+    h = math.sqrt(max(r * r - (corda / 2) ** 2, 0.0)) * (-1 if abs(b) < 1 else 1)
+    cx, cy = (x0 + x1) / 2 + nx * h, (y0 + y1) / 2 + ny * h
+    a0 = math.atan2(y0 - cy, x0 - cx)
+    a1 = math.atan2(y1 - cy, x1 - cx)
+    verso = 1 if b > 0 else -1
+    while (a1 - a0) * verso <= 0:
+        a1 += 2 * math.pi * verso
+    n = max(2, int(abs(a1 - a0) / math.radians(passo)))
+    return [(cx + r * math.cos(a0 + (a1 - a0) * k / n),
+             cy + r * math.sin(a0 + (a1 - a0) * k / n)) for k in range(1, n)]
+
+def contorno(p):
+    """Il giro di un pezzo ricalcato: rettangolo o tracciato con archi."""
+    if p['tipo'] != 'trazado':
+        return [(p['x'], p['y']), (p['x'] + p['w'], p['y']),
+                (p['x'] + p['w'], p['y'] + p['h']), (p['x'], p['y'] + p['h'])]
+    n = p['nodos']
+    giro = []
+    for i, q in enumerate(n):
+        r = n[(i + 1) % len(n)]
+        giro.append((q['x'], q['y']))
+        giro.extend(arco((q['x'], q['y']), (r['x'], r['y']), q.get('b', 0) or 0))
+    return giro
+
+vani = []
+for p in pz:
+    if p.get('papel') != 'bugnato':
+        continue
+    g = [(fx(x), fy(y)) for x, y in contorno(p)]
+    xs = [q[0] for q in g]; ys = [q[1] for q in g]
+    vani.append((min(xs), max(xs), min(ys), max(ys),
+                 g if p['tipo'] == 'trazado' else None))
 if not vani:
     sys.exit('nessun vano: il tracciato non ha pezzi «bugnato»')
 
@@ -84,10 +145,20 @@ fili = gruppi([v[0] for v in vani] + [v[1] for v in vani])
 fili = [(f + (L - fili[len(fili) - 1 - i])) / 2 for i, f in enumerate(fili)]
 
 riquadri = []
-for a, b, c, e in vani:
+for a, b, c, e, giro in vani:
     riga = min(righe, key=lambda r: abs(r[0] - c) + abs(r[1] - e))
-    riquadri.append({'x0': round(accosta(a, fili), 1), 'x1': round(accosta(b, fili), 1),
-                     'y0': round(riga[0], 1), 'y1': round(riga[1], 1)})
+    q = {'x0': round(accosta(a, fili), 1), 'x1': round(accosta(b, fili), 1),
+         'y0': round(riga[0], 1), 'y1': round(riga[1], 1)}
+    if giro:
+        # Il vano curvo si porta dietro il suo giro, che il motore sa
+        # gia' disegnare -- e' cosi' che si fanno i vani di Cosenza.
+        # Lo si stira dalla sua scatola a quella raddrizzata, cosi' i
+        # fianchi cadono sui fili giusti e la curva resta curva.
+        sx = (q['x1'] - q['x0']) / (b - a) if b > a else 1
+        sy = (q['y1'] - q['y0']) / (e - c) if e > c else 1
+        q['punti'] = [[round(q['x0'] + (x - a) * sx, 2),
+                       round(q['y0'] + (y - c) * sy, 2)] for x, y in giro]
+    riquadri.append(q)
 riquadri.sort(key=lambda r: (r['y0'], r['x0']))
 
 # 3. i traversi sono il complemento: fra due file di vani c'e' sempre
