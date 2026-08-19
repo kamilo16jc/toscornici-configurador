@@ -500,6 +500,16 @@ renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 0.80;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+/* LA MAPPA D'OMBRA NON SI RIFA' DA SOLA.
+   Di suo three la ridisegna a ogni fotogramma: quattromila per
+   quattromila fanno sedici milioni e mezzo di texel, sessanta volte al
+   secondo, per una scena di diecimila triangoli che sta ferma. Su una
+   grafica integrata -- che e' quel che ha un i5 da ufficio, e divide la
+   memoria col sistema -- quello e' il conto piu' salato di tutti.
+   La porta non si deforma: l'ombra basta calcolarla quando cambia
+   qualcosa, e lo dice `ombraDaRifare()`. */
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 viewerEl.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -814,6 +824,8 @@ async function costruisciPorta(modello, mio) {
   doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
   if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
   loaderEl.classList.add('is-hidden');
+  /* Porta nuova in scena: l'ombra e' quella di quella di prima. */
+  ombraDaRifare(); ridisegna(1500);
   refreshUI();
 }
 
@@ -917,8 +929,10 @@ function loadModel(key) {
       doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
       if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
       loaderEl.classList.add('is-hidden');
+  /* Porta nuova in scena: l'ombra e' quella di quella di prima. */
+  ombraDaRifare(); ridisegna(1500);
       refreshUI();
-      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello };
+      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello, controls, ridisegna };
     },
     (ev) => {
       if (ev.total) loaderFill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
@@ -1164,16 +1178,157 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
+/* ── SI DISEGNA SOLO QUANDO SERVE ─────────────────────────────────────
+   Il giro di prima ridisegnava sempre, sessanta volte al secondo, anche
+   con la porta ferma e nessuno che tocca niente. E non e' un fotogramma
+   qualunque: e' la catena intera -- ombra, scena, occlusione a schermo
+   pieno, sfocatura -- su un buffer a quattro campioni in mezza
+   precisione. Su una macchina con la grafica integrata quello si sente,
+   e si sente proprio nel momento sbagliato: mentre si gira la porta.
+
+   Adesso si disegna se c'e' un motivo: l'orbita si sta muovendo, la
+   porta si sta aprendo, o qualcuno ha cambiato qualcosa. Fermi, si
+   dorme -- e la macchina resta libera per il fotogramma successivo,
+   quello che l'utente sta aspettando.
+
+   LA CODA SERVE. Fra il momento in cui si chiede di ridisegnare e quello
+   in cui la scena e' davvero pronta ci sono di mezzo cose che arrivano
+   quando vogliono: una texture che finisce di decodificare, l'ambiente
+   che si genera. Un fotogramma solo li perderebbe, e resterebbe a
+   schermo la porta di prima. Percio' chi chiede tiene sveglio il giro
+   per mezzo secondo. */
+let sveglioFino = 0;
+let eraOra = performance.now();
+const spia = { disegnati: 0, dormito: 0, perCamera: 0, perAnta: 0, perRichiesta: 0 };
+window.__spia = spia;
+function ridisegna(ms = 500) {
+  sveglioFino = Math.max(sveglioFino, performance.now() + ms);
+}
+function ombraDaRifare() {
+  renderer.shadowMap.needsUpdate = true;
+  ridisegna();
+}
+window.addEventListener('resize', () => ridisegna());
+/* Rete di sicurezza: qualunque cosa si tocchi nel pannello ridisegna.
+   Meglio un fotogramma di troppo che una scelta che non si vede --
+   sono due comandi ogni volta che si clicca, non e' quello il costo. */
+for (const ev of ['click', 'change', 'input', 'pointerup'])
+  document.addEventListener(ev, () => ridisegna(), true);
+
+/* QUANDO LA CAMERA E' FERMA DAVVERO.
+   `controls.update()` dice di si' finche' il movimento supera un
+   millesimo di milionesimo, e con lo smorzamento a 0,06 la camera ci
+   mette VENTICINQUE SECONDI a scendere sotto quella soglia. Misurato:
+   dopo aver lasciato il mouse la macchina continua a ridisegnare per
+   venticinque secondi un'immagine che l'occhio vede gia' ferma. Su una
+   grafica integrata e' proprio la sensazione di lentezza.
+   La soglia si misura IN PIXEL, non in metri: un metro non vuol dire
+   niente finche' non si sa quanto e' lontana la camera e quanto e'
+   grande la finestra. Sotto un quarto di pixel sullo schermo non si e'
+   mosso niente di visibile, e si smette. */
+const occhio = new THREE.Vector3();
+let dove = new THREE.Vector3(NaN, NaN, NaN);
+function cameraSiMuove() {
+  occhio.copy(camera.position).sub(controls.target);
+  const d = occhio.distanceTo(dove);
+  dove.copy(occhio);
+  if (!(d >= 0)) return true;                       // il primo giro
+  // quanti pixel vale quello spostamento, a questa distanza
+  const alta = 2 * occhio.length() * Math.tan(camera.fov * Math.PI / 360);
+  return d / alta * renderer.domElement.height > 0.25;
+}
+
 renderer.setAnimationLoop(() => {
   controls.update();
+  const mosso = cameraSiMuove();
+  let anima = false;
+  /* L'APERTURA VA A TEMPO, NON A FOTOGRAMMI.
+     Avvicinarsi del sette per cento A OGNI GIRO vuol dire che la porta
+     si apre alla velocita' della macchina: veloce dove ce n'e' bisogno,
+     lenta proprio dove gia' arranca. Ed e' un cerchio che si chiude
+     male, perche' piu' la macchina e' lenta piu' a lungo deve lavorare
+     per la stessa apertura. Misurato qui, con la grafica per software a
+     due fotogrammi e mezzo al secondo: la porta continuava a muoversi
+     dopo QUARANTA secondi.
+     Con il tempo vero, invece, l'apertura dura uguale dappertutto e
+     finisce sempre. E l'ultimo tratto si chiude di colpo, che un
+     avvicinamento per frazioni al punto non ci arriva mai. */
+  const ora = performance.now();
+  /* Il tetto sul dt serve per la scheda lasciata in secondo piano: al
+     ritorno il tempo passato e' minuti, e senza tetto la porta
+     sbatterebbe. Ma tenerlo a un decimo lo rimette a fotogrammi proprio
+     dove non si deve: a due fotogrammi e mezzo al secondo si avanza di
+     un decimo per giro, e l'apertura dura quattro volte tanto. A mezzo
+     secondo il tetto scatta solo quando serve davvero -- e li' un balzo
+     e' quello che si vuole. */
+  const dt = Math.min((ora - eraOra) / 1000, 0.5);
+  eraOra = ora;
+  const passo = 1 - Math.exp(-dt * 4.3);             // ~mezzo secondo di corsa
   if (portaGen) {
-    apGen += ((doorTargetAngle === 0 ? 0 : 1) - apGen) * 0.07;
-    portaGen.apertura(apGen);
+    const meta = doorTargetAngle === 0 ? 0 : 1;
+    if (apGen !== meta) {
+      apGen = Math.abs(meta - apGen) < 1e-3 ? meta : apGen + (meta - apGen) * passo;
+      portaGen.apertura(apGen);
+      anima = true;
+    }
   } else if (doorPivot) {
-    doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
+    const g = doorPivot.rotation.y;
+    if (g !== doorTargetAngle) {
+      doorPivot.rotation.y = Math.abs(doorTargetAngle - g) < 1e-3
+        ? doorTargetAngle : g + (doorTargetAngle - g) * passo;
+      anima = true;
+    }
   }
+  /* L'ombra si rifa' mentre l'anta si muove, e un'ultima volta quando si
+     ferma: se no resterebbe a terra l'ombra della porta chiusa. */
+  if (anima) renderer.shadowMap.needsUpdate = true;
+  const sveglio = performance.now() <= sveglioFino;
+  if (!mosso && !anima && !sveglio) { spia.dormito++; return; }
+  spia.disegnati++;
+  if (mosso) spia.perCamera++;
+  if (anima) spia.perAnta++;
+  if (!mosso && !anima) spia.perRichiesta++;
   compositore.render();
+  renderer.shadowMap.needsUpdate = false;
 });
+
+/* ── LA SPIA ──────────────────────────────────────────────────────────
+   Serve per capire cosa succede sulle macchine degli altri, che e'
+   l'unico posto dove il problema esiste davvero: qui il configuratore
+   e' sempre andato bene. Dice quanti fotogrammi al secondo, a che
+   risoluzione, con che scheda -- e soprattutto PERCHE' sta disegnando,
+   che e' la domanda vera quando sembra lento senza motivo.
+   Si apre con ?diag=1 in fondo all'indirizzo. */
+if (new URLSearchParams(location.search).has('diag')) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;'
+    + 'font:11px/1.45 ui-monospace,Consolas,monospace;background:rgba(20,16,12,.86);'
+    + 'color:#eee;padding:8px 10px;border-radius:4px;white-space:pre;pointer-events:none';
+  document.body.appendChild(box);
+  let scheda = 'ignota';
+  try {
+    const gl = renderer.getContext();
+    const e = gl.getExtension('WEBGL_debug_renderer_info');
+    if (e) scheda = gl.getParameter(e.UNMASKED_RENDERER_WEBGL);
+  } catch (_) { /* qualche browser lo nasconde: pazienza */ }
+  let prima = performance.now(), eran = 0;
+  setInterval(() => {
+    const ora = performance.now(), dt = (ora - prima) / 1000;
+    const fps = (spia.disegnati - eran) / dt;
+    prima = ora; eran = spia.disegnati;
+    const t = renderer.info.memory;
+    box.textContent =
+      `${fps.toFixed(0)} fps disegnati   (dormiti ${spia.dormito})
+`
+      + `perche': camera ${spia.perCamera}  anta ${spia.perAnta}  richiesta ${spia.perRichiesta}
+`
+      + `tela ${renderer.domElement.width}x${renderer.domElement.height}  DPR ${renderer.getPixelRatio()}
+`
+      + `ombra ${key.shadow.mapSize.width}  texture ${t.textures}  geometrie ${t.geometries}
+`
+      + `${scheda}`;
+  }, 1000);
+}
 
 // click sulla porta → apri/chiudi (senza interferire con l'orbita)
 const raycaster = new THREE.Raycaster();
