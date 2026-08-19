@@ -745,7 +745,8 @@ let numeroCarico = 0;
    per pezzo: cosi' il coprifilo, la mano e la finitura del riquadro
    restano scelte vive, che in un GLB sarebbero cotte dentro. */
 const COSTRUITE = new Set(['siena', 'roma', 'ragusa', 'enna', 'faenza',
-                           'latina', 'piacenza', 'pisa', 'pienza', 'mantova']);
+                           'latina', 'piacenza', 'pisa', 'pienza', 'mantova',
+                           'newengland']);
 
 const tipoPills = document.getElementById('tipoPills');
 const tipoNote = document.getElementById('tipoNote');

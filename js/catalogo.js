@@ -3869,7 +3869,7 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 4500",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA47_NEW_ENGLAND.glb?v=d3bdd3d7",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta47_NEW_ENGLAND"
