@@ -1463,7 +1463,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 900",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA23_PIACENZA.glb?v=d9dc93b8",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta23_PIACENZA"
@@ -1581,7 +1581,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1000",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA24_PIENZA.glb?v=4534f972",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta24_PIENZA"
@@ -1969,7 +1969,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 750",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA30_PISA.glb?v=5422deef",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta30_PISA"
@@ -2559,7 +2559,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 700",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA35_MANTOVA.glb?v=470db128",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta35_MANTOVA"
@@ -2677,7 +2677,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 800",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/PUERTA36_LATINA.glb?v=cffec5bb",
+    "file": null,
     "nodi": {
       "pannello": [
         "Puerta36_LATINA"

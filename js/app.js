@@ -734,7 +734,8 @@ let numeroCarico = 0;
    tavola di fabbrica -- alzato piu' le due sezioni -- e si monta pezzo
    per pezzo: cosi' il coprifilo, la mano e la finitura del riquadro
    restano scelte vive, che in un GLB sarebbero cotte dentro. */
-const COSTRUITE = new Set(['siena', 'roma', 'ragusa', 'enna', 'faenza']);
+const COSTRUITE = new Set(['siena', 'roma', 'ragusa', 'enna', 'faenza',
+                           'latina', 'piacenza', 'pisa', 'pienza', 'mantova']);
 
 const tipoPills = document.getElementById('tipoPills');
 const tipoNote = document.getElementById('tipoNote');
