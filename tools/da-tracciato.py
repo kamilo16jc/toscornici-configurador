@@ -101,23 +101,29 @@ def contorno(p):
         giro.extend(arco((q['x'], q['y']), (r['x'], r['y']), q.get('b', 0) or 0))
     return giro
 
+# Un vano puo' essere di legno o di VETRO, e per il corpo dell'anta non
+# cambia niente: e' un buco nella tavola in tutti e due i casi, e il
+# legno intorno viene da se'. Cambia solo cosa ci si mette dentro, e
+# quello lo dice il flag che ci si porta dietro.
+RUOLI_VANO = {'bugnato': False, 'bugnatoVetro': True}
 vani = []
 for p in pz:
-    if p.get('papel') != 'bugnato':
+    if p.get('papel') not in RUOLI_VANO:
         continue
     g = [(fx(x), fy(y)) for x, y in contorno(p)]
     xs = [q[0] for q in g]; ys = [q[1] for q in g]
     vani.append((min(xs), max(xs), min(ys), max(ys),
-                 g if p['tipo'] == 'trazado' else None))
+                 g if p['tipo'] == 'trazado' else None,
+                 RUOLI_VANO[p['papel']]))
 if not vani:
-    sys.exit('nessun vano: il tracciato non ha pezzi «bugnato»')
+    sys.exit('nessun vano: il tracciato non ha pezzi «bugnato» ne «bugnatoVetro»')
 
 # Quel che si lascia fuori si dice, non si tace: montanti e traversi
 # ricalcati non servono -- il corpo dell'anta li ritrova da solo -- ma se
 # un giorno arrivasse un ruolo nuovo, sparirebbe senza un fiato.
 scartati = {}
 for q in pz:
-    if q.get('papel') != 'bugnato':
+    if q.get('papel') not in RUOLI_VANO:
         scartati[q.get('papel')] = scartati.get(q.get('papel'), 0) + 1
 if scartati:
     print('lasciati fuori: ' + ', '.join('%d %s' % (n, k) for k, n in sorted(scartati.items()))
@@ -140,14 +146,34 @@ def accosta(v, griglia):
 # incrociando, quel vano si spaccherebbe in due. Ogni vano resta dov'e';
 # quel che si raddrizza sono i FILI su cui i vani si appoggiano.
 righe = list(zip(gruppi([v[2] for v in vani]), gruppi([v[3] for v in vani])))
-fili = gruppi([v[0] for v in vani] + [v[1] for v in vani])
-# specchiati sulla mezzeria: una porta e' simmetrica, la mano no
-fili = [(f + (L - fili[len(fili) - 1 - i])) / 2 for i, f in enumerate(fili)]
+
+# I FILI DI SINISTRA E QUELLI DI DESTRA NON SI MESCOLANO MAI.
+# Buttandoli in un mucchio solo, il bordo destro di un vano e quello
+# sinistro del vano accanto finivano nello stesso gruppo appena erano
+# vicini -- e su Barletta lo sono: i regoli fra un vetro e l'altro
+# misurano nove millimetri, meno della tolleranza. I nove vetri si
+# toccavano e i regoli sparivano.
+# Non e' questione di scegliere meglio la tolleranza: quei due bordi
+# sono cose diverse per definizione, perche' FRA DUE VANI C'E' SEMPRE
+# DEL LEGNO. Quindi si raggruppano i bordi sinistri fra loro e i destri
+# fra loro, e non si toccano.
+sinistri = gruppi([v[0] for v in vani])
+destri = gruppi([v[1] for v in vani])
+# Specchiati sulla mezzeria: una porta e' simmetrica. Il compagno di un
+# bordo sinistro e' un bordo DESTRO, quindi si accoppiano incrociati.
+if len(sinistri) == len(destri):
+    n = len(sinistri)
+    coppie = [((sinistri[i] + (L - destri[n - 1 - i])) / 2) for i in range(n)]
+    sinistri = coppie
+    destri = [L - coppie[n - 1 - i] for i in range(n)]
+else:
+    print('fili non specchiabili (%d a sinistra, %d a destra): '
+          'si tengono come ricalcati' % (len(sinistri), len(destri)))
 
 riquadri = []
-for a, b, c, e, giro in vani:
+for a, b, c, e, giro, vetro in vani:
     riga = min(righe, key=lambda r: abs(r[0] - c) + abs(r[1] - e))
-    q = {'x0': round(accosta(a, fili), 1), 'x1': round(accosta(b, fili), 1),
+    q = {'x0': round(accosta(a, sinistri), 1), 'x1': round(accosta(b, destri), 1),
          'y0': round(riga[0], 1), 'y1': round(riga[1], 1)}
     if giro:
         # Il vano curvo si porta dietro il suo giro, che il motore sa
@@ -158,6 +184,8 @@ for a, b, c, e, giro in vani:
         sy = (q['y1'] - q['y0']) / (e - c) if e > c else 1
         q['punti'] = [[round(q['x0'] + (x - a) * sx, 2),
                        round(q['y0'] + (y - c) * sy, 2)] for x, y in giro]
+    if vetro:
+        q['vetro'] = True
     riquadri.append(q)
 riquadri.sort(key=lambda r: (r['y0'], r['x0']))
 

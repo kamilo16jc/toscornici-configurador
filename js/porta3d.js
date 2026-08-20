@@ -449,6 +449,36 @@ const guarda = (a, bordi) => bordi.some((v) => Math.abs(a - v) < .5);
 
 /* il pannello piatto dei tipi 2 e 3: una tavola dello spessore della
    cava, che nel vano ci sta dentro tutta */
+/* IL VETRO.
+   Non e' un legno trasparente: e' liscio, riflette e lascia passare la
+   stanza. Ma NON si usa `transmission`, che pure sarebbe la strada
+   giusta: costringe three a rendere la scena una seconda volta in un
+   buffer a parte per vedere cosa c'e' dietro, e su una grafica
+   integrata quel raddoppio si sente proprio dove non deve. Un
+   trasparente liscio con l'ambiente riflesso fa la stessa figura e non
+   costa un secondo passaggio.
+   Si fa una volta sola e lo usano tutti i vetri della porta: nove
+   materiali uguali sarebbero nove volte lo stesso lavoro per la
+   scheda. */
+let vetroMat = null;
+function materialeVetro(mat) {
+  if (vetroMat) return vetroMat;
+  vetroMat = new THREE.MeshPhysicalMaterial({
+    color: 0xd8e2e2, roughness: 0.05, metalness: 0,
+    /* Provato a 0,34: veniva bianco latte, plastica invece che vetro --
+       dietro c'e' il muro, che e' chiaro, e a quell'opacita' il vetro lo
+       copriva invece di lasciarlo vedere. A 0,16 il muro si vede
+       attraverso e resta solo il velo di riflesso, che e' quel che fa
+       leggere il vetro come vetro. */
+    transparent: true, opacity: 0.16,
+    envMap: mat && mat.envMap ? mat.envMap : null,
+    envMapIntensity: 1.1,
+    side: THREE.DoubleSide,      // si vede anche da dentro casa
+    depthWrite: false,           // se no i vetri dietro spariscono
+  });
+  return vetroMat;
+}
+
 function pannelloPiatto(r, gioco) {
   const g = new THREE.BoxGeometry(r.x1 - r.x0 - 2 * gioco,
                                   r.y1 - r.y0 - 2 * gioco, SPCAVA);
@@ -520,6 +550,18 @@ function montaAnta() {
   }
 
   for (const r of d.riquadri) {
+    /* Un vano di vetro non prende ne' la bugna ne' il pannello piatto:
+       ci va una lastra sottile in mezzo alla cava. Il legno intorno --
+       il labbro, il giro del riquadro -- e' gia' li', perche' e' la
+       tavola dell'anta e non cambia: per lei un vano e' un buco, di
+       legno o di vetro che sia. */
+    if (r.vetro) {
+      const g = new THREE.BoxGeometry(r.x1 - r.x0 - 2 * d.pannello.gioco,
+                                      r.y1 - r.y0 - 2 * d.pannello.gioco, 4);
+      g.translate((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, T / 2);
+      gPann.add(new THREE.Mesh(g, materialeVetro(mat)));
+      continue;
+    }
     metti(gPann, tipo === 1
       /* MEZZO MILLIMETRO DI GIOCO PER FACCIA nello spessore, ed e' la
          cosa che ha risolto le righe tratteggiate.
