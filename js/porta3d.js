@@ -545,14 +545,17 @@ function misuraRegolo() {
   }
   // e il traverso piu' magro, che e' l'altro limite
   for (const t of d.traversi) stretto = Math.min(stretto, (t.y1 - t.y0) * 2);
-  return Math.max(0, Math.min(pieno, stretto / 2 - 1));
+  // la specifica dice dodici; il legno puo' imporre di meno
+  const voluto = d.pannello.regolo_largo || pieno;
+  return Math.max(0, Math.min(voluto, pieno, stretto / 2 - 1));
 }
 /* IN PROVA, PER ORA. Il motore e' lo stesso per il banco e per il
    configuratore: toccandolo si tocca anche quel che vede il cliente.
    Il regolo si accende con ?regolo nell'indirizzo -- cosi' il banco lo
    mostra e il configuratore resta com'era, finche' non si decide. */
-const LARGO = (typeof location !== 'undefined'
-               && location.search.indexOf('regolo') >= 0) ? misuraRegolo() : 0;
+const PROVA = typeof location !== 'undefined'
+              && location.search.indexOf('regolo') >= 0;
+const LARGO = PROVA ? misuraRegolo() : 0;
 
 /* IL REGOLO APPLICATO, e perche' mancava.
    Le due facce dell'anta NON sono uguali, e la sezione lo dice: da una
@@ -721,8 +724,14 @@ function montaAnta() {
          fossero la causa del tratteggio che resta lungo il giro del
          riquadro: non cambia niente, quindi non e' quello, e non vale
          la pena di rovinare la curva. */
-      ? pannello(r, dirada(d.pannello.bugna.map(([u, v]) => [u, Math.max(.1, v - .5)]),
-                           1.5, 12), ZC, d.pannello.gioco)
+      /* IN PROVA: la bugna della specifica invece di quella letta dal
+         DXF. Scivolo dritto largo trenta che sale di quattro, con un
+         gradino prima e uno dopo. Quella del disegno -- sessanta di
+         curva -- resta nel file come `bugna_dxf`, che e' una misura e
+         non si butta. */
+      ? pannello(r, dirada((PROVA && d.pannello.bugna_nuova || d.pannello.bugna)
+                           .map(([u, v]) => [u, Math.max(.1, v - .5)]), 1.5, 12),
+                 ZC, d.pannello.gioco)
       : pannelloPiatto(r, d.pannello.gioco), false);
   }
   ombreggia();
