@@ -30,6 +30,14 @@ import json, io, os, sys, glob
 SORG = sys.argv[1] if len(sys.argv) > 1 else \
     r'C:\Users\Julic\Downloads\Puerta sin titulo.puerta.json'
 
+# QUANTO INGRANDIRE. Sul tracciato il bisel misura 4 su 30, e su un'anta
+# alta due metri e dieci si perde: da lontano non c'e'. Si allarga tutto
+# della stessa quantita' -- lo scivolo E la sua salita -- cosi'
+# l'inclinazione resta quella disegnata e cambia solo la taglia.
+# E' l'UNICA manopola qui: se e' ancora poco si alza questo numero e si
+# rilancia, non c'e' altro da toccare.
+SCALA = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5
+
 t = json.load(io.open(SORG, encoding='utf8'))
 b = next(p for p in t['piezas'] if p.get('papel') == 'bugnato')
 SP = float(b['espesor'])
@@ -44,11 +52,13 @@ print('               biselPerfil %s, perfilBugna %s, bastoneForma %s'
 
 def profilo():
     mezzo = SP / 2                       # il piano del pannello
-    labbro = mezzo - BISEL               # il bordo che entra in cava
+    bisel = BISEL * SCALA
+    largo = LARGO * SCALA
+    labbro = mezzo - bisel               # il bordo che entra in cava
     return [[0.0, labbro],
             [RIENTRO, labbro],           # il rientro, piatto
-            [RIENTRO + LARGO, mezzo],    # lo scivolo, dritto
-            [RIENTRO + LARGO + 6.0, mezzo]]
+            [RIENTRO + largo, mezzo],    # lo scivolo, dritto
+            [RIENTRO + largo + 6.0, mezzo]]
 
 p = profilo()
 n = 0
@@ -65,4 +75,5 @@ for f in glob.glob('assets/porte/*/anta.json'):
         pa['regolo_largo'] = BASTONE
     io.open(f, 'w', encoding='utf8').write(json.dumps(d, ensure_ascii=False, indent=1))
     n += 1
-print('%d porte.  profilo: %s' % (n, p))
+print('%d porte.  scala %g -> bisel %g su %g.  profilo: %s'
+      % (n, SCALA, BISEL * SCALA, LARGO * SCALA, p))

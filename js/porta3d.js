@@ -1051,6 +1051,18 @@ function legnoDiSerie() {
     const t = tx.load(`assets/textures/rovere/${nome}`);
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    /* IL FILTRO ANISOTROPO, e non e' un lusso.
+       Le facce viste DI TAGLIO -- il fianco di un montante, la fascia
+       del bisel, il regolo -- in profondita' si stringono a pochi
+       pixel, e la venatura ci finisce dentro tutta insieme: senza
+       questo filtro il legno si spezza in righine verticali, che
+       sembrano una crepa o un buco nel bisel. Il configuratore ce
+       l'aveva da sempre, il banco no: stessa scena, stessa geometria,
+       e uno solo dei due si rigava. */
+    /* Sedici e' il massimo che le schede danno, e chiederlo qui non si
+       puo': il motore non ha il renderer sottomano. Se la scheda ne
+       regge meno lo taglia lei, senza lamentarsi. */
+    t.anisotropy = 16;
     return t;
   };
   return new THREE.MeshStandardMaterial({
