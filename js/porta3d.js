@@ -279,6 +279,33 @@ function pannello(r, bugna, zc, gioco) {
     return dd > 0.35;
   });
   const anelli = bugna.map(([dist]) => rientra(bordo, dist));
+
+  /* SI SPEZZA ANCHE LUNGO IL PROFILO, non solo agli angoli del vano.
+     Gli spigoli di sopra riguardano il GIRO del riquadro -- i quattro
+     angoli, o la curva di un ovale. Ma la modanatura ha spigoli suoi
+     nell'altra direzione: la bugna di Siena, misurata sul disegno, sale
+     dolce per venti millimetri, corre quasi piatta per nove, poi si
+     alza di tre in due millimetri e mezzo e finisce sul piano del
+     pannello. Quel gradino e' il disegnino che si vede su una porta
+     vera appena prima del rilievo.
+     Tendendo la superficie liscia da un capo all'altro del profilo, le
+     normali si mediavano ATTRAVERSO il gradino e lo spianavano: in
+     render restava una rampa sola, morbida, senza niente. Il gradino
+     c'era nella geometria e non si vedeva nella luce.
+     Dove il profilo gira forte, l'anello si mette DUE VOLTE: sotto
+     finisce una fascia, sopra ne comincia un'altra, e le due non si
+     scambiano le normali. Lo spigolo torna netto -- ed e' netto perche'
+     lo dice il disegno di fabbrica, non perche' l'abbiamo aggiunto. */
+  const fasce = [];                       // gli anelli da tendere, coi doppioni
+  for (let j = 0; j < bugna.length; j++) {
+    fasce.push(j);
+    if (j === 0 || j + 1 >= bugna.length) continue;
+    const a1 = Math.atan2(bugna[j][1] - bugna[j - 1][1], bugna[j][0] - bugna[j - 1][0]);
+    const a2 = Math.atan2(bugna[j + 1][1] - bugna[j][1], bugna[j + 1][0] - bugna[j][0]);
+    let dd = Math.abs(a2 - a1) % (2 * Math.PI);
+    if (dd > Math.PI) dd = 2 * Math.PI - dd;
+    if (dd > 0.5) fasce.push(j);          // ~29 gradi: di la' e' modanatura
+  }
   const metti = (q, z) => { pos.push(q[0], q[1], z); uv.push(q[0] / 1000, q[1] / 1000); return n++; };
 
   // la superficie si spezza solo sugli spigoli: fra uno e l'altro
@@ -297,13 +324,15 @@ function pannello(r, bugna, zc, gioco) {
   for (const verso of [1, -1]) {
     for (const seq of tratti) {
       const base = n, m = seq.length;
-      for (let j = 0; j < bugna.length; j++) {
+      for (const j of fasce) {
         const z = zc + verso * bugna[j][1];
         for (const i of seq) metti(anelli[j][i], z);
       }
-      for (let j = 0; j + 1 < bugna.length; j++) {
+      for (let t = 0; t + 1 < fasce.length; t++) {
+        // fra un anello e il suo doppione non si tende niente: e' la piega
+        if (fasce[t] === fasce[t + 1]) continue;
         for (let k = 0; k + 1 < m; k++) {
-          const q = base + j * m + k;
+          const q = base + t * m + k;
           if (verso > 0) idx.push(q, q + 1, q + m + 1, q, q + m + 1, q + m);
           else idx.push(q, q + m + 1, q + 1, q, q + m, q + m + 1);
         }
@@ -486,6 +515,114 @@ function pannelloPiatto(r, gioco) {
   return g;
 }
 
+/* IL REGOLO, la modanatura intorno al vano.
+   Il profilo NON e' inventato: viene dalla sezione del traverso del DXF
+   -- sedici millimetri di gola che scendono di quasi nove, in curva --
+   e sta nell'anta.json come `pannello.regolo`. E' quel filetto che su
+   una porta vera gira intorno al pannello, e intorno al vetro fa il
+   fermavetro.
+
+   QUANTO LARGO. Sedici millimetri stanno comodi fra due vani che
+   distano centinaia, ma non fra i regoli di Barletta, che ne misurano
+   dieci: due gole da sedici si mangerebbero il regolo e i vetri si
+   toccherebbero. Allora la gola si stringe a quel che il legno
+   consente, meta' del passaggio piu' stretto meno un millimetro di
+   spalla. E' anche quel che fa il falegname: la modanatura la fa larga
+   quanto il pezzo la regge. */
+function misuraRegolo() {
+  const prof = d.pannello && d.pannello.regolo;
+  if (!prof || prof.length < 4) return 0;
+  const pieno = Math.max(...prof.map((q) => q[0]));
+  let stretto = Infinity;
+  for (const a of d.riquadri) {
+    for (const b of d.riquadri) {
+      if (a === b) continue;
+      const dx = Math.max(a.x0 - b.x1, b.x0 - a.x1);
+      const dy = Math.max(a.y0 - b.y1, b.y0 - a.y1);
+      const g = Math.max(dx, dy);
+      if (g > 0.01) stretto = Math.min(stretto, g);
+    }
+  }
+  // e il traverso piu' magro, che e' l'altro limite
+  for (const t of d.traversi) stretto = Math.min(stretto, (t.y1 - t.y0) * 2);
+  return Math.max(0, Math.min(pieno, stretto / 2 - 1));
+}
+/* IN PROVA, PER ORA. Il motore e' lo stesso per il banco e per il
+   configuratore: toccandolo si tocca anche quel che vede il cliente.
+   Il regolo si accende con ?regolo nell'indirizzo -- cosi' il banco lo
+   mostra e il configuratore resta com'era, finche' non si decide. */
+const LARGO = (typeof location !== 'undefined'
+               && location.search.indexOf('regolo') >= 0) ? misuraRegolo() : 0;
+
+/* IL REGOLO APPLICATO, e perche' mancava.
+   Le due facce dell'anta NON sono uguali, e la sezione lo dice: da una
+   parte la modanatura e' scavata nel legno -- sedici millimetri di gola
+   che scendono di nove, in curva -- dall'altra c'e' un incasso di
+   squadro largo sedici e profondo ventiquattro. Quell'incasso non e' la
+   faccia finita: e' il posto dove, sulla porta vera, si inchioda il
+   REGOLO, il listello sagomato che tiene il pannello (e intorno al
+   vetro fa il fermavetro). Il regolo e' un pezzo a parte e nel DXF
+   dell'anta non c'e'.
+   Noi lo disegnavamo: mai. Percio' da quel lato si vedeva un incasso
+   nudo, e da li' «la bajada es plana». Adesso c'e', e ha lo stesso
+   profilo dell'altra faccia -- che e' quel che si fa in bottega, le due
+   facce di una porta si somigliano. */
+function regoloVano(r) {
+  /* SESSANTASEI PUNTI SONO TROPPI per sedici millimetri di gola. Il DXF
+     ne da' uno ogni due decimi e la curva non se ne accorge, ma la
+     scheda si': undici vani per due facce per sessantasei anelli sono
+     centinaia di migliaia di triangoli, e Barletta non finiva piu' di
+     disegnarsi. Diradati a mezzo millimetro e otto gradi la curva resta
+     quella e i triangoli diventano un quinto. */
+  const prof = dirada(d.pannello.regolo, 0.5, 8);
+  const pieno = Math.max(...prof.map((q) => q[0]));
+  const fondo = Math.max(...prof.map((q) => q[1]));
+  const k = LARGO / pieno;                       // stretta, se il legno e' poco
+  /* Il livello zero cambia di posto. Nella sezione la quota si conta
+     dal bordo del vano e cresce entrando nel legno; qui il livello zero
+     e' la FACCIA dell'anta, e la gola e' quanto ci si scende sotto.
+     Provato prima al rovescio -- profondo fuori e a filo sul vano -- e
+     usciva una porta piatta: la gola si stendeva sopra i pannelli e li
+     copriva tutti e due. Sul vano la gola e' al suo massimo, e sedici
+     millimetri piu' in la' torna a filo della faccia. */
+  const gola = prof.map(([t, z]) => [t, fondo - z]);
+  /* Il regolo sta DENTRO l'incasso, non sopra la faccia: comincia al
+     filo del vano e va in fuori quanto e' largo. Non allarga il buco
+     nella tavola -- l'incasso c'e' gia' nella sezione del montante. */
+  /* VERSO DENTRO, non verso fuori. L'incasso del regolo sta fra il filo
+     del vano e il fianco del montante -- nella sezione da x 98 a x 114,
+     e il vano comincia a 98 -- quindi il regolo copre i sedici
+     millimetri DENTRO al vano, dove sotto ci va la linguetta del
+     pannello. Provato in fuori: finiva sotto il montante, che lo
+     copriva, e non si vedeva niente. */
+  const anelli = gola.map(([t]) => contornoRiquadro(r, t * k));
+  const pos = [], idx = [];
+  let n = 0;
+  const metti2 = (q, z) => { pos.push(q[0], q[1], z); return n++; };
+  for (const faccia of [1, -1]) {
+    const z0 = faccia > 0 ? T - 3 : 3;   // il filo dell'incasso, dopo lo smusso
+    const base = n, m = anelli[0].length;
+    for (let j = 0; j < gola.length; j++) {
+      const z = z0 - faccia * gola[j][1] * k;
+      for (let i = 0; i < m; i++) metti2(anelli[j][i], z);
+    }
+    for (let j = 0; j + 1 < gola.length; j++) {
+      for (let i = 0; i < m; i++) {
+        const i2 = (i + 1) % m;
+        const q = base + j * m + i, q2 = base + j * m + i2;
+        const p1 = q + m, p2 = q2 + m;
+        if (faccia > 0) idx.push(q, q2, p2, q, p2, p1);
+        else idx.push(q, p2, q2, q, p1, p2);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 function montaAnta() {
   for (const g of [gAnta, gPann]) {
     for (const m of g.children) m.geometry.dispose();
@@ -547,6 +684,9 @@ function montaAnta() {
       depth: T, bevelEnabled: false, curveSegments: 1,
     });
     metti(gAnta, g, true);
+
+    // il regolo, su tutti e due i lati, intorno a ogni vano
+    if (LARGO > 1) for (const q of d.riquadri) metti(gAnta, regoloVano(q), true);
   }
 
   for (const r of d.riquadri) {
