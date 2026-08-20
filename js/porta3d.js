@@ -637,6 +637,60 @@ function regoloVano(r) {
   return g;
 }
 
+/* LA MOLDURA DEL GIUNTO, dalla definizione della fabbrica.
+   `double_step_curved_middle_001`: doppio gradino con la pedata di
+   mezzo curva, larga dodici e alta tredici e mezzo, in mitra sugli
+   angoli -- e la mitra viene da se', come per il coprifilo, perche' si
+   rientra un percorso ad angolo retto.
+
+   IL RIFERIMENTO. x va dal bordo del pannello (0) verso l'armazon (12);
+   z sta sopra la faccia del pannello (0) e arriva alla faccia dell'anta
+   (13,5). I tredici e mezzo tornano da soli: la faccia dell'anta sta a
+   45, il piano del pannello a 21 piu' 10,5, cioe' 31,5. La differenza fa
+   13,5 -- non e' una coincidenza, e' la stessa porta.
+
+   E' LABRADA nell'armazon, non incollata sopra: percio' il vano nella
+   tavola e nel montante si allarga di dodici e la moldura riempie quella
+   fascia. La definizione lo dice in una riga -- «el armazon se aparta
+   del vano crecido por el ancho de la moldura; si no, se queda macizo
+   aqui y la tapa» -- e ci ero passato sopra due volte: prima mettendola
+   in fuori, e il montante ci stava sopra; poi in dentro, e litigava col
+   pannello. */
+function moldura() { return PROVA && d.pannello && d.pannello.moldura; }
+
+function pianoPannello() {
+  return ZC + Math.max(...(d.pannello.bugna_nuova || d.pannello.bugna).map((q) => q[1]));
+}
+
+function molduraVano(r) {
+  const pt = moldura().punti;
+  const zPan = pianoPannello();
+  const anelli = pt.map(([x]) => contornoRiquadro(r, -x));
+  const pos = [], idx = [];
+  let n = 0;
+  const m2 = anelli[0].length;
+  for (const faccia of [1, -1]) {
+    const base = n;
+    for (let j = 0; j < pt.length; j++) {
+      const z = faccia > 0 ? zPan + pt[j][1] : (T - zPan) - pt[j][1];
+      for (let i = 0; i < m2; i++) { pos.push(anelli[j][i][0], anelli[j][i][1], z); n++; }
+    }
+    for (let j = 0; j + 1 < pt.length; j++) {
+      for (let i = 0; i < m2; i++) {
+        const i2 = (i + 1) % m2;
+        const q = base + j * m2 + i, q2 = base + j * m2 + i2;
+        if (faccia > 0) idx.push(q, q2, q2 + m2, q, q2 + m2, q + m2);
+        else idx.push(q, q2 + m2, q2, q, q + m2, q2 + m2);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 function montaAnta() {
   for (const g of [gAnta, gPann]) {
     for (const m of g.children) m.geometry.dispose();
@@ -646,7 +700,14 @@ function montaAnta() {
   const ry0 = d.riquadri.map((r) => r.y0), ry1 = d.riquadri.map((r) => r.y1);
 
   // i montanti: tutta l'altezza dell'anta, come in bottega
-  const mo = rifaiFilo(d.montante.punti, tipo, d.montante.larghezza, 1);
+  let mo = rifaiFilo(d.montante.punti, tipo, d.montante.larghezza, 1);
+  /* Anche il montante si scosta, e solo il legno SOPRA il piano del
+     pannello: sotto c'e' la cava, e quella non si tocca. */
+  if (moldura()) {
+    const zPan = pianoPannello();
+    const filo = Math.min(...d.riquadri.map((r) => r.x0)) - moldura().largo;
+    mo = mo.map(([x, z]) => [z > zPan && x > filo ? filo : x, z]);
+  }
   metti(gAnta, verticale(mo, 0, H), false);
   metti(gAnta, verticale(ribalta(mo, L), 0, H), false);
 
@@ -683,12 +744,19 @@ function montaAnta() {
        colonna di destra restava per aria.
        E il montante di mezzo non si disegna: e' il legno che avanza fra
        le due colonne di vani, e viene da se'. */
-    const x0 = Math.min(...d.riquadri.map((r) => r.x0));
-    const x1 = Math.max(...d.riquadri.map((r) => r.x1));
+    /* IL CONTORNO DELLA TAVOLA CRESCE QUANTO I BUCHI, e questa e' la
+       riga che mancava. Allargando solo i vani, quelli di riva finivano
+       FUORI dalla tavola -- buco a 81,5 su una tavola che comincia a
+       93,5 -- e la triangolazione andava a carte quarantotto: la porta
+       usciva liscia, senza piu' un riquadro. Un buco fuori dal suo
+       contorno non e' un buco. */
+    const banda = moldura() ? moldura().largo : 0;
+    const x0 = Math.min(...d.riquadri.map((r) => r.x0)) - banda;
+    const x1 = Math.max(...d.riquadri.map((r) => r.x1)) + banda;
     s0.moveTo(x0, yGiu); s0.lineTo(x1, yGiu);
     s0.lineTo(x1, ySu); s0.lineTo(x0, ySu); s0.closePath();
     for (const r of d.riquadri) {
-      const giro = contornoRiquadro(r, 0);
+      const giro = contornoRiquadro(r, -banda);
       const h = new THREE.Path();
       giro.forEach(([x, y], i) => (i ? h.lineTo(x, y) : h.moveTo(x, y)));
       h.closePath();
@@ -702,6 +770,8 @@ function montaAnta() {
     // il regolo, su tutti e due i lati, intorno a ogni vano
     if (LARGO > 1) for (const q of d.riquadri) metti(gAnta, regoloVano(q), true);
   }
+
+  if (moldura()) for (const r of d.riquadri) metti(gAnta, molduraVano(r), true);
 
   for (const r of d.riquadri) {
     /* Un vano di vetro non prende ne' la bugna ne' il pannello piatto:
@@ -1051,18 +1121,6 @@ function legnoDiSerie() {
     const t = tx.load(`assets/textures/rovere/${nome}`);
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    /* IL FILTRO ANISOTROPO, e non e' un lusso.
-       Le facce viste DI TAGLIO -- il fianco di un montante, la fascia
-       del bisel, il regolo -- in profondita' si stringono a pochi
-       pixel, e la venatura ci finisce dentro tutta insieme: senza
-       questo filtro il legno si spezza in righine verticali, che
-       sembrano una crepa o un buco nel bisel. Il configuratore ce
-       l'aveva da sempre, il banco no: stessa scena, stessa geometria,
-       e uno solo dei due si rigava. */
-    /* Sedici e' il massimo che le schede danno, e chiederlo qui non si
-       puo': il motore non ha il renderer sottomano. Se la scheda ne
-       regge meno lo taglia lei, senza lamentarsi. */
-    t.anisotropy = 16;
     return t;
   };
   return new THREE.MeshStandardMaterial({
