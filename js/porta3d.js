@@ -553,8 +553,19 @@ function misuraRegolo() {
    configuratore: toccandolo si tocca anche quel che vede il cliente.
    Il regolo si accende con ?regolo nell'indirizzo -- cosi' il banco lo
    mostra e il configuratore resta com'era, finche' non si decide. */
+/* DOVE SI PROVA E DOVE NO.
+   Il motore e' lo stesso per il banco e per il configuratore, ma i due
+   posti servono a cose diverse: il banco e' dove si guarda una cosa
+   nuova, il configuratore e' quel che vede il cliente. Quindi la prova
+   e' ACCESA nel banco e spenta di la', e non c'e' niente da scrivere
+   nell'indirizzo -- prima bisognava aggiungere ?regolo a mano, e chi
+   apriva il banco vedeva ancora la roba vecchia senza saperlo.
+   Con ?regolo=0 si spegne anche nel banco, per confrontare. */
 const PROVA = typeof location !== 'undefined'
-              && location.search.indexOf('regolo') >= 0;
+              && (/regolo=0/.test(location.search)
+                    ? false
+                    : /banco/.test(location.pathname)
+                      || location.search.indexOf('regolo') >= 0);
 const LARGO = PROVA ? misuraRegolo() : 0;
 
 /* IL REGOLO APPLICATO, e perche' mancava.
