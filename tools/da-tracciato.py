@@ -37,7 +37,22 @@ L = float(d['plantilla']['ancho']); H = float(d['plantilla']['alto'])
 pz = [p for p in d['piezas'] if p.get('visible', True)]
 
 # 1. la scatola di quel che e' ricalcato -> le misure dell'anta
+def _ellisse(p, n=96):
+    """Il giro di un'ellisse, punto per punto.
+
+    Arriva col centro e i due raggi -- cx, cy, rx, ry -- e non con
+    l'angolo in alto a sinistra come i rettangoli. Se la si legge come
+    un rettangolo si cerca una chiave che non c'e' e il programma muore
+    li'."""
+    import math as _m
+    cx, cy = float(p['cx']), float(p['cy'])
+    rx, ry = float(p['rx']), float(p['ry'])
+    return [(cx + rx * _m.cos(2 * _m.pi * k / n),
+             cy + ry * _m.sin(2 * _m.pi * k / n)) for k in range(n)]
+
 def _giro(p):
+    if p['tipo'] == 'elipse':
+        return _ellisse(p, 8)
     if p['tipo'] != 'trazado':
         return [(p['x'], p['y']), (p['x'] + p['w'], p['y'] + p['h'])]
     return [(q['x'], q['y']) for q in p['nodos']]
@@ -89,7 +104,9 @@ def arco(p0, p1, b, passo=2.0):
              cy + r * math.sin(a0 + (a1 - a0) * k / n)) for k in range(1, n)]
 
 def contorno(p):
-    """Il giro di un pezzo ricalcato: rettangolo o tracciato con archi."""
+    """Il giro di un pezzo ricalcato: rettangolo, ellisse o tracciato."""
+    if p['tipo'] == 'elipse':
+        return _ellisse(p)
     if p['tipo'] != 'trazado':
         return [(p['x'], p['y']), (p['x'] + p['w'], p['y']),
                 (p['x'] + p['w'], p['y'] + p['h']), (p['x'], p['y'] + p['h'])]
@@ -113,7 +130,7 @@ for p in pz:
     g = [(fx(x), fy(y)) for x, y in contorno(p)]
     xs = [q[0] for q in g]; ys = [q[1] for q in g]
     vani.append((min(xs), max(xs), min(ys), max(ys),
-                 g if p['tipo'] == 'trazado' else None,
+                 g if p['tipo'] in ('trazado', 'elipse') else None,
                  RUOLI_VANO[p['papel']]))
 if not vani:
     sys.exit('nessun vano: il tracciato non ha pezzi «bugnato» ne «bugnatoVetro»')
@@ -145,55 +162,109 @@ def accosta(v, griglia):
 # le righe, ma Ragusa in mezzo ha UN vano solo largo quanto la porta:
 # incrociando, quel vano si spaccherebbe in due. Ogni vano resta dov'e';
 # quel che si raddrizza sono i FILI su cui i vani si appoggiano.
-righe = list(zip(gruppi([v[2] for v in vani]), gruppi([v[3] for v in vani])))
-
-# I FILI DI SINISTRA E QUELLI DI DESTRA NON SI MESCOLANO MAI.
-# Buttandoli in un mucchio solo, il bordo destro di un vano e quello
-# sinistro del vano accanto finivano nello stesso gruppo appena erano
-# vicini -- e su Barletta lo sono: i regoli fra un vetro e l'altro
-# misurano nove millimetri, meno della tolleranza. I nove vetri si
-# toccavano e i regoli sparivano.
-# Non e' questione di scegliere meglio la tolleranza: quei due bordi
-# sono cose diverse per definizione, perche' FRA DUE VANI C'E' SEMPRE
-# DEL LEGNO. Quindi si raggruppano i bordi sinistri fra loro e i destri
-# fra loro, e non si toccano.
-sinistri = gruppi([v[0] for v in vani])
-destri = gruppi([v[1] for v in vani])
-# Specchiati sulla mezzeria: una porta e' simmetrica. Il compagno di un
-# bordo sinistro e' un bordo DESTRO, quindi si accoppiano incrociati.
-if len(sinistri) == len(destri):
-    n = len(sinistri)
-    coppie = [((sinistri[i] + (L - destri[n - 1 - i])) / 2) for i in range(n)]
-    sinistri = coppie
-    destri = [L - coppie[n - 1 - i] for i in range(n)]
+# CRUDO: si prende il tracciato com'e', senza raddrizzare niente.
+# Il raddrizzo serve quando i vani sono rettangoli in griglia e la mano
+# trema: allinea le righe e specchia i fili. Ma su una porta con
+# un'ellisse in mezzo, che si sovrappone ai vani sopra e sotto, quella
+# stessa regola li schiaccia tutti e tre sullo stesso rettangolo e fa
+# uscire traversi di altezza negativa. Li' non c'e' niente da
+# raddrizzare: il disegno e' gia' quello che deve essere.
+CRUDO = '--crudo' in sys.argv or any(v[4] and len(v[4]) > 8 for v in vani)
+if CRUDO:
+    riquadri = []
+    for a2, b2, c2, e2, g2, vetro in vani:
+        r = {'x0': round(a2, 1), 'x1': round(b2, 1),
+             'y0': round(c2, 1), 'y1': round(e2, 1)}
+        if g2:
+            r['punti'] = [[round(x, 2), round(y, 2)] for x, y in g2]
+        if vetro:
+            r['vetro'] = True
+        riquadri.append(r)
+    riquadri.sort(key=lambda r: (r['y0'], r['x0']))
+    # un traverso solo, da capo a fondo: al motore serve solo per sapere
+    # da dove a dove va la tavola, e i vani ci si ritagliano dentro
+    traversi = [{'y0': 0.0, 'y1': H}]
+    print('   crudo: %d vani presi come stavano, niente raddrizzo' % len(riquadri))
 else:
-    print('fili non specchiabili (%d a sinistra, %d a destra): '
-          'si tengono come ricalcati' % (len(sinistri), len(destri)))
+  righe = list(zip(gruppi([v[2] for v in vani]), gruppi([v[3] for v in vani])))
 
-riquadri = []
-for a, b, c, e, giro, vetro in vani:
-    riga = min(righe, key=lambda r: abs(r[0] - c) + abs(r[1] - e))
-    q = {'x0': round(accosta(a, sinistri), 1), 'x1': round(accosta(b, destri), 1),
-         'y0': round(riga[0], 1), 'y1': round(riga[1], 1)}
-    if giro:
-        # Il vano curvo si porta dietro il suo giro, che il motore sa
-        # gia' disegnare -- e' cosi' che si fanno i vani di Cosenza.
-        # Lo si stira dalla sua scatola a quella raddrizzata, cosi' i
-        # fianchi cadono sui fili giusti e la curva resta curva.
-        sx = (q['x1'] - q['x0']) / (b - a) if b > a else 1
-        sy = (q['y1'] - q['y0']) / (e - c) if e > c else 1
-        q['punti'] = [[round(q['x0'] + (x - a) * sx, 2),
-                       round(q['y0'] + (y - c) * sy, 2)] for x, y in giro]
-    if vetro:
-        q['vetro'] = True
-    riquadri.append(q)
-riquadri.sort(key=lambda r: (r['y0'], r['x0']))
+  # I FILI DI SINISTRA E QUELLI DI DESTRA NON SI MESCOLANO MAI.
+  # Buttandoli in un mucchio solo, il bordo destro di un vano e quello
+  # sinistro del vano accanto finivano nello stesso gruppo appena erano
+  # vicini -- e su Barletta lo sono: i regoli fra un vetro e l'altro
+  # misurano nove millimetri, meno della tolleranza. I nove vetri si
+  # toccavano e i regoli sparivano.
+  # Non e' questione di scegliere meglio la tolleranza: quei due bordi
+  # sono cose diverse per definizione, perche' FRA DUE VANI C'E' SEMPRE
+  # DEL LEGNO. Quindi si raggruppano i bordi sinistri fra loro e i destri
+  # fra loro, e non si toccano.
+  sinistri = gruppi([v[0] for v in vani])
+  destri = gruppi([v[1] for v in vani])
+  # Specchiati sulla mezzeria: una porta e' simmetrica. Il compagno di un
+  # bordo sinistro e' un bordo DESTRO, quindi si accoppiano incrociati.
+  if len(sinistri) == len(destri):
+      n = len(sinistri)
+      coppie = [((sinistri[i] + (L - destri[n - 1 - i])) / 2) for i in range(n)]
+      sinistri = coppie
+      destri = [L - coppie[n - 1 - i] for i in range(n)]
+  else:
+      print('fili non specchiabili (%d a sinistra, %d a destra): '
+            'si tengono come ricalcati' % (len(sinistri), len(destri)))
 
-# 3. i traversi sono il complemento: fra due file di vani c'e' sempre
-#    del legno, e ai due capi il traverso arriva al filo dell'anta
-tagli = [0.0] + [q for r in righe for q in r] + [H]
-traversi = [{'y0': round(tagli[i], 1), 'y1': round(tagli[i + 1], 1)}
-            for i in range(0, len(tagli) - 1, 2)]
+  riquadri = []
+  for a, b, c, e, giro, vetro in vani:
+      riga = min(righe, key=lambda r: abs(r[0] - c) + abs(r[1] - e))
+      q = {'x0': round(accosta(a, sinistri), 1), 'x1': round(accosta(b, destri), 1),
+           'y0': round(riga[0], 1), 'y1': round(riga[1], 1)}
+      if giro:
+          # Il vano curvo si porta dietro il suo giro, che il motore sa
+          # gia' disegnare -- e' cosi' che si fanno i vani di Cosenza.
+          # Lo si stira dalla sua scatola a quella raddrizzata, cosi' i
+          # fianchi cadono sui fili giusti e la curva resta curva.
+          sx = (q['x1'] - q['x0']) / (b - a) if b > a else 1
+          sy = (q['y1'] - q['y0']) / (e - c) if e > c else 1
+          q['punti'] = [[round(q['x0'] + (x - a) * sx, 2),
+                         round(q['y0'] + (y - c) * sy, 2)] for x, y in giro]
+      if vetro:
+          q['vetro'] = True
+      riquadri.append(q)
+  riquadri.sort(key=lambda r: (r['y0'], r['x0']))
+
+  # 3. i traversi sono il complemento: fra due file di vani c'e' sempre
+  #    del legno, e ai due capi il traverso arriva al filo dell'anta
+  tagli = [0.0] + [q for r in righe for q in r] + [H]
+  traversi = [{'y0': round(tagli[i], 1), 'y1': round(tagli[i + 1], 1)}
+              for i in range(0, len(tagli) - 1, 2)]
+
+  # IL BISEL DI QUESTA PORTA, dai suoi numeri e non da quelli di un'altra.
+# Ogni tracciato se lo porta dietro nel pezzo «bugnato», e due porte
+# possono averlo diverso: Matera lo vuole tondo, largo sessanta, che sale
+# di dieci e mezzo; Potenza dritto, largo trenta, che sale di quattro. Se
+# si prendesse quello di Siena per tutte, una delle due uscirebbe
+# sbagliata -- e sarebbe uno di quei casi in cui il render e' bello e non
+# e' la porta.
+def bisel(pezzo, siena):
+    sp = float(pezzo.get('espesor') or 21)
+    mezzo = sp / 2
+    alt = float(pezzo.get('bisel') or 0)
+    largo = float(pezzo.get('biselAncho') or 0)
+    dentro = float(pezzo.get('rientro') or 0)
+    forma = (pezzo.get('biselPerfil') or 'recto').lower()
+    nome = (pezzo.get('perfilBugna') or '').lower()
+    if not alt or not largo:
+        return None
+    if forma.startswith('redond') or nome == 'siena':
+        # Il tondo e' quello misurato sul DXF di Siena: sessanta di curva
+        # che salgono di dieci e mezzo. Se la porta lo chiede di un'altra
+        # misura, la curva si scala -- la forma resta, cambiano i numeri.
+        if siena:
+            kx = largo / max(q[0] for q in siena)
+            kz = alt / max(q[1] for q in siena)
+            return [[round(q[0] * kx + dentro, 2), round(mezzo - alt + q[1] * kz, 2)]
+                    for q in siena]
+    labbro = mezzo - alt
+    return [[0.0, labbro], [dentro, labbro],
+            [round(dentro + largo, 2), mezzo], [round(dentro + largo + 6, 2), mezzo]]
 
 base = json.load(io.open('assets/porte/%s/anta.json' % BASE, encoding='utf8'))
 fuori = {
@@ -203,12 +274,20 @@ fuori = {
     'montante': base['montante'],          # sezione misurata, non ricalcata
     'traversi': traversi,
     'riquadri': riquadri,
-    'pannello': base['pannello'],          # il tracciato dice perfilBugna: siena
+    'pannello': dict(base['pannello']),
     'maniglia': base['maniglia'],
     'telaio': base['telaio'],
     'tracciato': 'ricalcato su %s, squadrato' % os.path.basename(SORG),
 }
 os.makedirs('assets/porte/%s' % SLUG, exist_ok=True)
+bp = next((q for q in pz if str(q.get('papel', '')).startswith('bugna')), None)
+bn = bisel(bp, base['pannello'].get('bugna_dxf') or base['pannello'].get('bugna')) if bp else None
+if bn:
+    fuori['pannello']['bugna_nuova'] = bn
+    fuori['pannello']['spessore'] = float(bp.get('espesor') or 21)
+    print('   bisel proprio: %s %g su %g  ->  %d punti'
+          % (bp.get('biselPerfil'), float(bp.get('bisel') or 0), float(bp.get('biselAncho') or 0), len(bn)))
+
 io.open('assets/porte/%s/anta.json' % SLUG, 'w', encoding='utf8').write(
     json.dumps(fuori, ensure_ascii=False, indent=1))
 print('%d vani, %d traversi  ->  assets/porte/%s/anta.json' % (len(riquadri), len(traversi), SLUG))
