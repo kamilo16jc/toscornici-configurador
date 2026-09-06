@@ -892,12 +892,14 @@ function loadModel(key) {
       doorOpenAngle = (manoDx ? -1 : 1) * THREE.MathUtils.degToRad(82);
       doorBtn.hidden = false;
 
-      /* Il punto lo da' la porta. Si calcola sui pezzi TRACCIATI —coordinate
-         d'anta— e poi si porta dov'e' finita l'anta dentro il perno. */
-      const punto = puntoDellaManiglia(pezzi, manoDx);
+      /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
+         nello spazio del perno — che e' quello dell'insieme meno l'offset del
+         perno stesso. */
+      const punto = puntoDellaManiglia(pezzi, vano, manoDx);
+      if (!punto.sobreMontante) console.warn(`${key}: la maniglia non cade sul montante`);
       sitioManiglia = {
-        x: punto.x + anta.position.x,
-        y: punto.y + anta.position.y,
+        x: punto.x - doorPivot.position.x,
+        y: punto.y - doorPivot.position.y,
         z: spessore / 2 + anta.position.z,
       };
       await montaManiglia(mio, sitioManiglia, manoDx);
@@ -949,43 +951,41 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
 }
 
 /**
- * Dove va la maniglia — mappata sulla porta, non a occhio.
+ * Dove va la maniglia.
  *
- * Stava a 60 mm dal bordo e basta, un numero fisso uguale per tutte. Misurato
- * sulle 25 porte, il montante del lato di apertura sta fra 91 e 100 mm e la
- * rosetta cadeva sempre FUORI CENTRO di 10-14 mm, spostata verso il bordo.
- * Poco, ma su un pezzo di ferramenta si vede: una maniglia non centrata sul
- * montante e' la prima cosa che tradisce un render.
+ * La regola e' quella dello scaparate, che e' quella di fabbrica: il canto
+ * della rosetta a RETRANQUEO dal bordo del VANO, e l'altezza a 1040 mm dal
+ * pavimento. Non si inventa niente qui: si copia da li', perche' li' era
+ * giusta.
  *
- * Adesso il punto lo da' la porta: si cerca il montante del lato di apertura
- * all'altezza della maniglia e si prende la sua mezzeria. Se non c'e' —una
- * porta che li' non abbia montante— si torna ai 60 mm, che almeno cadono sul
- * legno.
+ * Avevo provato a centrarla sulla mezzeria del montante, che sembra piu'
+ * furbo — la porta te lo dice, invece di un numero fisso. Ma non e' la stessa
+ * cosa e si vedeva: misurato sulla Siena, la mia cadeva a 115 mm dal bordo
+ * dell'anta dove lo scaparate la mette a 89. Ventisei millimetri troppo
+ * dentro, che su una maniglia si notano subito.
  *
- * L'altezza resta 1040 mm dal pavimento, che e' la quota di fabbrica.
+ * Il montante resta come CONTROLLO: se la rosetta non cadesse sopra di lui
+ * qualcosa non torna, e vale la pena saperlo invece di disegnarla in aria.
  */
-const ALTO_MANIGLIA = 1040;
+const ALTO_MANIGLIA = 1040;      // dal pavimento, quota di fabbrica
+const RETRANQUEO = 25;           // dal bordo del vano al canto della rosetta
 /* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
    catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
 const LARGO_MANIGLIA = 135;
-const RETRO_MANIGLIA = 60;
 
-function puntoDellaManiglia(pezzi, manoDx) {
+function puntoDellaManiglia(pezzi, vano, manoDx) {
+  const x = (manoDx ? vano.dx - RETRANQUEO : vano.sx + RETRANQUEO);
+
+  // Controllo: a quell'altezza li' sotto ci dev'essere il montante.
   const cajas = pezzi.map((p) => ({ p, c: cajaDe(p) }));
   const hoja = cajas.reduce(
     (b, { c }) => [Math.min(b[0], c[0]), Math.min(b[1], c[1]), Math.max(b[2], c[2]), Math.max(b[3], c[3])],
     [Infinity, Infinity, -Infinity, -Infinity],
   );
   const y = hoja[1] + ALTO_MANIGLIA;
-  const borde = manoDx ? hoja[2] : hoja[0];
+  const sobreMontante = cajas.some(({ p, c }) => p.papel === 'montante' && y >= c[1] && y <= c[3]);
 
-  const montanti = cajas.filter(({ p, c }) => p.papel === 'montante' && y >= c[1] && y <= c[3]);
-  const suo = manoDx
-    ? montanti.sort((a, b) => b.c[2] - a.c[2])[0]
-    : montanti.sort((a, b) => a.c[0] - b.c[0])[0];
-
-  const x = suo ? (suo.c[0] + suo.c[2]) / 2 : borde - (manoDx ? 1 : -1) * RETRO_MANIGLIA;
-  return { x, y, sobreElMontante: !!suo };
+  return { x, y: ALTO_MANIGLIA, sobreMontante };
 }
 
 /* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
@@ -1646,7 +1646,14 @@ function renderExtras() {
   });
 
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
-    b.addEventListener('click', () => { state.mano = b.dataset.mano; refreshUI(); }));
+    b.addEventListener('click', () => {
+      state.mano = b.dataset.mano;
+      /* E si rifa' la porta. La mano decide da che lato stanno le cerniere e
+         quindi dove va la maniglia e verso dove spazza l'anta: cambiarla senza
+         ricostruire lasciava la maniglia dov'era, cioe' dal lato sbagliato. */
+      loadModel(currentModelKey);
+      refreshUI();
+    }));
   document.querySelectorAll('#capLatiPills .pill').forEach((b) =>
     b.addEventListener('click', () => { state.capLati = +b.dataset.lati; refreshUI(); }));
   document.querySelectorAll('#capComplPills .pill').forEach((b) =>
