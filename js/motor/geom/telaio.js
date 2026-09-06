@@ -14,7 +14,7 @@
  */
 
 import * as THREE from 'three';
-import { veta } from './materiales.js';
+import { material as materialDe } from './materiales.js';
 
 /** Perfil cerrado a partir de puntos [a, b]. */
 function contorno(puntos) {
@@ -187,11 +187,16 @@ export function montar(datos, { conTapajuntas = false, conSuelo = true, veta: ni
      para la hoja —el configurador tiene sus esencias con fotos reales— debe
      poder darselo tambien al marco, o la puerta y su cerco saldrian de dos
      maderas distintas. */
-  const v = material ? null : veta(nivel);
-  const madera = material ?? new THREE.MeshPhysicalMaterial({
-    color: 0xc8a271, roughness: 0.6, metalness: 0, clearcoat: 0.1, clearcoatRoughness: 0.4,
-    map: v?.mapa ?? null, roughnessMap: v?.rugosidad ?? null,
-  });
+  /* La madera del marco se pide DONDE SE PIDE LA DE LA HOJA, no se arma aqui.
+     Se armaba a mano con el color, la rugosidad y el barniz cableados, y solo
+     se le enganchaban los dos mapas de la veta. El resultado: con una receta
+     que trae tinte propio, la hoja salia del color de la madera y el marco y
+     el coprifilo se quedaban en el 0xc8a271 de siempre — y ademas sin relieve
+     y con otra rugosidad. Medido con el castaño: hoja ae9365 rugosidad 0,71 con
+     relieve, marco c8a271 rugosidad 0,60 sin el.
+     Pasando por material() hereda todo lo que herede la hoja, hoy y cuando se
+     le añada algo mañana. Un marco no es de otra madera que su puerta. */
+  const madera = material ?? materialDe('robleClaro', undefined, nivel);
   /* El yeso, bajado contra el PIXEL y no contra el numero del material.
      Primero lo baje un 13 % sobre e6ded1 y no se noto NADA, porque lo que se
      ve no es el color del material: es el color pasado por la luz. Medido en
