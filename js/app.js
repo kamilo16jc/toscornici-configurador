@@ -599,6 +599,15 @@ function applyMaterialLook() {
   woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.35 : 0.7);
 }
 
+/* Il fondale prende il tono del visore: chiaro di solito, scuro quando il
+   legno e' chiaro e il CSS passa allo sfondo verde. Se stonasse, il vetro
+   mostrerebbe un colore che non c'e' da nessuna parte. */
+let telon = null;
+function pintaTelon() {
+  if (!telon) return;
+  telon.material.color.set(viewerEl.classList.contains('is-dark') ? 0x33413a : 0xe9e4d8);
+}
+
 function applyEssenza() {
   /* La venatura la DISEGNA il motore, non e' piu' una foto.
      Erano quattro mappe PBR fotografiche (albedo, normale, ruvidezza, AO) di
@@ -622,6 +631,7 @@ function applyEssenza() {
     ? hexLum(LACCATI[state.colore].color) > 0.35
     : ESSENZE[state.essenza].tonoChiaro;
   viewerEl.classList.toggle('is-dark', chiaro);
+  pintaTelon();
 }
 
 /* ============================================================
@@ -815,6 +825,29 @@ function loadModel(key) {
          dell'editore, e l'ambiente deve fare lo stesso viaggio o la sua parete
          resta mezzo spessore avanti e si mangia il coprifilo. */
       if (muro) marco.add(muro);
+
+      /* IL FONDALE, dietro il vano.
+         Il canvas e' trasparente di proposito: la sfumatura del visore la fa il
+         CSS, dietro di lui. Ma la passata di TRASMISSIONE del vetro non sa
+         niente del CSS — campiona un buffer che si pulisce col colore del
+         renderer, che e' nero. Percio' il vetro non mostrava il fondo chiaro
+         che si vede intorno: si riempiva di scuro, ed erano quelle "ombre
+         marroni" dentro al cristallo.
+         Non erano ombre, e infatti toglierle non e' bastato: era il vetro che
+         guardava il vuoto.
+         La soluzione non e' dare uno sfondo alla scena —si perderebbe la
+         sfumatura del CSS— ma metterci dietro qualcosa DA GUARDARE, che e'
+         quello che in un negozio si chiama fondale. Serve anche al vano: senza,
+         attraverso la porta aperta si vedeva la pagina. */
+      telon = new THREE.Mesh(
+        new THREE.PlaneGeometry((vano.dx - vano.sx) * 3, vano.su * 2.4),
+        new THREE.MeshBasicMaterial({ toneMapped: false }),
+      );
+      telon.name = 'Fondale';
+      telon.position.set((vano.sx + vano.dx) / 2, vano.su * 0.55,
+        (datiTelaio.muro ? datiTelaio.muro.z0 : -110) - 40);
+      pintaTelon();
+      marco.add(telon);
 
       model = conjunto;
       conjunto.scale.setScalar(1 / 1000);        // il motore va in millimetri
