@@ -75,8 +75,21 @@ function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45) {
   if (!fuera) return null;
 
   const caraHoja = espesorHoja / 2;
-  // Muere justo por encima del panel, para apoyarse en el y taparle el canto.
-  const fondo = (pieza.z ?? 0) + pieza.espesor / 2;
+
+  /* Muere un pelo POR DEBAJO de la cara del panel, no justo en ella.
+     Acababa exactamente en (z + espesor/2), o sea en el mismo plano que la cara
+     del panel, y encima solapa con el 12 mm de banda todo alrededor. Con un
+     panel de madera no se notaba: son dos caras a hueso, la de arriba tapa a la
+     de abajo y ninguna de las dos se ve. Con un CRISTAL si, porque las dos se
+     ven, y salia el parpadeo — medido en la Vercelli, cuyo panel es un vidrio
+     satinado de 4 mm centrado en -1,5: la cara del cristal caia en +0,5 y el
+     aro tenia una cara en +0,5 clavada. 128 coincidencias de 136 en toda la
+     puerta eran ese par.
+     Metiendose 0,3 mm, el canto del cristal queda ENTERRADO bajo el aro, que es
+     ademas lo que hace un junquillo de verdad: se monta encima del vidrio y le
+     tapa el borde. Ni parpadeo ni rendija. */
+  const HOLGURA = 0.3;
+  const fondo = (pieza.z ?? 0) + pieza.espesor / 2 - HOLGURA;
   if (!(caraHoja > fondo + 0.5)) return null;
 
   return geometriaBugna(fuera, perfilBastoneEnMm(ancho, caraHoja, fondo, pieza.bastoneForma), {
