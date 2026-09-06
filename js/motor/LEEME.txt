@@ -1,0 +1,3 @@
+Copia mecanica del motor de puertas3d. NO editar aqui.
+Se corrige en C:UsersJulicpuertas3d y se vuelve a correr:
+  node tools/sync-motor.mjs

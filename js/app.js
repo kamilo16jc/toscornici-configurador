@@ -3,6 +3,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+/* Il motore delle porte. Copia meccanica di puertas3d: non si edita qui, si
+   corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
+import { tejerHoja } from './motor/viewer/tejer.js';
+import { deserializar } from './motor/modelo/proyecto.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
@@ -48,7 +52,7 @@ function essenzaLabel() {
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
 const state = {
-  modello: 'liverpool',
+  modello: 'siena',
   essenza: 'rovere',
   colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
   finitura: 'verniciata',
@@ -606,7 +610,6 @@ function applyEssenza() {
    MODELLO — caricamento GLB, perno di apertura, dimensioni
    ============================================================ */
 
-const nodes = {};
 let model = null;
 let shadowPlane = null;
 let currentModelKey = null;
@@ -650,7 +653,6 @@ function disposeSubtree(root) {
 function clearModel() {
   if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
-  for (const k of Object.keys(nodes)) delete nodes[k];
   leafParts = [];
   doorTargetAngle = 0;
   doorBtn.hidden = true;
@@ -669,47 +671,61 @@ function clearModel() {
 // in scena soltanto l'ultimo partito.
 let numeroCarico = 0;
 
+/**
+ * Carica la porta e la mette in scena.
+ *
+ * Non arriva piu' da un GLB esportato: la TESSE il motore a partire dal
+ * tracciato. Il .json non e' un modello 3D, e' il disegno — montanti,
+ * traversi, riquadri, bugne — e la geometria si calcola qui ogni volta.
+ *
+ * Il salto e' grosso: i 44 GLB pesavano 276 MB, i 25 tracciati pesano 164 KB.
+ * Ed e' geometria vera, non una maglia cotta: cambiare una modanatura si vede
+ * su tutte le porte senza riesportare niente.
+ *
+ * Il motore lavora in MILLIMETRI e il configuratore in metri, da qui la scala.
+ */
 function loadModel(key) {
   const mio = ++numeroCarico;
   currentModelKey = key;
   const def = MODELLI[key];
   clearModel();
   loaderEl.classList.remove('is-hidden');
-  loaderFill.style.width = '0%';
+  loaderFill.style.width = '30%';
 
-  gltfLoader.load(
-    def.file,
-    (gltf) => {
-      if (mio !== numeroCarico) {
-        // sorpassato da un caricamento piu' recente: si butta, se no
-        // resta appeso in memoria senza che nessuno lo veda
-        disposeSubtree(gltf.scene);
-        return;
-      }
-      model = gltf.scene;
+  fetch(def.file)
+    .then((r) => { if (!r.ok) throw new Error(`${r.status} su ${def.file}`); return r.text(); })
+    .then(async (testo) => {
+      if (mio !== numeroCarico) return;   // sorpassato da un caricamento piu' recente
+      loaderFill.style.width = '70%';
 
-      // i GLB sono in millimetri → normalizza a metri
-      const rawBox = new THREE.Box3().setFromObject(model);
-      const rawH = rawBox.getSize(new THREE.Vector3()).y;
-      if (rawH > 100) model.scale.setScalar(1 / 1000);
+      const progetto = deserializar(testo);
+      const pezzi = progetto.piezas.filter((p) => p.visible !== false);
+      const spessore = Math.max(...pezzi.map((p) => p.espesor ?? 45));
 
-      model.traverse((o) => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
-          if (o.material && o.material.name.startsWith('Mat_puerta')) {
-            disposeMaterial(o.material); // texture 4K embebida nel GLB, non serve più
-            o.material = woodMat;
-          }
-        }
+      /* uv: true e veta: null.
+         Le venature del motore qui non servono — il configuratore ha le sue
+         essenze con le foto vere — ma le coordinate di texture SI, o woodMat
+         resta liscio. */
+      const anta = tejerHoja(pezzi, { veta: null, uv: true, espesorHoja: spessore });
+      if (mio !== numeroCarico) { disposeSubtree(anta); return; }
+
+      /* I materiali del motore si buttano e si mettono quelli del
+         configuratore: l'essenza e la finitura sono il cuore commerciale di
+         questa pagina e devono comandare loro. Il vetro invece resta com'e':
+         il motore lo fa con la trasmissione, che e' come si riconosce un
+         cristallo, e il configuratore non ne ha uno suo. */
+      anta.traverse((o) => {
+        if (!o.isMesh) return;
+        o.castShadow = o.receiveShadow = true;
+        const m = o.material;
+        if (m && (m.transmission ?? 0) > 0) return;      // vetro: si lascia
+        if (m) disposeMaterial(m);
+        o.material = woodMat;
       });
 
-      for (const names of Object.values(def.nodi)) {
-        for (const n of names) {
-          const obj = model.getObjectByName(n);
-          if (obj) nodes[n] = obj;
-        }
-      }
+      model = new THREE.Group();
+      model.add(anta);
+      anta.scale.setScalar(1 / 1000);          // il motore va in millimetri
 
       // centra il modello e inquadra
       const box = new THREE.Box3().setFromObject(model);
@@ -718,14 +734,13 @@ function loadModel(key) {
       model.position.sub(center);
       scene.add(model);
 
-      const dist = size.y * 2.0; // compensa il FOV più stretto
+      const dist = size.y * 2.0;
       camera.position.set(dist * 0.65, size.y * 0.12, dist);
       controls.target.set(0, 0, 0);
       controls.minDistance = dist * 0.5;
       controls.maxDistance = dist * 2.2;
       controls.update();
 
-      // piano d'ombra (uno solo, riposizionato per modello)
       if (!shadowPlane) {
         shadowPlane = new THREE.Mesh(
           new THREE.PlaneGeometry(8, 8),
@@ -737,56 +752,94 @@ function loadModel(key) {
       }
       shadowPlane.position.y = -size.y / 2 - 0.001;
 
-      // maniglia con materiale configurabile
-      const lockNode = nodes[def.lockNode];
-      if (lockNode) lockNode.traverse((o) => {
-        if (o.isMesh) { disposeMaterial(o.material); o.material = handleMat; }
-      });
-
-      // perno di apertura sul lato cerniere (opposto alla maniglia)
+      /* Il perno sta sul lato delle cerniere, cioe' l'OPPOSTO della maniglia.
+         Prima si deduceva da dove stava il nodo della serratura dentro il GLB;
+         adesso lo decide state.mano, che e' gia' un dato del preventivo —
+         c'e' il selettore Mano DX / Mano SX — e non una cosa da indovinare
+         guardando la maglia. */
+      const manoDx = state.mano !== 'sx';
       scene.updateMatrixWorld(true);
-      leafParts = def.leafNodes.map((n) => nodes[n]).filter(Boolean);
-      const leafBox = new THREE.Box3();
-      leafParts.forEach((p) => leafBox.expandByObject(p));
-      const lockBox = new THREE.Box3().setFromObject(lockNode || leafParts[0]);
-      const lockX = (lockBox.min.x + lockBox.max.x) / 2;
-      const leafCX = (leafBox.min.x + leafBox.max.x) / 2;
-      const hingeRight = lockX < leafCX;
+      const anteBox = new THREE.Box3().setFromObject(model);
       doorPivot = new THREE.Group();
       doorPivot.position.set(
-        hingeRight ? leafBox.max.x : leafBox.min.x,
+        manoDx ? anteBox.min.x : anteBox.max.x,
         0,
-        (leafBox.min.z + leafBox.max.z) / 2
+        (anteBox.min.z + anteBox.max.z) / 2
       );
       scene.add(doorPivot);
-      leafParts.forEach((p) => doorPivot.attach(p));
-      // 82°: ben aperta ma senza che il bordo libero "incomba" sulla camera
-      doorOpenAngle = (hingeRight ? 1 : -1) * THREE.MathUtils.degToRad(82);
+      leafParts = [model];
+      doorPivot.attach(model);
+      doorOpenAngle = (manoDx ? -1 : 1) * THREE.MathUtils.degToRad(82);
       doorBtn.hidden = false;
 
+      await montaManiglia(mio, size, manoDx);
+
       applyEssenza();
-      applyVisibility();
       doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
       if (state.ambiente !== 'galleria') setAmbiente(state.ambiente);
       loaderEl.classList.add('is-hidden');
       refreshUI();
-      window.__dbg = { scene, camera, model, size, center, nodes, renderer, doorPivot, toggleDoor, setModello };
-    },
-    (ev) => {
-      if (ev.total) loaderFill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
-    },
-    (err) => {
+      window.__dbg = { scene, camera, model, size, center, renderer, doorPivot, toggleDoor, setModello,
+        get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; } };
+    })
+    .catch((err) => {
+      if (mio !== numeroCarico) return;
       loaderEl.querySelector('p').textContent = 'Errore nel caricamento del modello';
       console.error(err);
-    }
-  );
+    });
 }
 
-function applyVisibility() {
-  // La porta si preventiva sempre completa: tutti i nodi visibili.
-  const def = MODELLI[state.modello];
-  for (const names of Object.values(def.nodi)) {
-    for (const n of names) if (nodes[n]) nodes[n].visible = true;
+/* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
+   GLB ne portava una fissa e il menu cambiava solo il prezzo. */
+const cacheManiglia = new Map();
+let manigliaMesh = null;
+
+/** Rifa' solo la maniglia, senza ricostruire la porta. */
+function rimontaManiglia() {
+  if (!window.__dbg?.size || !doorPivot) return;
+  montaManiglia(numeroCarico, window.__dbg.size, state.mano !== 'sx');
+}
+
+async function montaManiglia(mio, size, manoDx) {
+  if (manigliaMesh) { disposeSubtree(manigliaMesh); manigliaMesh.parent?.remove(manigliaMesh); manigliaMesh = null; }
+  const mod = state.manigliaMod;
+  if (!mod || mod === 'no') return;
+
+  const url = `assets/maniglie/${mod}.glb`;
+  try {
+    if (!cacheManiglia.has(mod)) {
+      const gltf = await gltfLoader.loadAsync(url);
+      gltf.scene.updateMatrixWorld(true);
+      let geo = null;
+      gltf.scene.traverse((o) => { if (!geo && o.isMesh) { geo = o.geometry.clone(); geo.applyMatrix4(o.matrixWorld); } });
+      if (!geo) return;
+      /* I GLB del catalogo non rispettano l'unita' di glTF. Si normalizza sul
+         lato piu' lungo a 135 mm, che e' la misura di tutte le maniglie della
+         serie secondo le schede tecniche Mariva. In metri: 0,135. */
+      geo.computeBoundingBox();
+      const c = geo.boundingBox.getSize(new THREE.Vector3());
+      geo.scale(...new Array(3).fill(0.135 / Math.max(c.x, c.y, c.z)));
+      geo.computeVertexNormals();
+      geo.center();
+      cacheManiglia.set(mod, geo);
+    }
+    if (mio !== numeroCarico) return;
+    const geo = cacheManiglia.get(mod);
+    geo.computeBoundingBox();
+    const g = geo.boundingBox;
+    manigliaMesh = new THREE.Mesh(geo, handleMat);
+    manigliaMesh.name = 'Maniglia';
+    manigliaMesh.castShadow = manigliaMesh.receiveShadow = true;
+    // sul filo della porta, a 1040 mm da terra e a 60 mm dal bordo di apertura
+    const bordo = manoDx ? size.x / 2 : -size.x / 2;
+    manigliaMesh.position.set(
+      bordo - (manoDx ? 1 : -1) * 0.06 - (manoDx ? g.max.x : g.min.x),
+      1.04 - size.y / 2,
+      size.z / 2 - g.min.z
+    );
+    doorPivot.add(manigliaMesh);
+  } catch (err) {
+    console.warn(`maniglia ${mod} non caricata`, err);
   }
 }
 
@@ -1183,6 +1236,10 @@ function renderManiglieGrid() {
       state.manFinitura = null;                        // finitura da riscegliere
       grid.querySelectorAll('.man-card').forEach((b) =>
         b.classList.toggle('is-active', b === btn));
+      /* E si rimonta in 3D. Prima cambiava solo il prezzo: il GLB portava una
+         maniglia fissa e sceglierne un'altra non si vedeva. Adesso il modello
+         e' un file a parte, quindi si vede quella scelta. */
+      rimontaManiglia();
       refreshUI();
     });
   });
@@ -2014,6 +2071,12 @@ document.addEventListener('linguacambiata', () => {
 /* ============================================================
    AVVIO
    ============================================================ */
+
+/* Il modello di partenza deve ESISTERE. Era 'liverpool', che senza tracciato
+   e' uscito dal catalogo, e la pagina moriva alla prima riga che ne leggeva il
+   listino. Meglio non fidarsi nemmeno del valore scritto qui sopra: se non c'e'
+   si prende la prima porta del catalogo, qualunque sia. */
+if (!MODELLI[state.modello]) state.modello = Object.keys(MODELLI)[0];
 
 renderModelli();
 renderEssenze();

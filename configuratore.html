@@ -9,15 +9,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo configuratore.html e la pagina si rompe -->
-<link rel="stylesheet" href="css/style.css?v=36">
+<link rel="stylesheet" href="css/style.css?v=37">
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "polybooljs": "https://cdn.jsdelivr.net/npm/polybooljs@1.2.2/+esm"
   }
 }
 </script>
+<!--
+  Tre voci nuove e una cambiata, e vale la pena spiegarle:
+
+  · three passa da 0.170 a 0.180. Non e' un capriccio: il motore delle porte
+    gira su 0.180 e DUE versioni di three nella stessa pagina non si possono
+    mescolare — sarebbero due istanze scollegate, con due classi Vector3
+    diverse che non si riconoscono.
+  · "three/examples/jsm/" e' lo stesso di "three/addons/", ma il motore scrive
+    i percorsi in quel modo. Puntano allo stesso posto.
+  · polybooljs e' CommonJS. Il "+esm" di jsdelivr lo converte al volo, cosi'
+    entra in una pagina senza impacchettatore. Verificato: union di due
+    quadrati da 8 vertici, una regione.
+-->
 </head>
 <body>
 
@@ -346,6 +361,6 @@
 
 <script src="js/lingua.js?v=2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=35"></script>
+<script type="module" src="js/app.js?v=38"></script>
 </body>
 </html>

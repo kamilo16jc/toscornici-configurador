@@ -1,6 +1,11 @@
-// Generatore del catalogo: incrocia i GLB (Assets doors) con le schede
-// .md (manual-configurador/modelos) e produce js/catalogo.js + copia i GLB.
+// Generatore del catalogo: incrocia le porte TRACCIATE (.puerta.json) con le
+// schede .md (manual-configurador/modelos) e produce js/catalogo.js + copia i
+// JSON in assets/porte/.
 // Uso:  node tools/generate-catalog.mjs
+//
+// Prima incrociava i GLB. Adesso il 3D non viene piu' da un modello esportato:
+// lo tesse il motore a partire dal tracciato, quindi la fonte e' il .json. Un
+// modello senza tracciato non entra in catalogo — non avrebbe come mostrarsi.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -8,9 +13,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJ = path.resolve(__dirname, '..');
-const GLB_DIR = 'C:/Users/Julic/OneDrive/Escritorio/Toscornici/Assets doors';
+const PORTE_DIR = process.env.PORTE ?? 'C:/Users/Julic/OneDrive/Escritorio/Jason Doors';
 const MD_DIR = 'C:/Users/Julic/OneDrive/Escritorio/Toscornici/manual-configurador/modelos';
-const OUT_ASSETS = path.join(PROJ, 'assets');
+const OUT_ASSETS = path.join(PROJ, 'assets', 'porte');
 const OUT_CATALOG = path.join(PROJ, 'js', 'catalogo.js');
 
 const ESSENZE_COLS = ['rovere', 'castagno', 'toulipier', 'pino'];
@@ -167,54 +172,70 @@ function classifyNodes(names, warnings, tag) {
 // Modelli esclusi dal configuratore: i design hanno errori da correggere.
 // I GLB sorgente restano in "Assets doors" — per riattivarne uno basta
 // toglierlo da questa lista e rigenerare.
+/* Modelli tenuti fuori dal catalogo.
+   Da qui sono usciti vercelli, alessandria e piccadilly: erano esclusi perche'
+   il loro GLB aveva il disegno sbagliato, e il GLB non c'e' piu'. Adesso il 3D
+   nasce dal tracciato, che per queste tre esiste ed e' buono. Gli altri
+   restano: non hanno tracciato, quindi in ogni caso non entrerebbero. */
 const EXCLUDE = new Set([
   'america', 'arizona', 'indiana', 'florida', 'california', 'georgia',
-  'newjersey', 'montana', 'vercelli', 'alessandria', 'piccadilly', 'queen',
+  'newjersey', 'montana', 'queen',
 ]);
 
 const warnings = [];
 const modelli = {};
 const skipped = [];
 
-const glbs = fs.readdirSync(GLB_DIR).filter((f) => f.toLowerCase().endsWith('.glb'));
+const porte = fs.readdirSync(PORTE_DIR).filter((f) => f.toLowerCase().endsWith('.json'));
 const mds = fs.readdirSync(MD_DIR).filter((f) => f.endsWith('.md'));
+fs.mkdirSync(OUT_ASSETS, { recursive: true });
 
-for (const glb of glbs.sort()) {
-  const full = path.join(GLB_DIR, glb);
-  const size = fs.statSync(full).size;
-  const rawName = glb.replace(/^PUERTA\d+_/, '').replace(/\.glb$/i, ''); // "NEW JERSEY"
-  if (size < 10000) { skipped.push(`${glb} (file corrotto: ${size} B)`); continue; }
-  const slug = rawName.toLowerCase().replace(/\s+/g, '-');
-  if (EXCLUDE.has(slug.replace(/-/g, ''))) { skipped.push(`${glb} (escluso: design da correggere)`); continue; }
-  const md = mds.find((f) => new RegExp(`^\\d+-${slug}\\.md$`).test(f));
-  if (!md) { skipped.push(`${glb} (nessuna scheda .md per "${slug}")`); continue; }
+/** Che tipo di porta e', letto dai PAPELES del tracciato e non a mano. */
+function descrivi(piezas) {
+  const papeles = new Set(piezas.map((p) => p.papel));
+  const vetro = piezas.some((p) => ['vetro', 'vetroSatinato'].includes(p.papel) || p.vidrioEnElCampo);
+  // Un grigliato all'inglese sono molti riquadri di vetro piccoli, non uno solo.
+  const riquadri = piezas.filter((p) => ['vetro', 'vetroSatinato'].includes(p.papel)).length;
+  const grigliato = riquadri >= 4;
+  return {
+    descIt: grigliato ? 'Porta vetrata con grigliato all’inglese'
+      : vetro ? 'Porta con vano vetro' : 'Porta classica con bugne',
+    descEn: grigliato ? 'Glazed door with English grille'
+      : vetro ? 'Glazed panel door' : 'Classic panelled door',
+    haVetro: vetro,
+    papeles: [...papeles],
+  };
+}
+
+for (const file of porte.sort()) {
+  const full = path.join(PORTE_DIR, file);
+  const rawName = file.replace(/\.puerta$/i, '').replace(/\.json$/i, '').replace(/\.puerta\.json$/i, '');
+  const slug = rawName.toLowerCase().replace(/\.puerta$/, '').replace(/\s+/g, '-');
+  if (EXCLUDE.has(slug.replace(/-/g, ''))) { skipped.push(`${file} (escluso: design da correggere)`); continue; }
+
+  let doc;
+  try { doc = JSON.parse(fs.readFileSync(full, 'utf8')); }
+  catch (e) { skipped.push(`${file} (JSON illeggibile: ${e.message})`); continue; }
+  const piezas = (doc.piezas ?? []).filter((p) => p.visible !== false);
+  if (!piezas.length) { skipped.push(`${file} (nessun pezzo tracciato)`); continue; }
+
+  // Le schede si chiamano 2500-alessandria.md: basta il suffisso, senza regex.
+  const md = mds.find((f) => f.toLowerCase().endsWith('-' + slug + '.md'));
+  if (!md) { skipped.push(`${file} (nessuna scheda .md per "${slug}")`); continue; }
 
   const info = parseMd(path.join(MD_DIR, md));
   const { componenti, listino } = buildComponents(info, warnings);
-  const nodeNames = parseGlbNodes(full);
-  const cls = classifyNodes(nodeNames, warnings, rawName);
-
-  const nodi = {
-    pannello: [...cls.leaf, ...cls.glass],
-    montanti: cls.marco ? [cls.marco] : [],
-    serratura: cls.lock ? [cls.lock] : [],
-  };
-  for (const c of componenti) if (!nodi[c.id]) nodi[c.id] = [];
-
-  const hasVetro = cls.glass.length > 0;
-  const hasGrigliato = componenti.some((c) => c.id === 'grigliato');
-  const descIt = hasGrigliato ? 'Porta vetrata con grigliato all’inglese'
-    : hasVetro ? 'Porta con vano vetro'
-    : 'Porta classica con bugne';
-  const descEn = hasGrigliato ? 'Glazed door with English grille'
-    : hasVetro ? 'Glazed panel door'
-    : 'Classic panelled door';
+  const { descIt, descEn } = descrivi(piezas);
 
   const key = slug.replace(/-/g, '');
-  const outFile = glb.replace(/\s+/g, '_');
-  fs.copyFileSync(full, path.join(OUT_ASSETS, outFile));
-  // hash del contenuto nella URL: il browser riscarica solo se il GLB cambia
-  const hash = crypto.createHash('md5').update(fs.readFileSync(full)).digest('hex').slice(0, 8);
+  const outFile = `${key}.json`;
+  /* Si copia SENZA l'immagine di riferimento. E' il calco su cui si e'
+     tracciato: pesa il 95 % del file, non si vede in 3D, e farla scaricare al
+     cliente sarebbe regalargli il disegno di fabbrica. */
+  const { imagen, ...limpio } = doc;
+  const testo = JSON.stringify(limpio);
+  fs.writeFileSync(path.join(OUT_ASSETS, outFile), testo);
+  const hash = crypto.createHash('md5').update(testo).digest('hex').slice(0, 8);
 
   const lineaTag = info.linea === 'BASE' ? 'Base' : info.linea;
   modelli[key] = {
@@ -223,17 +244,15 @@ for (const glb of glbs.sort()) {
     linea: lineaTag,
     sub: `Linea ${lineaTag} · ID ${info.id}`,
     descIt, descEn,
-    file: `assets/${outFile}?v=${hash}`,
-    nodi,
-    leafNodes: [...cls.leaf, ...cls.glass, ...(cls.lock ? [cls.lock] : [])],
-    lockNode: cls.lock,
+    file: `assets/porte/${outFile}?v=${hash}`,
+    pezzi: piezas.length,
     componenti,
     listino,
   };
 }
 
 const banner = `// GENERATO AUTOMATICAMENTE da tools/generate-catalog.mjs — non modificare a mano.
-// Fonte: Assets doors (GLB) + manual-configurador/modelos (.md). Rigenerare con:
+// Fonte: porte tracciate (.json) + manual-configurador/modelos (.md). Rigenerare con:
 //   node tools/generate-catalog.mjs
 `;
 fs.writeFileSync(OUT_CATALOG, `${banner}export const MODELLI = ${JSON.stringify(modelli, null, 2)};\n`);
