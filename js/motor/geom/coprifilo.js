@@ -17,6 +17,7 @@
  */
 
 import * as THREE from 'three';
+import { pegarVeta } from './materiales.js';
 
 /**
  * Coloca el perfil en el convenio del montaje.
@@ -201,6 +202,13 @@ export async function montarCoprifilo(perfil, medida, vano, muro, material, base
     m.castShadow = true;
     m.receiveShadow = true;
     m.name = 'Coprifilo';
+    /* Y sus coordenadas de textura. Sin ellas la moldura salia LISA al lado de
+       un marco veteado, que es de lo primero que canta: es la misma madera y
+       tiene que tener la misma fibra. La jamba se lee a lo largo, el cabecero a
+       lo ancho, asi que el sentido se saca de su propia caja. */
+    m.geometry.computeBoundingBox();
+    const caja = m.geometry.boundingBox;
+    pegarVeta(m.geometry, caja.max.x - caja.min.x > caja.max.y - caja.min.y);
     g.add(m);
   });
 

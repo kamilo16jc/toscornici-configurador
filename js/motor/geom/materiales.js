@@ -157,6 +157,41 @@ export function veta(nivel) {
   return vetaGuardada.get(nivel);
 }
 
+/**
+ * Cuanto mide una vuelta de veta, en mm.
+ *
+ * 400 y no 900: la textura son 512 pixeles, asi que a 900 mm cada pixel mide
+ * 1,76 y una fibra de 7 se queda en cuatro pixeles — se emborrona en cuanto la
+ * puerta se aleja. A 400 el pixel mide 0,78 y la fibra son nueve.
+ */
+export const TAM_VETA = 400;
+
+/**
+ * Pega las coordenadas de textura a una pieza, con la fibra donde va.
+ *
+ * Proyeccion plana desde X e Y: la puerta es plana, asi que basta, y ademas
+ * hace que la veta CORRA SEGUIDA de una pieza a la siguiente en vez de
+ * empezar de cero en cada una, que es lo que delata una textura pegada.
+ *
+ * El sentido no es un capricho: en una puerta la fibra va a lo LARGO de cada
+ * pieza —vertical en los largueros, horizontal en los travesaños— porque la
+ * madera se mueve a lo ancho y no a lo largo.
+ *
+ * Vive aqui y no en el tejido porque no lo necesita solo el tejido: el
+ * coprifilo es madera igual, y sin UV le salia lisa.
+ */
+export function pegarVeta(geo, cruzada) {
+  const p = geo.attributes.position;
+  const uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    const a = p.getX(i) / TAM_VETA;
+    const b = p.getY(i) / TAM_VETA;
+    uv[i * 2] = cruzada ? b : a;
+    uv[i * 2 + 1] = cruzada ? a : b;
+  }
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+}
+
 /** Un acabado admite veta si es madera: ni el vidrio ni el laton la llevan. */
 export const esMadera = (clave) => {
   const a = ACABADOS[clave];

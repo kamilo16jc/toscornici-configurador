@@ -10,6 +10,7 @@ import { deserializar } from './motor/modelo/proyecto.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
+import { veta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
@@ -552,10 +553,14 @@ function loadSet(essenza) {
 }
 
 // materiale legno condiviso da pannello + marco (tutti i modelli)
-const woodMat = new THREE.MeshStandardMaterial({
-  roughness: 1,
+/* Fisico e non standard: il legno del motore ha il CLEARCOAT, che e' lo strato
+   di vernice sopra la fibra. Con MeshStandard quel parametro si ignora in
+   silenzio e il legno resta opaco, che e' mezzo problema del "sembra plastica". */
+const woodMat = new THREE.MeshPhysicalMaterial({
+  roughness: 0.38,
   metalness: 0,
-  normalScale: new THREE.Vector2(0.8, 0.8),
+  clearcoat: 0.08,
+  clearcoatRoughness: 0.35,
 });
 
 const hexLum = (hex) =>
@@ -586,19 +591,29 @@ function applyMaterialLook() {
   const base = new THREE.Color(lacc ? LACCATI[state.colore].color : ESSENZE[state.essenza].color);
   if (raw) base.multiplyScalar(0.88);
   woodMat.color.copy(base);
-  woodMat.roughness = lacc ? 0.42 : (raw ? 1 : 0.62);
-  woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.3 : 0.55);
-  const ns = lacc ? 1.15 : (raw ? 1.25 : 1.05);
-  woodMat.normalScale.set(ns, ns);
-  woodMat.aoMapIntensity = raw ? 1.5 : 1.35;
+  /* I numeri sono quelli del motore: 0,38 di ruvidezza e 0,08 di vernice per
+     il legno verniciato, che e' come si vede una porta finita. La grezza e'
+     legno nudo — niente vernice e molto piu' ruvida. */
+  woodMat.roughness = lacc ? 0.42 : (raw ? 0.85 : 0.38);
+  woodMat.clearcoat = lacc ? 0.5 : (raw ? 0 : 0.08);
+  woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.35 : 0.7);
 }
 
 function applyEssenza() {
-  const set = loadSet('universal');
-  woodMat.map = set.map;
-  woodMat.normalMap = set.normalMap;
-  woodMat.roughnessMap = set.roughnessMap;
-  woodMat.aoMap = set.aoMap;
+  /* La venatura la DISEGNA il motore, non e' piu' una foto.
+     Erano quattro mappe PBR fotografiche (albedo, normale, ruvidezza, AO) di
+     un set 'universal' tinto col colore dell'essenza. Adesso e' la stessa
+     venatura dello scaparate: rovere al quarto, generata con codice.
+
+     Il colore dell'essenza RESTA. Sono quattro colonne di listino diverse e
+     devono continuare a distinguersi: cambia il materiale, non il catalogo.
+
+     Un laccato non ha venatura: e' vernice coprente sopra il legno. */
+  const v = isLaccato() ? null : veta('sutil');
+  woodMat.map = v?.mapa ?? null;
+  woodMat.roughnessMap = v?.rugosidad ?? null;
+  woodMat.normalMap = null;
+  woodMat.aoMap = null;
   applyMaterialLook();
   woodMat.needsUpdate = true;
 

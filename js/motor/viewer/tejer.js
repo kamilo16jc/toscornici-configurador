@@ -17,7 +17,7 @@
 
 import * as THREE from 'three';
 import { extruir } from '../geom/extruir.js';
-import { material, esMadera } from '../geom/materiales.js';
+import { material, esMadera, pegarVeta } from '../geom/materiales.js';
 import { geometriaBugna, campoDe, perfilQueQuepa } from '../geom/relieve.js';
 import { perfilEnMm, perfilBastoneEnMm } from '../geom/perfiles.js';
 import { haciaDentro } from '../geom/offset.js';
@@ -25,37 +25,6 @@ import { contornoEfectivo } from '../geom/efectivo.js';
 import { recortarPorVanos } from '../geom/booleanas.js';
 
 
-/* Cuanto mide una vuelta de veta, en mm.
-   400 y no 900: la textura son 512 pixeles, asi que a 900 mm cada pixel mide
-   1,76 mm y una fibra de 8 mm se queda en cuatro pixeles y medio — se
-   emborrona en cuanto la puerta se aleja. A 400 el pixel mide 0,78 y la fibra
-   son once, que aguanta. Repetir mas veces no se nota porque el ruido es
-   periodico y el contraste, bajisimo. */
-const TAM_VETA = 400;
-
-/**
- * Pega la veta a la pieza, con la fibra donde va.
- *
- * Proyeccion plana desde X e Y: la puerta es plana, asi que basta, y ademas
- * hace que la veta CORRA SEGUIDA de una pieza a la siguiente en vez de
- * empezar de cero en cada una, que es lo que delata una textura pegada.
- *
- * Y el sentido no es un capricho: en una puerta la fibra va a lo LARGO de cada
- * pieza —vertical en los largueros, horizontal en los travesaños— porque la
- * madera se mueve a lo ancho y no a lo largo. Asi que se mira la pieza: si es
- * mas ancha que alta, se cruzan las coordenadas.
- */
-function pegarVeta(geo, cruzada) {
-  const p = geo.attributes.position;
-  const uv = new Float32Array(p.count * 2);
-  for (let i = 0; i < p.count; i++) {
-    const a = p.getX(i) / TAM_VETA;
-    const b = p.getY(i) / TAM_VETA;
-    uv[i * 2] = cruzada ? b : a;
-    uv[i * 2 + 1] = cruzada ? a : b;
-  }
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-}
 
 /**
  * Crece el contorno por el solape que la pieza mete en la ranura.
