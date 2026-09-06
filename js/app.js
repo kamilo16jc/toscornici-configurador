@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* Il motore delle porte. Copia meccanica di puertas3d: non si edita qui, si
    corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
 import { tejerHoja } from './motor/viewer/tejer.js';
-import { deserializar } from './motor/modelo/proyecto.js';
+import { deserializar, cajaDe } from './motor/modelo/proyecto.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
@@ -892,7 +892,15 @@ function loadModel(key) {
       doorOpenAngle = (manoDx ? -1 : 1) * THREE.MathUtils.degToRad(82);
       doorBtn.hidden = false;
 
-      await montaManiglia(mio, size, manoDx);
+      /* Il punto lo da' la porta. Si calcola sui pezzi TRACCIATI —coordinate
+         d'anta— e poi si porta dov'e' finita l'anta dentro il perno. */
+      const punto = puntoDellaManiglia(pezzi, manoDx);
+      sitioManiglia = {
+        x: punto.x + anta.position.x,
+        y: punto.y + anta.position.y,
+        z: spessore / 2 + anta.position.z,
+      };
+      await montaManiglia(mio, sitioManiglia, manoDx);
 
       applyEssenza();
       doorDims = { w: size.x, h: size.y, floorY: -size.y / 2 };
@@ -909,11 +917,6 @@ function loadModel(key) {
     });
 }
 
-/* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
-   GLB ne portava una fissa e il menu cambiava solo il prezzo. */
-const cacheManiglia = new Map();
-let manigliaMesh = null;
-
 /**
  * Il coprifilo, in 3D e non solo a listino.
  *
@@ -922,7 +925,7 @@ let manigliaMesh = null;
  * lungo il perimetro del vano, contro la parete.
  *
  * Due non hanno sezione tracciata: 'massello' e' lo stesso liscio del
- * listellare —cambia il legno, non la forma— e prende quello; 'novecento' non
+ * listellare â€”cambia il legno, non la formaâ€” e prende quello; 'novecento' non
  * ce l'ha proprio e resta senza 3D, a listino come prima.
  */
 const COPRI_3D = {
@@ -945,16 +948,56 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
   }
 }
 
-/** Rifa' solo la maniglia, senza ricostruire la porta. */
-function rimontaManiglia() {
-  if (!window.__dbg?.size || !doorPivot) return;
-  montaManiglia(numeroCarico, window.__dbg.size, state.mano !== 'sx');
+/**
+ * Dove va la maniglia — mappata sulla porta, non a occhio.
+ *
+ * Stava a 60 mm dal bordo e basta, un numero fisso uguale per tutte. Misurato
+ * sulle 25 porte, il montante del lato di apertura sta fra 91 e 100 mm e la
+ * rosetta cadeva sempre FUORI CENTRO di 10-14 mm, spostata verso il bordo.
+ * Poco, ma su un pezzo di ferramenta si vede: una maniglia non centrata sul
+ * montante e' la prima cosa che tradisce un render.
+ *
+ * Adesso il punto lo da' la porta: si cerca il montante del lato di apertura
+ * all'altezza della maniglia e si prende la sua mezzeria. Se non c'e' —una
+ * porta che li' non abbia montante— si torna ai 60 mm, che almeno cadono sul
+ * legno.
+ *
+ * L'altezza resta 1040 mm dal pavimento, che e' la quota di fabbrica.
+ */
+const ALTO_MANIGLIA = 1040;
+/* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
+   catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
+const LARGO_MANIGLIA = 135;
+const RETRO_MANIGLIA = 60;
+
+function puntoDellaManiglia(pezzi, manoDx) {
+  const cajas = pezzi.map((p) => ({ p, c: cajaDe(p) }));
+  const hoja = cajas.reduce(
+    (b, { c }) => [Math.min(b[0], c[0]), Math.min(b[1], c[1]), Math.max(b[2], c[2]), Math.max(b[3], c[3])],
+    [Infinity, Infinity, -Infinity, -Infinity],
+  );
+  const y = hoja[1] + ALTO_MANIGLIA;
+  const borde = manoDx ? hoja[2] : hoja[0];
+
+  const montanti = cajas.filter(({ p, c }) => p.papel === 'montante' && y >= c[1] && y <= c[3]);
+  const suo = manoDx
+    ? montanti.sort((a, b) => b.c[2] - a.c[2])[0]
+    : montanti.sort((a, b) => a.c[0] - b.c[0])[0];
+
+  const x = suo ? (suo.c[0] + suo.c[2]) / 2 : borde - (manoDx ? 1 : -1) * RETRO_MANIGLIA;
+  return { x, y, sobreElMontante: !!suo };
 }
 
-async function montaManiglia(mio, size, manoDx) {
+/* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
+   GLB ne portava una fissa e il menu cambiava solo il prezzo. */
+const cacheManiglia = new Map();
+let manigliaMesh = null;
+let sitioManiglia = null;   // dove va, in millimetri e in coordinate d'anta
+
+async function montaManiglia(mio, sitio, manoDx) {
   if (manigliaMesh) { disposeSubtree(manigliaMesh); manigliaMesh.parent?.remove(manigliaMesh); manigliaMesh = null; }
   const mod = state.manigliaMod;
-  if (!mod || mod === 'no') return;
+  if (!mod || mod === 'no' || !doorPivot || !sitio) return;
 
   const url = `assets/maniglie/${mod}.glb`;
   try {
@@ -964,12 +1007,16 @@ async function montaManiglia(mio, size, manoDx) {
       let geo = null;
       gltf.scene.traverse((o) => { if (!geo && o.isMesh) { geo = o.geometry.clone(); geo.applyMatrix4(o.matrixWorld); } });
       if (!geo) return;
-      /* I GLB del catalogo non rispettano l'unita' di glTF. Si normalizza sul
-         lato piu' lungo a 135 mm, che e' la misura di tutte le maniglie della
-         serie secondo le schede tecniche Mariva. In metri: 0,135. */
+      /* IN MILLIMETRI, come tutto quello che sta dentro l'insieme.
+         Era normalizzata a 0,135 —metri— da quando l'anta stava sciolta in
+         scena. Adesso pende dal perno, che vive in millimetri dentro un gruppo
+         scalato per mille: la maniglia usciva di 0,1 mm, cioe' invisibile.
+         Il valore e' 135 perche' e' quanto misurano tutte le maniglie della
+         serie secondo le schede Mariva; i GLB del catalogo non rispettano
+         l'unita' di glTF, quindi si normalizza sul lato piu' lungo. */
       geo.computeBoundingBox();
       const c = geo.boundingBox.getSize(new THREE.Vector3());
-      geo.scale(...new Array(3).fill(0.135 / Math.max(c.x, c.y, c.z)));
+      geo.scale(...new Array(3).fill(LARGO_MANIGLIA / Math.max(c.x, c.y, c.z)));
       geo.computeVertexNormals();
       geo.center();
       cacheManiglia.set(mod, geo);
@@ -978,20 +1025,45 @@ async function montaManiglia(mio, size, manoDx) {
     const geo = cacheManiglia.get(mod);
     geo.computeBoundingBox();
     const g = geo.boundingBox;
-    manigliaMesh = new THREE.Mesh(geo, handleMat);
+
+    /* Il modello porta la rosetta a un capo e la leva verso l'altro. Per la
+       mano destra va specchiato, o la leva punta al bordo invece che dentro
+       l'anta. */
+    const espejo = manoDx;
+    const clave = `${mod}${espejo ? '-esp' : ''}`;
+    if (!cacheManiglia.has(clave)) {
+      let g2 = geo;
+      if (espejo) {
+        g2 = geo.clone();
+        g2.scale(-1, 1, 1);
+        const idx = g2.getIndex();
+        if (idx) { const a = idx.array; for (let i = 0; i < a.length; i += 3) { const t = a[i]; a[i] = a[i + 2]; a[i + 2] = t; } idx.needsUpdate = true; }
+        g2.computeVertexNormals();
+        g2.computeBoundingBox();
+      }
+      cacheManiglia.set(clave, g2);
+    }
+    const usada = cacheManiglia.get(clave);
+    usada.computeBoundingBox();
+    const b = usada.boundingBox;
+
+    manigliaMesh = new THREE.Mesh(usada, handleMat);
     manigliaMesh.name = 'Maniglia';
     manigliaMesh.castShadow = manigliaMesh.receiveShadow = true;
-    // sul filo della porta, a 1040 mm da terra e a 60 mm dal bordo di apertura
-    const bordo = manoDx ? size.x / 2 : -size.x / 2;
-    manigliaMesh.position.set(
-      bordo - (manoDx ? 1 : -1) * 0.06 - (manoDx ? g.max.x : g.min.x),
-      1.04 - size.y / 2,
-      size.z / 2 - g.min.z
-    );
+    /* Riferita al canto della ROSETTA e non al centro: il modello la tiene a
+       un estremo, e centrarlo la lasciava a meta' fuori dall'anta. */
+    const cantoRoseta = espejo ? b.max.x : b.min.x;
+    manigliaMesh.position.set(sitio.x - cantoRoseta, sitio.y, sitio.z - b.min.z);
     doorPivot.add(manigliaMesh);
   } catch (err) {
     console.warn(`maniglia ${mod} non caricata`, err);
   }
+}
+
+/** Rifa' solo la maniglia, senza ricostruire la porta. */
+function rimontaManiglia() {
+  if (!sitioManiglia || !doorPivot) return;
+  montaManiglia(numeroCarico, sitioManiglia, state.mano !== 'sx');
 }
 
 /* ============================================================
