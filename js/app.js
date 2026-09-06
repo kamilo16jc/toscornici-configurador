@@ -25,12 +25,26 @@ import { MODELLI } from './catalogo.js';
 const ESSENZE = {
   rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xa86948 },
   castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xa2805a },
-  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  color: 0xcdaf7b },
+  /* 9f8456 e' il tono con cui il toulipier e' stato disegnato al banco, e va
+     col suo. Il colore e la venatura sono la stessa decisione: la venatura
+     moltiplica il colore, quindi separarli vuol dire vedere un legno che non
+     esiste in nessuna delle due parti. */
+  toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  color: 0x9f8456 },
   /* Il pino era e8a05c, un arancione molto carico: con la venatura addosso
      sembrava legno tinto, non pino. c8a271 e' il tono con cui lo scaparate lo
      rende —e quello che gli e' piaciuto— ed e' anche piu' vicino al pino vero,
      che e' giallo pallido e non arancione. */
   pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  color: 0xc8a271 },
+};
+
+/* Quale venatura porta ogni essenza. Una tabella e non una catena di if: la
+   prossima si aggiunge con una riga, e si vede a colpo d'occhio quali ne hanno
+   e quali no. Le ricette vivono nel motore, geom/materiales.js -> PRESETS_VETA,
+   disegnate al banco.
+   Rovere e castagno restano a colore pieno finche' non abbiano la loro. */
+const VENATURE = {
+  pino: 'pinoCatedral',
+  toulipier: 'toulipier',
 };
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
@@ -629,7 +643,7 @@ function applyEssenza() {
      devono continuare a distinguersi: cambia il materiale, non il catalogo.
 
      Un laccato non ha venatura: e' vernice coprente sopra il legno. */
-  /* VENATURA SOLO SUL PINO, per adesso.
+  /* OGNI ESSENZA CON LA SUA VENATURA.
      E' quella disegnata al banco —veta-140f-50c, il preset 'pinoCatedral'—:
      140 fibre ogni 750 mm, figura a cattedrale e tre nodi. Il banco esporta la
      RICETTA e non il PNG, cosi' si rigenera a 1024 px invece dei 512 esportati
@@ -637,7 +651,7 @@ function applyEssenza() {
      i pixel appena ci si avvicina.
      Le altre tre essenze restano a colore pieno finche' non abbiano la loro.
      Un laccato non la prende mai: e' vernice coprente. */
-  const v = !isLaccato() && state.essenza === 'pino' ? veta('pinoCatedral') : null;
+  const v = isLaccato() ? null : veta(VENATURE[state.essenza] ?? null);
   woodMat.map = v?.mapa ?? null;
   woodMat.roughnessMap = v?.rugosidad ?? null;
   woodMat.normalMap = v?.normal ?? null;

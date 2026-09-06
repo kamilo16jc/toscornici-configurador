@@ -64,6 +64,7 @@ export const VETA_POR_DEFECTO = {
   nudoTam: 0.045,    // diametro relativo al lado
   nudoOscuro: 0.58,  // cuanto oscurece el nudo
   relieve: 0.28,     // fuerza del mapa de normales; 0 lo apaga
+  semilla: 20260825, // cambiala y sale otra tabla del mismo arbol
   px: 512,           // resolucion del mapa
 };
 
@@ -74,12 +75,13 @@ export function mapasDeVeta(o = {}) {
   const {
     lineas, color: fColor, brillo: fBrillo, finura, temblor, irregular,
     vida: fVida, tono: fTono, mancha: fMancha, desvio: fDesvio,
-    catedral, nudos: cuantosNudos, nudoTam, nudoOscuro, relieve: relieveFuerza, px,
+    catedral, nudos: cuantosNudos, nudoTam, nudoOscuro, relieve: relieveFuerza,
+    semilla: laSemilla, px,
   } = { ...VETA_POR_DEFECTO, ...o };
   const N = px;
 
   // Ruido de valor PERIODICO: al repetirse la textura no se ve la juntura.
-  let semilla = 20260825;
+  let semilla = laSemilla >>> 0;
   const azar = () => ((semilla = (semilla * 1664525 + 1013904223) >>> 0) / 4294967296);
   const banda = (n) => {
     const v = Array.from({ length: n }, azar);
@@ -358,6 +360,62 @@ export const PRESETS_VETA = {
         relieve: 0.08, px: 1024,
         // Y lo que no es veta sino MATERIAL, que tambien venia en su ficha:
         tam: 750, rugosidad: 0.9, barniz: 0,
+      },
+
+      /* TOULIPIER, el suyo: veta-111f-20c, salido del banco.
+         Es la ficha wood_toulipier_raw_001 ya retocada a ojo, y los cambios
+         que le hizo dicen bastante:
+           tam 800 -> 300 mm y 160 -> 111 fibras, o sea fibra cada 2,70 en vez
+             de cada 5. Madera bastante mas cerrada que la de la ficha.
+           finura 0,50 -> 1,17: de linea fina a onda ancha. Es lo que quita el
+             aire de pana y la deja como veta blanda.
+           brillo 0,30 -> 0. La fibra no cambia el brillo en absoluto: manda el
+             color y nada mas.
+           relieve 0,25 -> 0,02, o sea practicamente plana.
+           nudos 1 -> 0. Tabla limpia.
+           catedral 0,28 -> 0,35.
+         A 2048 px sobre 300 mm son 6,83 texeles por milimetro: de sobra.
+         La semilla 48271 es la de la ficha original, que conservo. */
+      toulipier: {
+        lineas: 111, color: 0.195, brillo: 0, finura: 1.17,
+        temblor: 0.2, irregular: 0.55, vida: 0.34,
+        tono: 0.08, mancha: 0.14, desvio: 0.04,
+        catedral: 0.35, nudos: 0, nudoTam: 0.015, nudoOscuro: 0.36,
+        relieve: 0.02, semilla: 48271, px: 2048,
+        tam: 300, rugosidad: 0.3, barniz: 0, tinte: 0x9f8456,
+      },
+
+      /* TOULIPIER CRUDO, de la ficha wood_toulipier_raw_001. Campo por campo:
+           real_world_scale 80 cm            -> tam 800
+           grain_physical_width_mm avg 5,0   -> 800/5 = 160 fibras
+           grain_contrast 0,24               -> color
+           grain_definition 0,55 y
+             grain_sharpness 0,40            -> finura (fine_soft: linea fina y blanda)
+           waviness 0,24 y curvature 0,18    -> temblor
+           spacing.randomness 0,38 y
+             local_distortion 0,15           -> irregular
+           fibers.visibility 0,26            -> vida
+           cathedral intensity 0,28          -> catedral
+           knots density 0,08, very_low      -> 1 nudo
+           knots color_contrast 0,28         -> nudoOscuro
+           grain_distortion_radius 0,08      -> nudoTam
+           color.variation horizontal 0,08
+             y vertical 0,22                 -> tono y mancha
+           pbr.normal.strength 0,25          -> relieve
+           surface.roughness 0,68            -> rugosidad
+           clearcoat 0,0, raw_wood true      -> barniz 0
+           procedural_variation.seed 48271   -> semilla
+         Y la ficha avisa de dos cosas que hay que respetar: avoid
+         excessive_orange y wood_must_not_look_varnished. Por eso barniz 0 y por
+         eso el revelado del configurador ya esta en ACES, que desatura.
+         A 2048 px sobre 800 mm son 2,56 texeles/mm: no se pixela ni de cerca. */
+      toulipierCrudo: {
+        lineas: 160, color: 0.24, brillo: 0.30, finura: 0.50,
+        temblor: 0.35, irregular: 0.55, vida: 0.45,
+        tono: 0.08, mancha: 0.18, desvio: 0.04,
+        catedral: 0.28, nudos: 1, nudoTam: 0.03, nudoOscuro: 0.28,
+        relieve: 0.25, semilla: 48271, px: 2048,
+        tam: 800, rugosidad: 0.68, barniz: 0, tinte: 0xdeb985,
       },
 
       pinoCrudo: {
