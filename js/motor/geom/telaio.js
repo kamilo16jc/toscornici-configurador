@@ -58,6 +58,12 @@ const bordes = (curvas, i) => curvas.flatMap((c) => c.map((p) => p[i]));
  * bastarian decimas de milimetro para que se abriera un filo entre dos, y un
  * filo de muro en medio de la madera se ve perfectamente.
  */
+/* La holgura de cada lado entre la hoja y la jamba.
+   8,5 es la del propio catalogo: su vano mide 857 —de -15 a 842— y esta
+   dibujado para una hoja de 840. No es un numero elegido, es el que ya tenia
+   montado, y por eso las puertas que hoy encajan siguen encajando igual. */
+const HOLGURA_LADO = 8.5;
+
 export function vanoDe(datos) {
   const x = bordes(datos.telaio_imbotto, 0);
   const propio = Math.max(...bordes(datos.telaio_alto_imbotto, 0));
@@ -69,11 +75,28 @@ export function vanoDe(datos) {
      el suelo —lo normal es que se dibuje con su holgura debajo— y restando esa
      holgura el cabecero se quedaria bajo y la hoja asomaria por arriba. */
   const su = datos.cantoAltoHoja > 0 ? datos.cantoAltoHoja + (datos.holguraAlta ?? 4) : propio;
+  /* Y EL ANCHO IGUAL QUE EL ALTO: si nos dicen cuanto mide ESTA hoja, manda
+     ella. El catalogo trae una puerta de serie, y una hoja mas estrecha dejaba
+     el hueco a los dos lados —no una holgura, un vacio— porque las jambas se
+     quedaban donde las puso el dibujo de fabrica.
+     Medido: el vano del catalogo son 857 mm; la Siena mide 839,5 y deja 8,75
+     por banda, que es una holgura; la Matera S mide 785,8 y dejaba 35,6, que
+     son cuatro veces la holgura y se ven perfectamente.
+     El vano se centra donde lo puso el catalogo, asi que lo unico que cambia
+     es cuanto se acercan las dos jambas. */
+  const centro = (Math.min(...x) + Math.max(...x)) / 2;
+  const medio = datos.anchoHoja > 0
+    ? datos.anchoHoja / 2 + (datos.holguraLateral ?? HOLGURA_LADO)
+    : (Math.max(...x) - Math.min(...x)) / 2;
   return {
-    sx: Math.min(...x),
-    dx: Math.max(...x),
+    sx: centro - medio,
+    dx: centro + medio,
     su,
     propio,
+    /* Cuanto se mete cada jamba hacia dentro. Como `desplaza` para el cabecero:
+       los perfiles traen su sitio metido en las coordenadas y no se mueven
+       solos. Positivo = las jambas se acercan. */
+    aprieta: (Math.max(...x) - Math.min(...x)) / 2 - medio,
     // Lo que hay que subir o bajar el cabecero: sus perfiles traen la altura
     // del catalogo metida en las coordenadas, no se estiran solos.
     desplaza: su - propio,
@@ -92,8 +115,16 @@ export function construirMarco(datos, material, conTapajuntas = false) {
   const g = new THREE.Group();
   const vano = vanoDe(datos);
 
+  /* Cada jamba se mete `aprieta` hacia el centro. La de la izquierda hacia la
+     derecha y la de la derecha hacia la izquierda, y se sabe cual es cada una
+     por de que lado del centro esta dibujada. */
+  const centro = (Math.min(...bordes(datos.telaio_imbotto, 0))
+                + Math.max(...bordes(datos.telaio_imbotto, 0))) / 2;
   for (const c of datos.telaio_imbotto) {
-    g.add(new THREE.Mesh(tirarEnVertical(c, 0, vano.su), material));
+    const malla = new THREE.Mesh(tirarEnVertical(c, 0, vano.su), material);
+    const suyo = c.reduce((s2, p) => s2 + p[0], 0) / c.length;
+    malla.position.x = suyo < centro ? vano.aprieta : -vano.aprieta;
+    g.add(malla);
   }
   /* El cabecero se estira `sobresale` a cada lado. Esos 87 mm por banda no
      quedan al aire: los tapa el tapajuntas al doblar la esquina, que es
