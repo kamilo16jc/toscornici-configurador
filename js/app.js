@@ -735,9 +735,21 @@ function loadModel(key) {
          cristallo, e il configuratore non ne ha uno suo. */
       anta.traverse((o) => {
         if (!o.isMesh) return;
-        o.castShadow = o.receiveShadow = true;
         const m = o.material;
-        if (m && (m.transmission ?? 0) > 0) return;      // vetro: si lascia
+        if (m && (m.transmission ?? 0) > 0) {
+          /* Il vetro FUORI dalle ombre, ne' proiettate ne' ricevute.
+             La mappa d'ombra non sa cos'e' la trasmissione: per lei un vetro e'
+             un corpo opaco. Cosi' proiettava un'ombra nera e piena come fosse
+             un'asse, e ricevendola si riempiva di macchie scure — quelle ombre
+             marroni che si vedevano galleggiare dentro il cristallo. Non erano
+             un riflesso: era l'ombra della porta stessa che gli cadeva addosso.
+             Era una riga ereditata dal motore vecchio, dove ogni nodo del GLB
+             prendeva castShadow e receiveShadow senza guardare di che materiale
+             fosse. Un vetro vero nemmeno fa ombra: lascia passare la luce. */
+          o.castShadow = o.receiveShadow = false;
+          return;                                        // e il materiale resta suo
+        }
+        o.castShadow = o.receiveShadow = true;
         if (m) disposeMaterial(m);
         o.material = woodMat;
       });

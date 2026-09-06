@@ -233,8 +233,17 @@ function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
 
     const malla = new THREE.Mesh(parte.geo, cache.get(claveMat));
     malla.position.z = parte.zAbsoluto ?? pieza.z ?? 0;
-    malla.castShadow = true;
-    malla.receiveShadow = true;
+
+    /* El cristal NO entra en las sombras, ni echandolas ni recibiendolas.
+       El mapa de sombras no sabe de transmision: para el, un cristal es un
+       cuerpo opaco, asi que un vidrio proyecta una sombra NEGRA y maciza como
+       si fuera tabla, y recibiendo se le pegan manchas oscuras por dentro —esas
+       sombras cafes que se veian flotando dentro del cristal, que no son un
+       reflejo de nada: son la sombra de la propia puerta cayendole encima.
+       Un cristal de verdad tampoco hace sombra: deja pasar la luz. */
+    const transparente = (cache.get(claveMat).transmission ?? 0) > 0;
+    malla.castShadow = !transparente;
+    malla.receiveShadow = !transparente;
     malla.name = pieza.nombre;
     ctx.grupo.add(malla);
   }
