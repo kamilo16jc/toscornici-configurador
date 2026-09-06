@@ -26,7 +26,11 @@ const ESSENZE = {
   rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xa86948 },
   castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xa2805a },
   toulipier: { label: 'Toulipier', en: 'Tulipwood', tonoChiaro: true,  color: 0xcdaf7b },
-  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  color: 0xe8a05c },
+  /* Il pino era e8a05c, un arancione molto carico: con la venatura addosso
+     sembrava legno tinto, non pino. c8a271 e' il tono con cui lo scaparate lo
+     rende —e quello che gli e' piaciuto— ed e' anche piu' vicino al pino vero,
+     che e' giallo pallido e non arancione. */
+  pino:      { label: 'Pino',      en: 'Pine',      tonoChiaro: true,  color: 0xc8a271 },
 };
 
 // laccati: texture 'universal' (albedo neutro) + tinta RAL.
@@ -477,8 +481,15 @@ const loaderFill = document.getElementById('loaderFill');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
-renderer.toneMapping = THREE.NeutralToneMapping;
-renderer.toneMappingExposure = 1.0;
+/* LO MISMO QUE EL ESCAPARATE, y no es un capricho de estilo.
+   Estaba en Neutral y el escaparate en ACESFilmic, y esas dos curvas revelan
+   el mismo color de forma distinta: Neutral conserva la saturacion, ACES
+   desatura y enfria las luces. Con la MISMA madera —c8a271, mismo acabado
+   crudo, misma textura— el centro de la hoja salia (230,186,130) aqui y
+   (211,187,148) alli: mas rojo y menos azul, o sea el naranja que se veia.
+   No era el color de la madera ni la lampara del ambiente: era el revelado. */
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 viewerEl.appendChild(renderer.domElement);
