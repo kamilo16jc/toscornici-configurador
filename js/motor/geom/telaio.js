@@ -192,7 +192,25 @@ export function montar(datos, { conTapajuntas = false, conSuelo = true, veta: ni
     color: 0xc8a271, roughness: 0.6, metalness: 0, clearcoat: 0.1, clearcoatRoughness: 0.4,
     map: v?.mapa ?? null, roughnessMap: v?.rugosidad ?? null,
   });
-  const yeso = new THREE.MeshStandardMaterial({ color: 0xe6ded1, roughness: 0.95, metalness: 0 });
+  /* El yeso, bajado contra el PIXEL y no contra el numero del material.
+     Primero lo baje un 13 % sobre e6ded1 y no se noto NADA, porque lo que se
+     ve no es el color del material: es el color pasado por la luz. Medido en
+     la escena, la pared salia a luminancia 229 de 255 —un 90 %, o sea blanco—
+     teniendo el material en 194: la iluminacion la sube casi un 20 %.
+     Asi que se mide el pixel renderizado, se pone el objetivo ahi —unos 200,
+     un hueso calido que ya no es blanco— y se despeja el material hacia atras.
+     Y hay que despejarlo MIDIENDO DOS VECES, porque la cuenta no es
+     proporcional: el revelado ACES comprime las luces, asi que bajar el
+     material mueve poco el extremo claro. Medido con dos puntos:
+       material 194 -> pixel 229
+       material 169 -> pixel 219
+     o sea 0,4 de pixel por cada unidad de material, no 1. Por eso el primer
+     intento —un 13 %— no se noto nada: movia el numero pero no la pared.
+     Es la unica forma de ajustar un color de escena: a ojo sobre el numero del
+     material se falla siempre, porque ese numero no es lo que nadie ve.
+     Y baja tambien porque estaba comiendole el sitio a la puerta: con la pared
+     mas clara que la hoja, el ojo va a la pared. */
+  const yeso = new THREE.MeshStandardMaterial({ color: 0x7d7972, roughness: 0.95, metalness: 0 });
   const suelo = new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: 0.9, metalness: 0 });
 
   const g = new THREE.Group();

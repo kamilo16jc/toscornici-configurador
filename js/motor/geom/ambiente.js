@@ -149,9 +149,13 @@ export const AMBIENTES = {
   },
   salon: {
     nombre: 'Salón',
-    pared: 0xe6ddcb,
+    // Un 13 % mas oscura: estaba casi blanca y le comia el sitio a la puerta.
+    pared: 0x7d786f,
     suelo: () => material(0xcfa87f, 0.65),
-    rodapie: 0xf0e9da,
+    /* El rodapie se baja lo mismo. Podria dejarse blanco —muchos lo son— pero
+       contra una pared ya bajada destacaria mas que antes, y lo que se busca es
+       justo lo contrario: que nada de la escena compita con la puerta. */
+    rodapie: 0x837f77,
     luces: [{ x: -1700, y: 1300, z: 550, color: 0xffe2b0, fuerza: 2.2, alcance: 4500 }],
   },
   estudio: {
