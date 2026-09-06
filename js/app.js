@@ -10,7 +10,6 @@ import { deserializar, cajaDe } from './motor/modelo/proyecto.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
-import { veta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
@@ -618,7 +617,11 @@ function applyEssenza() {
      devono continuare a distinguersi: cambia il materiale, non il catalogo.
 
      Un laccato non ha venatura: e' vernice coprente sopra il legno. */
-  const v = isLaccato() ? null : veta('sutil');
+  /* PER ORA SENZA VENATURA: solo colore pieno.
+     Il generatore resta nel motore e funziona —geom/materiales.js, veta()— e
+     lo scaparate continua a usarlo. Qui e' spento per vedere come rende il
+     legno liscio. Per riaccenderla basta rimettere veta('sutil') qui sotto. */
+  const v = null;
   woodMat.map = v?.mapa ?? null;
   woodMat.roughnessMap = v?.rugosidad ?? null;
   woodMat.normalMap = null;
