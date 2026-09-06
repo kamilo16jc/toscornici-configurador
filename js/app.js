@@ -7,6 +7,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
    corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
 import { tejerHoja } from './motor/viewer/tejer.js';
 import { deserializar } from './motor/modelo/proyecto.js';
+import { montar, vanoDe } from './motor/geom/telaio.js';
+import { montarCoprifilo } from './motor/geom/coprifilo.js';
+import { construirAmbiente } from './motor/geom/ambiente.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
@@ -613,6 +616,7 @@ function applyEssenza() {
 let model = null;
 let shadowPlane = null;
 let currentModelKey = null;
+let catalogoTelaio = null;   // si carica una volta sola
 
 // apertura della porta: perno sulle cerniere
 let doorPivot = null;
@@ -723,16 +727,86 @@ function loadModel(key) {
         o.material = woodMat;
       });
 
-      model = new THREE.Group();
-      model.add(anta);
-      anta.scale.setScalar(1 / 1000);          // il motore va in millimetri
+      /* TUTTO IN UN SOLO INSIEME, e in millimetri.
+         L'anta, il telaio, il muro e il coprifilo devono stare nello stesso
+         spazio: sono pezzi che si incastrano al millimetro, e scalarli uno per
+         uno vorrebbe dire che il piu' piccolo errore di scala si vede proprio
+         nelle giunzioni. Si scala una volta sola, l'insieme intero. */
+      const conjunto = new THREE.Group();
+      doorPivot = new THREE.Group();
+      conjunto.add(doorPivot);
+      doorPivot.add(anta);
 
-      // centra il modello e inquadra
-      const box = new THREE.Box3().setFromObject(model);
+      /* Il muro e il telaio.
+         La parete non e' scenografia: e' quello che da' la misura di cosa si
+         sta guardando —una porta sospesa nel vuoto non si legge— ed e'
+         soprattutto DOVE si appoggia il coprifilo. Senza parete il coprifilo
+         non ha contro cosa montarsi, ed e' un articolo di listino con tredici
+         profili e il suo prezzo. */
+      if (!catalogoTelaio) catalogoTelaio = await (await fetch('assets/catalogo/telaio-standard.json')).json();
+      if (mio !== numeroCarico) { disposeSubtree(anta); return; }
+
+      const cajaAnta = new THREE.Box3().setFromObject(anta);
+      const datiTelaio = {
+        ...catalogoTelaio,
+        anchoHoja: cajaAnta.max.x - cajaAnta.min.x,
+        espesorHoja: spessore,
+        cantoAltoHoja: cajaAnta.max.y,
+      };
+      /* La stessa essenza dell'anta: una porta e il suo cerco di due legni
+         diversi non esistono. Per questo montar() accetta un materiale. */
+      const marco = montar(datiTelaio, { conTapajuntas: false, conSuelo: false, material: woodMat });
+      conjunto.add(marco);
+
+      // L'anta si incastra nel vano del telaio
+      const vano = vanoDe(datiTelaio);
+      anta.position.set(
+        vano.sx + (vano.dx - vano.sx - (cajaAnta.max.x - cajaAnta.min.x)) / 2 - cajaAnta.min.x,
+        -cajaAnta.min.y,
+        0,
+      );
+
+      await montaCoprifilo(mio, conjunto, marco, datiTelaio);
+      if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
+
+      // La parete con il suo vano, tagliata sulle misure di QUESTA porta
+      const conMoldura = new THREE.Box3();
+      conjunto.traverse((o) => { if (o.isMesh && o.name === 'Coprifilo') conMoldura.expandByObject(o); });
+      const libre = conMoldura.isEmpty() ? vano.dx - vano.sx : conMoldura.max.x - conMoldura.min.x;
+      const muro = construirAmbiente(
+        state.ambiente === 'galleria' ? 'salon' : state.ambiente,
+        {
+          ancho: vano.dx - vano.sx,
+          alto: vano.su,
+          libre,
+          fondo: datiTelaio.muro ? datiTelaio.muro.z1 - datiTelaio.muro.z0 : undefined,
+        },
+        (vano.sx + vano.dx) / 2,
+      );
+      /* Dentro dell'insieme e non sciolto: montar() sposta tutto indietro di
+         mezzo spessore per passare dalla convenzione di fabbrica a quella
+         dell'editore, e l'ambiente deve fare lo stesso viaggio o la sua parete
+         resta mezzo spessore avanti e si mangia il coprifilo. */
+      if (muro) marco.add(muro);
+
+      model = conjunto;
+      conjunto.scale.setScalar(1 / 1000);        // il motore va in millimetri
+      conjunto.updateMatrixWorld(true);
+
+      /* Si inquadra sulla PORTA, non sull'insieme.
+         Adesso l'insieme comprende il pavimento, che e' un piano di nove metri:
+         misurando tutto, la porta veniva incorniciata dentro una stanza di 8 x
+         3,5 x 7 e si vedeva lontanissima. Si misurano solo l'anta, il telaio e
+         il coprifilo, che e' cio' che il cliente sta comprando. */
+      const box = new THREE.Box3();
+      conjunto.traverse((o) => {
+        if (o.isMesh && ['Telaio', 'Coprifilo'].includes(o.name)) box.expandByObject(o);
+      });
+      box.expandByObject(anta);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center);
-      scene.add(model);
+      conjunto.position.sub(center);
+      scene.add(conjunto);
 
       const dist = size.y * 2.0;
       camera.position.set(dist * 0.65, size.y * 0.12, dist);
@@ -741,34 +815,20 @@ function loadModel(key) {
       controls.maxDistance = dist * 2.2;
       controls.update();
 
-      if (!shadowPlane) {
-        shadowPlane = new THREE.Mesh(
-          new THREE.PlaneGeometry(8, 8),
-          new THREE.ShadowMaterial({ opacity: 0.22 })
-        );
-        shadowPlane.rotation.x = -Math.PI / 2;
-        shadowPlane.receiveShadow = true;
-        scene.add(shadowPlane);
-      }
-      shadowPlane.position.y = -size.y / 2 - 0.001;
+      /* Niente piano d'ombra: il motore porta il suo pavimento vero, e due
+         superfici che raccolgono l'ombra nello stesso punto litigano. */
 
       /* Il perno sta sul lato delle cerniere, cioe' l'OPPOSTO della maniglia.
-         Prima si deduceva da dove stava il nodo della serratura dentro il GLB;
-         adesso lo decide state.mano, che e' gia' un dato del preventivo —
-         c'e' il selettore Mano DX / Mano SX — e non una cosa da indovinare
-         guardando la maglia. */
+         Lo decide state.mano, che e' gia' un dato del preventivo — c'e' il
+         selettore Mano DX / Mano SX — e non una cosa da indovinare guardando
+         la maglia.
+         Il perno adesso e' DENTRO l'insieme e in millimetri: gira solo l'anta,
+         il telaio e il muro restano fermi, che e' come funziona una porta. */
       const manoDx = state.mano !== 'sx';
-      scene.updateMatrixWorld(true);
-      const anteBox = new THREE.Box3().setFromObject(model);
-      doorPivot = new THREE.Group();
-      doorPivot.position.set(
-        manoDx ? anteBox.min.x : anteBox.max.x,
-        0,
-        (anteBox.min.z + anteBox.max.z) / 2
-      );
-      scene.add(doorPivot);
-      leafParts = [model];
-      doorPivot.attach(model);
+      const cajaHoja = new THREE.Box3().setFromObject(anta);
+      doorPivot.position.set(manoDx ? cajaHoja.min.x : cajaHoja.max.x, 0, -spessore / 2);
+      anta.position.sub(doorPivot.position);
+      leafParts = [anta];
       doorOpenAngle = (manoDx ? -1 : 1) * THREE.MathUtils.degToRad(82);
       doorBtn.hidden = false;
 
@@ -793,6 +853,37 @@ function loadModel(key) {
    GLB ne portava una fissa e il menu cambiava solo il prezzo. */
 const cacheManiglia = new Map();
 let manigliaMesh = null;
+
+/**
+ * Il coprifilo, in 3D e non solo a listino.
+ *
+ * Finora era una voce di prezzo con la sua fotina: tredici profili che il
+ * cliente pagava senza poterli vedere montati. Adesso la sezione vera si tira
+ * lungo il perimetro del vano, contro la parete.
+ *
+ * Due non hanno sezione tracciata: 'massello' e' lo stesso liscio del
+ * listellare —cambia il legno, non la forma— e prende quello; 'novecento' non
+ * ce l'ha proprio e resta senza 3D, a listino come prima.
+ */
+const COPRI_3D = {
+  listellare: 'listellare', massello: 'listellare', pierre: 'pierre',
+  tintoretto: 'tintoretto', raffaello: 'raffaello', giotto: 'giotto',
+  leonardo: 'leonardo', michelangelo: 'michelangelo', cartesio: 'cartesio',
+  caravaggio: 'caravaggio', tiziano: 'tiziano', canaletto: 'canaletto',
+};
+
+async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
+  const perfil = COPRI_3D[state.copri];
+  if (!perfil) return;
+  try {
+    const g = await montarCoprifilo(perfil, undefined, vanoDe(datiTelaio),
+      datiTelaio.muro, woodMat, 'assets/catalogo/coprifili');
+    if (mio !== numeroCarico) return;
+    if (g) marco.add(g);
+  } catch (err) {
+    console.warn(`coprifilo ${perfil} non montato`, err);
+  }
+}
 
 /** Rifa' solo la maniglia, senza ricostruire la porta. */
 function rimontaManiglia() {
@@ -1469,6 +1560,10 @@ function refreshCopriSelect() {
       if (ev.target.closest('.man-zoom')) return;      // la lente apre il visore
       state.copri = btn.dataset.copri;
       state.copriMisura = null;                        // torna alla misura di listino
+      /* E si rimonta in 3D. Il coprifilo era una voce di listino con la sua
+         fotina: tredici profili che il cliente pagava senza vederli montati.
+         Adesso si vede quello scelto, addosso alla parete. */
+      loadModel(currentModelKey);
       refreshCopriSelect();
       refreshUI();
     });

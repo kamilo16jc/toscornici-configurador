@@ -25,6 +25,8 @@ const PIEZAS = [
   'geom/extruir.js', 'geom/relieve.js', 'geom/perfiles.js', 'geom/offset.js',
   'geom/efectivo.js', 'geom/booleanas.js', 'geom/poligonos.js', 'geom/arcos.js',
   'geom/seguir.js', 'geom/materiales.js',
+  // il muro, il telaio e i coprifili: senza parete non c'e' dove montarli
+  'geom/telaio.js', 'geom/coprifilo.js', 'geom/ambiente.js',
   'modelo/proyecto.js', 'modelo/papeles.js',
 ];
 
