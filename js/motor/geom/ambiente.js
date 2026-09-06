@@ -151,7 +151,17 @@ export const AMBIENTES = {
     nombre: 'Salón',
     // Un 13 % mas oscura: estaba casi blanca y le comia el sitio a la puerta.
     pared: 0x7d786f,
-    suelo: () => material(0xcfa87f, 0.65),
+    /* El suelo, bajado con su PROPIA pendiente y no con la de la pared.
+       Salia a luminancia 226 y quedaba MAS claro que la pared, que en una
+       habitacion de verdad casi nunca pasa: la luz cae de arriba, asi que el
+       suelo recibe de refilon y siempre es el tono mas bajo de la escena.
+       Y hay que medirle la suya: mirando hacia arriba coge mucha mas luz que un
+       tabique, asi que su pendiente es 0,62 de pixel por unidad de material,
+       contra los 0,40 de la pared. Usando la de la pared se habria pedido un
+       material casi negro para nada.
+       Medido en tres puntos —material 173/137/107 contra pixel 226/209/185—
+       sale que para dejarlo en 165 el material tiene que ir a 75. */
+    suelo: () => material(0x5a4936, 0.65),
     /* El rodapie se baja lo mismo. Podria dejarse blanco —muchos lo son— pero
        contra una pared ya bajada destacaria mas que antes, y lo que se busca es
        justo lo contrario: que nada de la escena compita con la puerta. */
