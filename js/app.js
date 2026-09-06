@@ -23,7 +23,11 @@ import { MODELLI } from './catalogo.js';
 // Tutte le essenze usano la texture 'universal' (venatura sottile +
 // rilievo) tinta con il colore medio misurato dagli scan raw originali.
 const ESSENZE = {
-  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xa86948 },
+  /* ae9365 e' il tono con cui il rovere e' stato disegnato al banco. Era
+     a86948, molto piu' rosso: con la venatura addosso sembrava legno tinto.
+     Colore e venatura sono la stessa decisione — la venatura moltiplica il
+     colore — quindi migrarne una sola fa vedere un legno che non esiste. */
+  rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xae9365 },
   castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xa2805a },
   /* 9f8456 e' il tono con cui il toulipier e' stato disegnato al banco, e va
      col suo. Il colore e la venatura sono la stessa decisione: la venatura
@@ -43,6 +47,7 @@ const ESSENZE = {
    disegnate al banco.
    Rovere e castagno restano a colore pieno finche' non abbiano la loro. */
 const VENATURE = {
+  rovere: 'rovere',
   pino: 'pinoCatedral',
   toulipier: 'toulipier',
 };

@@ -413,25 +413,12 @@ export const PRESETS_VETA = {
         tam: 750, rugosidad: 0.9, barniz: 0,
       },
 
-      /* CASTAÑO, el suyo: veta-200f-50c, salido del banco.
-         Conserva de la ficha el esqueleto —200 fibras sobre 800 mm, o sea una
-         cada 4,00; catedral 0,48; tres nudos de 12 mm; relieve 0,30; rugosidad
-         0,71 y sin barniz— y sube lo que la ficha se quedaba corta:
-
-                        el suyo   yo puse   la ficha declaraba
-           contraste      0,50      0,30          0,42
-           nudo           0,80      0,55          0,55
-           brillo         0,07      0,34
-           tono/mancha  0,21/0,25 0,10/0,20
-
-         Y AQUI HAY UNA LECCION QUE MERECE QUEDARSE. Yo baje el contraste a 0,30
-         argumentando que los propios colores de la ficha daban 0,21 y sus
-         percentiles 0,28, mientras que el 0,42 declarado no cuadraba. El
-         razonamiento era correcto y la conclusion equivocada: el midio la foto
-         de referencia, no lo que se quiere ver en una puerta. El fue a 0,50,
-         por encima incluso de lo declarado.
-         Medir sirve para saber de que se habla; no sustituye a mirarlo. */
-      castano: {
+      /* ROBLE, el suyo: veta-200f-50c, dibujado en el banco.
+         Nacio como castaño y acabo siendo roble: al verlo montado dijo que se
+         parecia mas al roble que al castaño, asi que se le cambia el destino y
+         no los numeros. El castaño de verdad lo esta dibujando aparte.
+         Se guarda tal cual salio del banco, los 21 campos sin tocar. */
+      rovere: {
         lineas: 200, color: 0.5, brillo: 0.19, finura: 0.57,
         temblor: 0.4, irregular: 0.6, vida: 0.4,
         tono: 0.17, mancha: 0.38, desvio: 0.05,
