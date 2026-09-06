@@ -967,7 +967,15 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
  * Il montante resta come CONTROLLO: se la rosetta non cadesse sopra di lui
  * qualcosa non torna, e vale la pena saperlo invece di disegnarla in aria.
  */
-const ALTO_MANIGLIA = 1040;      // dal pavimento, quota di fabbrica
+/* Altezza della maniglia, dal pavimento.
+   1040 e' la quota di fabbrica e nello scaparate va bene, ma li' l'anta viene
+   STIRATA fino a riempire il vano e arriva a 2121 mm; qui il vano si adatta
+   all'anta tracciata, che ne misura 2018. Gli stessi 1040 assoluti cadono al
+   51,5 % dell'anta invece che al 48,9 %, cioe' sopra la meta', e si vede alta.
+   990 riporta la maniglia dove sta nello scaparate — 49 % — restando una quota
+   verosimile per una porta di questa altezza.
+   Se la si vuole piu' su o piu' giu', e' questo numero e basta. */
+const ALTO_MANIGLIA = 990;
 const RETRANQUEO = 25;           // dal bordo del vano al canto della rosetta
 /* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
    catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
