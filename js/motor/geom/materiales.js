@@ -74,9 +74,37 @@ function mapasDeVeta({ lineas = 50, color: fColor = 0.13, brillo: fBrillo = 0.34
      exacto y el ruido solo la deforma —la ondula, y hace que unas fibras
      marquen mas que otras. Eso si es madera, y ademas el paso es un numero que
      se puede fijar. */
+  /* Y un ruido de dos dimensiones, tambien periodico, porque hacia falta que la
+     fibra VIVA A LO LARGO de la tabla y no solo a lo ancho.
+     Con las tres bandas de arriba la textura era la misma linea repetida de
+     abajo arriba: una fibra que empieza marcada, marcada sigue hasta el borde.
+     En una madera de verdad cada fibra va y viene —aparece, engorda, se apaga—
+     y es eso, mas que el contraste, lo que separa "rayas" de "madera". */
+  const ruido2 = (nx, ny) => {
+    const v = Array.from({ length: nx * ny }, azar);
+    const en = (i, j) => v[((j % ny) + ny) % ny * nx + ((i % nx) + nx) % nx];
+    return (u, t) => {
+      const px = u * nx, py = t * ny;
+      const i = Math.floor(px), j = Math.floor(py);
+      const fx = px - i, fy = py - j;
+      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      const a = en(i, j) + (en(i + 1, j) - en(i, j)) * sx;
+      const b = en(i, j + 1) + (en(i + 1, j + 1) - en(i, j + 1)) * sx;
+      return a + (b - a) * sy;
+    };
+  };
+
   const ondula = banda(7);    // curva las lineas a lo largo de la tabla
   const grupo = banda(11);    // unas fibras marcan mas que otras
   const fondo = banda(4);     // el tono general de la tabla, muy lento
+  const vida = ruido2(13, 5);  // la fibra aparece y se apaga a lo largo
+  const nube = ruido2(3, 2);   // manchas de tono muy amplias, casi imperceptibles
+  /* Y el que de verdad la hace pasar por madera: un alabeo de frecuencia MEDIA
+     —una fracción del paso de la fibra— que aprieta y separa las lineas por
+     tramos. Sin el, todas las fibras guardan el mismo paso y ondulan a la vez,
+     y eso no se lee como madera: se lee como PANA. El ojo perdona el contraste
+     y hasta el color, pero un paso perfectamente regular lo caza siempre. */
+  const aprieta = ruido2(Math.max(4, lineas / 3 | 0), 4);
   // Y una onda muy lenta a lo largo de la fibra: sin ella las lineas salen
   // rectas como un codigo de barras, que no es madera, es papel pintado.
   const vaiven = banda(5);
@@ -105,13 +133,26 @@ function mapasDeVeta({ lineas = 50, color: fColor = 0.13, brillo: fBrillo = 0.34
     for (let x = 0; x < N; x++) {
       const u = (x / N + desvio + 1) % 1;
 
-      // Paso exacto, ondulado por el ruido. Entero para que siga sin costura.
-      const fase = u * lineas + (ondula(u) - 0.5) * 1.6;
+      /* Paso exacto de fondo, pero alabeado a dos escalas: una lenta que curva
+         la tabla entera y otra media que agrupa las fibras de tres en tres o de
+         cinco en cinco, que es como salen de verdad. */
+      /* Las amplitudes van en FIBRAS, y son pequenas a proposito. Con 1,6 y 2,6
+         —lo primero que puse— la fibra dibujaba eses de un palmo a lo ancho de
+         la hoja: un mapa topografico, no una tabla. Y no se veia de cerca,
+         solo al mirar la puerta entera. La fibra de una madera cepillada es
+         casi RECTA; lo que tiene es un temblor de menos de una fibra. */
+      const fase = u * lineas
+        + (ondula(u) - 0.5) * 0.45
+        + (aprieta(u, t) - 0.5) * 0.7;
       // Elevado, para que la fibra sea una linea FINA y oscura y no una onda.
       const entreFibras = Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * fase), 0.45);
-      const marca = 0.35 + 0.65 * grupo(u);       // unas marcan mas que otras
+      const marca = 0.35 + 0.65 * grupo(u);          // unas marcan mas que otras
+      const viva = 0.45 + 0.55 * vida(u, t);         // y va y viene a lo largo
 
-      const g = 1 - marca * (1 - entreFibras) * 0.75 - (1 - fondo(u)) * 0.3;
+      const g = 1
+        - marca * viva * (1 - entreFibras) * 0.75
+        - (1 - fondo(u)) * 0.22
+        - (1 - nube(u, t)) * 0.20;
       campo[y * N + x] = g;
       if (g < lo) lo = g;
       if (g > hi) hi = g;
@@ -150,6 +191,12 @@ export function veta(nivel) {
   if (!vetaGuardada.has(nivel)) {
     const ajustes = {
       sutil: { lineas: 56, color: 0.11, brillo: 0.30 },
+      /* Roble/tulipier claro barnizado, como la foto de referencia: fibra muy
+         fina y contraste bajisimo. Manda el BRILLO, no el color — en una
+         madera clara satinada la fibra casi no oscurece, lo que hace es
+         cambiar como devuelve la luz, y por eso se ve al sesgo y desaparece de
+         frente. Subir el color aqui la ensuciaria. */
+      seda: { lineas: 64, color: 0.10, brillo: 0.38 },
       marcada: { lineas: 48, color: 0.26, brillo: 0.52 },
     };
     vetaGuardada.set(nivel, mapasDeVeta(ajustes[nivel] ?? ajustes.sutil));
