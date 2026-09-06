@@ -10,6 +10,7 @@ import { deserializar, cajaDe } from './motor/modelo/proyecto.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
+import { veta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
 
@@ -617,15 +618,18 @@ function applyEssenza() {
      devono continuare a distinguersi: cambia il materiale, non il catalogo.
 
      Un laccato non ha venatura: e' vernice coprente sopra il legno. */
-  /* SENZA VENATURA: solo colore pieno.
-     Il generatore resta nel motore e funziona —geom/materiales.js, veta()— e
-     lo scaparate continua a usarlo; qui e' spento. Prima la luce, poi le
-     texture: finche' la scena e' piatta, qualunque venatura si giudica alla
-     cieca. Per riaccenderla e' una riga: veta('seda') al posto del null. */
-  const v = null;
+  /* VENATURA SOLO SUL PINO, per adesso.
+     E' quella disegnata al banco —veta-140f-50c, il preset 'pinoCatedral'—:
+     140 fibre ogni 750 mm, figura a cattedrale e tre nodi. Il banco esporta la
+     RICETTA e non il PNG, cosi' si rigenera a 1024 px invece dei 512 esportati
+     e sale da 0,68 a 1,37 texel per millimetro: sotto quella soglia si vedono
+     i pixel appena ci si avvicina.
+     Le altre tre essenze restano a colore pieno finche' non abbiano la loro.
+     Un laccato non la prende mai: e' vernice coprente. */
+  const v = !isLaccato() && state.essenza === 'pino' ? veta('pinoCatedral') : null;
   woodMat.map = v?.mapa ?? null;
   woodMat.roughnessMap = v?.rugosidad ?? null;
-  woodMat.normalMap = null;
+  woodMat.normalMap = v?.normal ?? null;
   woodMat.aoMap = null;
   applyMaterialLook();
   woodMat.needsUpdate = true;
