@@ -64,6 +64,7 @@ export const VETA_POR_DEFECTO = {
   nudoTam: 0.045,    // diametro relativo al lado
   nudoOscuro: 0.58,  // cuanto oscurece el nudo
   relieve: 0.28,     // fuerza del mapa de normales; 0 lo apaga
+  suavizarRelieve: null, // null = una fibra de ancho, calculado. Ver mapasDeVeta
   semilla: 20260825, // cambiala y sale otra tabla del mismo arbol
   px: 512,           // resolucion del mapa
 };
@@ -76,7 +77,7 @@ export function mapasDeVeta(o = {}) {
     lineas, color: fColor, brillo: fBrillo, finura, temblor, irregular,
     vida: fVida, tono: fTono, mancha: fMancha, desvio: fDesvio,
     catedral, nudos: cuantosNudos, nudoTam, nudoOscuro, relieve: relieveFuerza,
-    semilla: laSemilla, px,
+    suavizarRelieve, semilla: laSemilla, px,
   } = { ...VETA_POR_DEFECTO, ...o };
   const N = px;
 
@@ -279,10 +280,60 @@ export function mapasDeVeta(o = {}) {
      brilla donde no hay vena, que es peor que no tener relieve.
      La pendiente se toma en el toro —el vecino del ultimo pixel es el
      primero— asi que el relieve tambien repite sin costura. */
-  const alt = (x, y) => {
-    const i = ((y + N) % N) * N + ((x + N) % N);
-    return (campo[i] - lo) * escala;
-  };
+  /* Cuanto desenfoque: UNA FIBRA de ancho, y sale de una cuenta y no del ojo.
+     Barrido midiendo pixeles que saltan al girar la camara un grado, sobre una
+     madera de fibra cada 3,5 mm:
+
+       desenfoque   0,68 mm -> 15,63 %
+                    1,37    ->  7,88
+                    2,05    ->  7,41
+                    3,08    ->  5,18   <- el codo, y es el paso de la fibra
+                    4,79    ->  4,57
+       sin relieve             4,18    <- el suelo
+
+     El codo cae justo en el paso de la fibra: desenfocando menos, el relieve
+     sigue llevandola y sigue hirviendo; desenfocando mas, ya solo se pierde
+     agrupacion de fibra sin ganar nada. Asi que se calcula —px/lineas son los
+     texeles que ocupa una fibra— y vale para cualquier receta sin tocarlo. */
+
+  /* EL RELIEVE VA SOBRE UNA COPIA DESENFOCADA, y esta es la razon.
+     Una fibra de esta madera mide 3,5 mm; en pantalla, con la puerta a media
+     altura, eso son 2,08 pixeles — justo el limite de muestreo. El mapa de
+     COLOR aguanta ahi porque el mipmap lo promedia y ya esta, pero el de
+     NORMALES no: al promediarlo, las normales se acortan y el sombreado
+     amplifica lo que queda, asi que la superficie hierve en cuanto la camara
+     se mueve un grado. Medido, contando pixeles que saltan al girar 1 grado:
+       con relieve         25,06 %
+       sin relieve          4,18 %
+     Seis veces mas inestable, y el color no tiene la culpa.
+     Desenfocando la altura un par de texeles, el relieve se queda con las
+     frecuencias que de verdad se ven —la catedral, los nudos, las agrupaciones
+     de fibra— y suelta las que solo sirven para centellear. Y ademas es cierto
+     en la madera: la fibra se ve oscura mucho antes de ser profunda; el color
+     la marca a 3 mm, el relieve no.
+     El desenfoque va EN EL TORO, o el relieve dejaria de repetir sin costura. */
+  const altura = new Float32Array(N * N);
+  for (let i = 0; i < campo.length; i++) altura[i] = (campo[i] - lo) * escala;
+  const anchoDeFibra = suavizarRelieve ?? N / Math.max(1, lineas);
+  if (anchoDeFibra > 0) {
+    const r = Math.max(1, Math.round(anchoDeFibra));
+    const paso = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        let s2 = 0;
+        for (let k = -r; k <= r; k++) s2 += altura[y * N + ((x + k + N) % N)];
+        paso[y * N + x] = s2 / (2 * r + 1);
+      }
+    }
+    for (let x = 0; x < N; x++) {
+      for (let y = 0; y < N; y++) {
+        let s2 = 0;
+        for (let k = -r; k <= r; k++) s2 += paso[((y + k + N) % N) * N + x];
+        altura[y * N + x] = s2 / (2 * r + 1);
+      }
+    }
+  }
+  const alt = (x, y) => altura[((y + N) % N) * N + ((x + N) % N)];
   for (let y = 0; y < N; y += 1) {
     for (let x = 0; x < N; x += 1) {
       const dx = (alt(x + 1, y) - alt(x - 1, y)) * relieveFuerza * N * 0.01;
@@ -360,6 +411,33 @@ export const PRESETS_VETA = {
         relieve: 0.08, px: 1024,
         // Y lo que no es veta sino MATERIAL, que tambien venia en su ficha:
         tam: 750, rugosidad: 0.9, barniz: 0,
+      },
+
+      /* CASTAÑO, el suyo: veta-200f-50c, salido del banco.
+         Conserva de la ficha el esqueleto —200 fibras sobre 800 mm, o sea una
+         cada 4,00; catedral 0,48; tres nudos de 12 mm; relieve 0,30; rugosidad
+         0,71 y sin barniz— y sube lo que la ficha se quedaba corta:
+
+                        el suyo   yo puse   la ficha declaraba
+           contraste      0,50      0,30          0,42
+           nudo           0,80      0,55          0,55
+           brillo         0,07      0,34
+           tono/mancha  0,21/0,25 0,10/0,20
+
+         Y AQUI HAY UNA LECCION QUE MERECE QUEDARSE. Yo baje el contraste a 0,30
+         argumentando que los propios colores de la ficha daban 0,21 y sus
+         percentiles 0,28, mientras que el 0,42 declarado no cuadraba. El
+         razonamiento era correcto y la conclusion equivocada: el midio la foto
+         de referencia, no lo que se quiere ver en una puerta. El fue a 0,50,
+         por encima incluso de lo declarado.
+         Medir sirve para saber de que se habla; no sustituye a mirarlo. */
+      castano: {
+        lineas: 200, color: 0.5, brillo: 0.19, finura: 0.57,
+        temblor: 0.4, irregular: 0.6, vida: 0.4,
+        tono: 0.17, mancha: 0.38, desvio: 0.05,
+        catedral: 0.48, nudos: 3, nudoTam: 0.015, nudoOscuro: 1,
+        relieve: 0.3, semilla: 91733, px: 2048,
+        tam: 700, rugosidad: 0.71, barniz: 0, tinte: 0xae9365,
       },
 
       /* TOULIPIER, el suyo: veta-111f-20c, salido del banco.
@@ -509,8 +587,18 @@ export function material(clave = 'robleClaro', espesor, nivelDeVeta = null) {
   /* Si la veta trae acabado propio manda ella. Una madera CRUDA no es la misma
      con barniz: la ficha del pino dice varnish false y clearcoat 0, y
      barnizarla la convierte en otra cosa aunque la fibra sea identica. */
-  const a = v?.receta && (v.receta.rugosidad !== undefined || v.receta.barniz !== undefined)
+  /* Si la veta trae acabado propio manda ella, EL COLOR INCLUIDO.
+     El color y la fibra son la misma decision, no dos: la fibra multiplica al
+     color, asi que tomar una sin la otra da una madera que no existe en
+     ninguna de las dos partes. Un castaño con la fibra del castaño y el tono
+     del roble no es ninguno de los dos.
+     Y una madera CRUDA tampoco es la misma con barniz: la ficha dice
+     clearcoat 0 y barnizarla la convierte en otra cosa aunque la fibra sea
+     identica. */
+  const a = v?.receta && (v.receta.rugosidad !== undefined
+      || v.receta.barniz !== undefined || v.receta.tinte !== undefined)
     ? { ...a0,
+        color: v.receta.tinte ?? a0.color,
         roughness: v.receta.rugosidad ?? a0.roughness,
         clearcoat: v.receta.barniz ?? a0.clearcoat }
     : a0;
