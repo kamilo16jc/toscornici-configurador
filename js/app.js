@@ -28,7 +28,12 @@ const ESSENZE = {
      Colore e venatura sono la stessa decisione — la venatura moltiplica il
      colore — quindi migrarne una sola fa vedere un legno che non esiste. */
   rovere:    { label: 'Rovere',    en: 'Oak',       tonoChiaro: false, color: 0xae9365 },
-  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xa2805a },
+  /* b16339 e' il tono con cui il castagno e' stato disegnato al banco. Era
+     a2805a. La sua venatura e' quella del rovere con la stessa mano —stesse
+     200 fibre, stesso seme— e cambia proprio il tinte: il castagno tira al
+     marrone rossiccio, il rovere resta bruno giallastro. Migrare il colore
+     senza la venatura, o viceversa, fa vedere un legno che non esiste. */
+  castagno:  { label: 'Castagno',  en: 'Chestnut',  tonoChiaro: false, color: 0xb16339 },
   /* 9f8456 e' il tono con cui il toulipier e' stato disegnato al banco, e va
      col suo. Il colore e la venatura sono la stessa decisione: la venatura
      moltiplica il colore, quindi separarli vuol dire vedere un legno che non
@@ -45,9 +50,10 @@ const ESSENZE = {
    prossima si aggiunge con una riga, e si vede a colpo d'occhio quali ne hanno
    e quali no. Le ricette vivono nel motore, geom/materiales.js -> PRESETS_VETA,
    disegnate al banco.
-   Rovere e castagno restano a colore pieno finche' non abbiano la loro. */
+   Adesso le hanno tutte e quattro. */
 const VENATURE = {
   rovere: 'rovere',
+  castagno: 'castagno',
   pino: 'pinoCatedral',
   toulipier: 'toulipier',
 };
@@ -648,13 +654,16 @@ function applyEssenza() {
      devono continuare a distinguersi: cambia il materiale, non il catalogo.
 
      Un laccato non ha venatura: e' vernice coprente sopra il legno. */
-  /* OGNI ESSENZA CON LA SUA VENATURA.
-     E' quella disegnata al banco —veta-140f-50c, il preset 'pinoCatedral'—:
-     140 fibre ogni 750 mm, figura a cattedrale e tre nodi. Il banco esporta la
-     RICETTA e non il PNG, cosi' si rigenera a 1024 px invece dei 512 esportati
-     e sale da 0,68 a 1,37 texel per millimetro: sotto quella soglia si vedono
-     i pixel appena ci si avvicina.
-     Le altre tre essenze restano a colore pieno finche' non abbiano la loro.
+  /* OGNI ESSENZA CON LA SUA VENATURA, e adesso le hanno tutte e quattro.
+     Sono disegnate al banco, una per una, e il banco esporta la RICETTA e non
+     il PNG: cosi' si rigenera alla risoluzione che serve, ripete senza cucitura
+     e si ritinge col colore dell'essenza. Un PNG non fa niente di tutto questo.
+       rovere     veta-200f-50c   700 mm a 2048 px   2,93 texel/mm
+       castagno   lo stesso tratto, altro tinte      2,93 texel/mm
+       toulipier  veta-111f-20c   300 mm a 2048 px   6,83 texel/mm
+       pino       veta-140f-50c   750 mm a 1024 px   1,37 texel/mm
+     Sotto un texel per millimetro si vedono i pixel appena ci si avvicina;
+     nessuna ci sta sotto.
      Un laccato non la prende mai: e' vernice coprente. */
   const v = isLaccato() ? null : veta(VENATURE[state.essenza] ?? null);
   woodMat.map = v?.mapa ?? null;

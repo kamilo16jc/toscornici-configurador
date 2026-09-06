@@ -427,6 +427,26 @@ export const PRESETS_VETA = {
         tam: 700, rugosidad: 0.71, barniz: 0, tinte: 0xae9365,
       },
 
+      /* CASTAÑO, el suyo: veta-200f-50c retocado.
+         Es el ROBLE de arriba con la misma mano: mismas 200 fibras, misma
+         semilla 91733, mismo dibujo entero. Solo cambian tres cosas, que son
+         justo las que separan una madera de otra habiendo salido del mismo
+         arbol dibujado:
+           tinte  ae9365 -> b16339, que es lo que dijo: el castaño tira a
+             marron rojizo y el roble se queda en pardo amarillento.
+           brillo 0,19 -> 0,06. La fibra ya casi no cambia el brillo; con el
+             tinte mas saturado, dejarla brillando la volvia barnizada.
+           nudos  3 -> 1. Tabla mas limpia.
+         Los otros 18 campos son identicos al roble a proposito. */
+      castagno: {
+        lineas: 200, color: 0.5, brillo: 0.06, finura: 0.57,
+        temblor: 0.4, irregular: 0.6, vida: 0.4,
+        tono: 0.17, mancha: 0.38, desvio: 0.05,
+        catedral: 0.48, nudos: 1, nudoTam: 0.015, nudoOscuro: 1,
+        relieve: 0.3, semilla: 91733, px: 2048,
+        tam: 700, rugosidad: 0.71, barniz: 0, tinte: 0xb16339,
+      },
+
       /* TOULIPIER, el suyo: veta-111f-20c, salido del banco.
          Es la ficha wood_toulipier_raw_001 ya retocada a ojo, y los cambios
          que le hizo dicen bastante:
