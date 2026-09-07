@@ -12,6 +12,10 @@ import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
 import { veta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
 
@@ -567,6 +571,87 @@ scene.add(key);
 const fill = new THREE.DirectionalLight(0xffffff, 0.3);
 fill.position.set(3, 2, 2.5);
 scene.add(fill);
+
+/* ============================================================
+   OCCLUSIONE AMBIENTALE
+   ------------------------------------------------------------
+   Le ombre proiettate non bastano a raccontare un incasso piccolo.
+   Il pannello del TIPO 3 e' incassato di 13,8 mm veri — la modanatura
+   cade da 22,5 a 8,7 — ma su una porta di 827 mm quei millimetri sono
+   tre pixel, la luce chiave li prende quasi di fronte e nessuna ombra
+   li segna: la porta si leggeva piatta pur non essendolo.
+
+   L'occlusione ambientale scurisce il rincaglio dell'incasso, che e'
+   proprio l'indizio con cui l'occhio legge la profondita'. Vale per
+   tutti i tipi — anche una bugna rialzata guadagna il suo stacco — e
+   soprattutto NON tocca la geometria: la porta a schermo resta quella
+   che esce dalla fabbrica.
+
+   Il raggio e' in metri, come la scena, ed e' scelto sull'incasso da
+   risolvere: 5 cm coprono i 13,8 mm con margine senza sporcare i campi
+   larghi. Piu' grande e i pannelli si sporcano d'ombra da soli.
+   ============================================================ */
+
+/* L'interruttore. L'occlusione costa GPU: se su qualche macchina il visore
+   va a scatti, si mette a false e si torna al render diretto — la porta
+   resta identica, perde solo l'ombra dentro l'incasso. */
+const OCCLUSIONE = true;
+
+let composer = null;
+let gtaoPass = null;
+
+function montaOcclusione() {
+  if (!OCCLUSIONE) return;
+  try {
+    const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
+
+    /* MSAA nel bersaglio del composer. L'antialias del renderer lavora solo
+       quando si disegna sullo schermo: passando per un render target si
+       perde, e i bordi della porta tornerebbero a scaletta. */
+    const bersaglio = new THREE.WebGLRenderTarget(w, h, {
+      type: THREE.HalfFloatType,
+      samples: 4,
+    });
+
+    const c = new EffectComposer(renderer, bersaglio);
+    c.addPass(new RenderPass(scene, camera));
+
+    const ao = new GTAOPass(scene, camera, w, h);
+    ao.output = GTAOPass.OUTPUT.Default;      // AO composta sopra la scena
+    ao.blendIntensity = 0.85;
+    /* Meno campioni sullo schermo piccolo. Il telefono ha meno GPU e la porta
+       ci sta dentro alta due dita: l'occlusione si legge lo stesso, e quello
+       che si guadagna e' che il visore continua a girare fluido. */
+    const fine = Math.min(w, h) >= 520;
+    ao.updateGtaoMaterial({
+      radius: 0.05,           // metri: l'incasso da risolvere e' 0,0138
+      distanceExponent: 1,
+      thickness: 0.5,
+      scale: 1.1,
+      samples: fine ? 16 : 8,
+      distanceFallOff: 1,
+      screenSpaceRadius: false,
+    });
+    c.addPass(ao);
+
+    /* Il tone mapping lo applica l'OutputPass: il renderer lo applica solo
+       disegnando sullo schermo, e qui si disegna su un target. Senza questo
+       passaggio la curva ACES sparisce e i colori escono slavati. */
+    c.addPass(new OutputPass());
+
+    composer = c;
+    gtaoPass = ao;
+  } catch (e) {
+    /* Se l'occlusione non si puo' montare —WebGL vecchio, addon cambiato—
+       il configuratore continua a rendere senza. Una porta senza AO si
+       vende; una pagina bianca no. */
+    console.warn('Occlusione ambientale non disponibile, si rende senza.', e);
+    composer = null;
+    gtaoPass = null;
+  }
+}
+
+montaOcclusione();
 
 /* ============================================================
    TEXTURES PBR — caricamento pigro con cache
@@ -1332,6 +1417,8 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  if (composer) composer.setSize(w, h);
+  if (gtaoPass) gtaoPass.setSize(w, h);
 }
 window.addEventListener('resize', resize);
 
@@ -1340,7 +1427,8 @@ renderer.setAnimationLoop(() => {
   if (doorPivot) {
     doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
   }
-  renderer.render(scene, camera);
+  if (composer) composer.render();
+  else renderer.render(scene, camera);
 });
 
 // click sulla porta → apri/chiudi (senza interferire con l'orbita)
