@@ -21,9 +21,9 @@ import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
 import { conSopraluce, traversoDe, vanoSopraluce, piezaVidrio,
          SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
 
-/* Trasparente o satinato. Il sopraluce sta sopra la testa e serve a far
-   passare la luce, quindi di serie e' trasparente; il satinato e' una riga. */
-const SOPRALUCE_SATINATO = false;
+/* Satinato. Un sopraluce sta sopra la testa: fa passare la luce senza dare
+   a vedere cosa c'e' dietro, ed e' come si montano. Trasparente e' false. */
+const SOPRALUCE_SATINATO = true;
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026

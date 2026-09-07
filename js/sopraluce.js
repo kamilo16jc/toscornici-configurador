@@ -117,7 +117,15 @@ export function piezaVidrio(ancho, alto, satinato = false) {
     x: 0, y: 0, w: ancho, h: alto, r: 0, angulo: 0,
     espesor: 4, bisel: 0, biselAncho: 0, biselPerfil: 'recto',
     perfilBugna: null, perfilPuntos: null, rientro: 16,
-    bastoneAncho: 12, bastoneForma: 'sagomato',
+    /* BASTONE A ZERO, e non e' un dettaglio.
+       Il bastone e' la modanatura del vano, e il motore la tira dalla CARA
+       DELL'ANTA fino al pannello: caraHoja = espesorHoja/2. Qui l'anta non
+       c'e' — siamo nel telaio, sopra la porta — e quella cara e' un piano
+       immaginario. Lasciandolo a 12 il vetro usciva alto 45 mm invece di 4 e
+       sporgeva 15 mm davanti al telaio: non era il vetro, era una ghiera di
+       legno tirata da una faccia che non esiste.
+       La battuta che regge il vetro la fa il telaio, non il vetro. */
+    bastoneAncho: 0, bastoneForma: 'sagomato',
     z: -1.5, acabado: satinato ? 'vidrioSatinado' : 'vidrio',
     vidrioEnElCampo: false, huecos: [], grupo: null, visible: true,
   };
