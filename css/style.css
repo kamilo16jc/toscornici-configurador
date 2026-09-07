@@ -761,6 +761,9 @@ body {
   border: 1px solid var(--hairline);
 }
 
+/* i tre TIPI stanno su tre colonne, non su due */
+.pills--tre { grid-template-columns: 1fr 1fr 1fr; }
+
 .pill {
   appearance: none;
   border: none;

@@ -13,6 +13,7 @@ import { construirAmbiente } from './motor/geom/ambiente.js';
 import { veta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MODELLI } from './catalogo.js';
+import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -84,10 +85,19 @@ function essenzaLabel() {
 
 const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
+/* Come si scrive il tipo sul preventivo. Con la modanatura accanto, perche'
+   chi lo legge in fabbrica deve sapere che ferro montare. */
+const TIPO_LABEL = {
+  1: 'Tipo 1 — bugna, doppio gradino',
+  2: 'Tipo 2 — bugna, mezza canna',
+  3: 'Tipo 3 — pannello liscio',
+};
+
 const state = {
   modello: 'siena',
   essenza: 'rovere',
   colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
+  tipo: TIPO_DEFAULT,  // 1, 2 o 3 — la finitura del campo. Vedi js/tipi.js
   finitura: 'verniciata',
   ambiente: 'galleria',
   maniglia: 'ottone',
@@ -760,6 +770,11 @@ let numeroCarico = 0;
  *
  * Il motore lavora in MILLIMETRI e il configuratore in metri, da qui la scala.
  */
+/* Se il modello caricato monta del vetro. Lo decide il tracciato, non il
+   catalogo: chi disegna la porta mette un campo di vetro e la porta smette da
+   sola di avere i tre tipi. */
+let modelloConVetro = false;
+
 function loadModel(key) {
   const mio = ++numeroCarico;
   currentModelKey = key;
@@ -775,7 +790,16 @@ function loadModel(key) {
       loaderFill.style.width = '70%';
 
       const progetto = deserializar(testo);
-      const pezzi = progetto.piezas.filter((p) => p.visible !== false);
+      const tracciato = progetto.piezas.filter((p) => p.visible !== false);
+
+      /* Il TIPO. Il tracciato sul disco vale da TIPO 1 e 2 — cambia solo la
+         modanatura — e il TIPO 3 si deriva spianando i campi. Cosi' i tre
+         tipi non sono tre file per porta: sono uno, letto in tre modi.
+         Le porte con vetro passano intatte: hanno una regola loro. */
+      modelloConVetro = haVetro(tracciato);
+      const pezzi = modelloConVetro ? tracciato : applicaTipo(tracciato, state.tipo);
+      refreshUI();
+
       const spessore = Math.max(...pezzi.map((p) => p.espesor ?? 45));
 
       /* uv: true e veta: null.
@@ -1964,6 +1988,27 @@ function refreshUI() {
         : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
       + 'Scegliendo "Grezza" si torna al legno a vista.';
 
+  /* il TIPO. La sezione sparisce sulle porte con vetro invece di restare
+     disattivata: una scelta che non si puo' fare non deve nemmeno vedersi. */
+  const secTipo = document.getElementById('secTipo');
+  if (secTipo) {
+    secTipo.hidden = modelloConVetro;
+    document.querySelectorAll('#tipoPills .pill').forEach((b) =>
+      b.classList.toggle('is-active', Number(b.dataset.tipo) === state.tipo));
+    const tipoNote = document.getElementById('tipoNote');
+    if (tipoNote && window.T) tipoNote.textContent = window.T(`tipo_n${state.tipo}`);
+
+    /* I numeri delle sezioni si riscrivono ogni volta. Sono nel documento
+       perche' li' si leggono, ma se una sezione sparisce restano quelli di
+       prima e il pannello va da 02 a 04: sembra che manchi un pezzo. */
+    let n = 0;
+    secTipo.parentElement.querySelectorAll(':scope > .section').forEach((sez) => {
+      const num = sez.querySelector('.section-title .num');
+      if (!num || sez.hidden) return;
+      num.textContent = String(++n).padStart(2, '0');
+    });
+  }
+
   document.querySelectorAll('#pills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.finitura === state.finitura));
   document.querySelectorAll('.swatch').forEach((b) =>
@@ -2021,6 +2066,19 @@ document.querySelectorAll('#pills .pill').forEach((btn) => {
   });
 });
 
+/* tipo: cambia la finitura del campo, cioe' la geometria. Non basta
+   ridipingere: la porta si ritesse. E' l'unica scelta del pannello che lo
+   richiede, insieme al modello. */
+document.querySelectorAll('#tipoPills .pill').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const tipo = Number(btn.dataset.tipo);
+    if (tipo === state.tipo || modelloConVetro) return;
+    state.tipo = tipo;
+    refreshUI();
+    loadModel(state.modello);
+  });
+});
+
 // ambiente
 document.querySelectorAll('[data-ambiente]').forEach((btn) => {
   btn.addEventListener('click', () => setAmbiente(btn.dataset.ambiente));
@@ -2072,6 +2130,8 @@ function datiPreventivo(cliente, rif) {
 
   const config = [
     ['Essenza', essenzaLabel()],
+    // il tipo va scritto: e' la porta che si costruisce, non un dettaglio
+    ...(modelloConVetro ? [] : [['Tipo', TIPO_LABEL[state.tipo]]]),
     ['Finitura', FINITURA_LABEL[state.finitura]],
     ['Misure luce', `${state.w} × ${state.h} mm`,
       `${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`],

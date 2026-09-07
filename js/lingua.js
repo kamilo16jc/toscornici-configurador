@@ -137,6 +137,26 @@
 
     sez_modello: { it: 'Modello', en: 'Model' },
     sez_essenza: { it: 'Essenza', en: 'Wood species' },
+    sez_tipo: { it: 'Tipo', en: 'Type' },
+    tipo_1: { it: 'Tipo 1', en: 'Type 1' },
+    tipo_2: { it: 'Tipo 2', en: 'Type 2' },
+    tipo_3: { it: 'Tipo 3', en: 'Type 3' },
+    tipo_n1: {
+      it: 'Bugna rialzata con modanatura a doppio gradino.',
+      en: 'Raised panel with a double-step moulding.',
+    },
+    tipo_n2: {
+      it: 'Bugna rialzata con modanatura a mezza canna.',
+      en: 'Raised panel with a cove moulding.',
+    },
+    tipo_n3: {
+      it: 'Pannello liscio, a filo, con modanatura a spigolo vivo.',
+      en: 'Flat flush panel with a square-edge moulding.',
+    },
+    tipo_vetro: {
+      it: 'I modelli con vetro hanno una finitura propria: il tipo non si applica.',
+      en: 'Glazed models have their own finish: the type does not apply.',
+    },
     sez_finitura: { it: 'Finitura', en: 'Finish' },
     sez_misure: { it: 'Misure luce', en: 'Opening size' },
     sez_muro: { it: 'Muro e allargato', en: 'Wall & frame extension' },
