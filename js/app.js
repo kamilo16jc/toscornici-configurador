@@ -18,6 +18,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
+import { conSopraluce, traversoDe, SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -114,6 +115,7 @@ const state = {
   telaio: 'std',
   copriWood: 'toulipier', copri: 'listellare', copriMisura: null, manFinitura: null,
   apertura: 'battente', forma: 'diritta', sopraluce: 'no', mano: 'dx',
+  sopraluceH: SOPRALUCE_DEFAULT,   // altezza del vano sopra la porta, in mm
   capitello: 'no', capLati: 1, capCompl: { fin: false, dia: false, zoc: false },
   serratura: 'std', cerniere: 'anuba', manigliaMod: 'no',
   cilindro: 'no', nottolino: false, oroSerr: false, oroCern: false,
@@ -957,20 +959,28 @@ function loadModel(key) {
         espesorHoja: spessore,
         cantoAltoHoja: cajaAnta.max.y,
       };
+      /* IL SOPRALUCE, per ora solo il vano. Il telaio sale, l'anta no: resta
+         appoggiata a terra e la sua testa diventa il traverso. Muro e
+         coprifilo inseguono da soli, che leggono lo stesso vanoDe(). */
+      const conSopra = state.sopraluce !== 'no';
+      const datiMarco = conSopra ? conSopraluce(datiTelaio, state.sopraluceH) : datiTelaio;
+
       /* La stessa essenza dell'anta: una porta e il suo cerco di due legni
          diversi non esistono. Per questo montar() accetta un materiale. */
-      const marco = montar(datiTelaio, { conTapajuntas: false, conSuelo: false, material: woodMat });
+      const marco = montar(datiMarco, { conTapajuntas: false, conSuelo: false, material: woodMat });
+      if (conSopra) marco.add(traversoDe(datiTelaio, datiMarco, woodMat));
       conjunto.add(marco);
 
-      // L'anta si incastra nel vano del telaio
-      const vano = vanoDe(datiTelaio);
+      // L'anta si incastra nel vano del telaio. Il vano largo e' lo stesso —
+      // il sopraluce alza, non allarga — quindi sx e dx valgono per entrambi.
+      const vano = vanoDe(datiMarco);
       anta.position.set(
         vano.sx + (vano.dx - vano.sx - (cajaAnta.max.x - cajaAnta.min.x)) / 2 - cajaAnta.min.x,
         -cajaAnta.min.y,
         0,
       );
 
-      await montaCoprifilo(mio, conjunto, marco, datiTelaio);
+      await montaCoprifilo(mio, conjunto, marco, datiMarco);
       if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
 
       // La parete con il suo vano, tagliata sulle misure di QUESTA porta
@@ -1779,8 +1789,22 @@ function renderExtras() {
     .addEventListener('change', (e) => { state.apertura = e.target.value; refreshUI(); });
   fillSelect('formaSelect', FORME, state.forma)
     .addEventListener('change', (e) => { state.forma = e.target.value; refreshUI(); });
+  /* Il sopraluce cambia il TELAIO, non solo il prezzo: si rimonta.
+     L'altezza si rilegge sul change e non sul input — ogni battuta
+     ritesserebbe la porta intera, e per tre cifre non vale la pena. */
   fillSelect('sopraluceSelect', SOPRALUCI, state.sopraluce)
-    .addEventListener('change', (e) => { state.sopraluce = e.target.value; refreshUI(); });
+    .addEventListener('change', (e) => {
+      state.sopraluce = e.target.value;
+      refreshUI();
+      loadModel(currentModelKey);
+    });
+  document.getElementById('sopH').addEventListener('change', (e) => {
+    const v = Math.round(+e.target.value || SOPRALUCE_DEFAULT);
+    state.sopraluceH = Math.min(SOPRALUCE_MAX, Math.max(SOPRALUCE_MIN, v));
+    e.target.value = state.sopraluceH;
+    refreshUI();
+    if (state.sopraluce !== 'no') loadModel(currentModelKey);
+  });
   fillSelect('capitelloSelect', CAPITELLI, state.capitello)
     .addEventListener('change', (e) => { state.capitello = e.target.value; refreshUI(); });
   fillSelect('serraturaSelect', SERRATURE, state.serratura)
@@ -2096,6 +2120,10 @@ function refreshUI() {
           ? `La laccatura è una verniciatura. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50). `
           : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
         + 'Scegliendo "Grezza" si torna al legno a vista.';
+
+  // l'altezza del sopraluce si chiede solo se il sopraluce c'e'
+  const sopBox = document.getElementById('sopraluceHBox');
+  if (sopBox) sopBox.hidden = state.sopraluce === 'no';
 
   /* il TIPO. La sezione sparisce sulle porte con vetro invece di restare
      disattivata: una scelta che non si puo' fare non deve nemmeno vedersi. */

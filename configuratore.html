@@ -224,6 +224,12 @@
         <button class="pill" data-telforma="1">Aggiungi telaio di passaggio</button>
       </div>
       <select class="model-select" id="sopraluceSelect" aria-label="Sopraluce"></select>
+      <!-- l'altezza del vano sopra la porta. Il listino copre fino a 50 cm -->
+      <div class="measures" id="sopraluceHBox" hidden>
+        <label class="measure"><span data-t="sop_altezza">Altezza sopraluce</span> <span class="en">mm</span>
+          <input type="number" id="sopH" value="400" min="150" max="500" step="10">
+        </label>
+      </div>
       <!-- il sopraluce si vede di taglio: il cardine alto o basso e' la differenza -->
       <figure class="anim" id="sopraluceAnimBox" hidden><svg id="sopraluceAnim" role="img" aria-label="Schema del sopraluce"></svg></figure>
       <div class="pills" id="manoPills">
@@ -376,8 +382,8 @@
   </div>
 </div>
 
-<script src="js/lingua.js?v=5"></script>
+<script src="js/lingua.js?v=6"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=72"></script>
+<script type="module" src="js/app.js?v=73"></script>
 </body>
 </html>
