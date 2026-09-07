@@ -1,37 +1,52 @@
 /* ============================================================
-   IL DECORO DEL VETRO — fiori incisi
+   IL DECORO DEL VETRO — fiori incisi e dipinti
    ------------------------------------------------------------
    Una prova per vedere come sta un sopraluce decorato.
 
    Non e' geometria: un fiore inciso non sporge, e' vetro
-   lavorato piu' o meno a fondo. Si fa con due mappe sul
-   materiale, che e' anche come si fa in fabbrica —
-   l'acidatura non toglie forma, toglie trasparenza:
+   lavorato piu' o meno a fondo. Si fa con tre mappe sul
+   materiale, che e' anche come si fa in fabbrica — l'acido non
+   toglie forma, toglie trasparenza, e il colore si dipinge:
 
-     roughnessMap     dove il fiore e' inciso il vetro
-                      diffonde di piu' e si vede bianco
-     transmissionMap  e lascia passare meno luce, cosi' il
-                      motivo si stacca dal fondo
+     roughnessMap     dove e' inciso il vetro diffonde di piu'
+     transmissionMap  e lascia passare meno luce
+     map              e il colore del fiore, che la trasmissione
+                      porta con se'
+
+   I COLORI SONO QUELLI DI CASA: i laccati del listino piu'
+   l'accento del sito. Un decoro con una tavolozza sua sarebbe
+   un secondo gusto dentro alla stessa porta, e non c'e' motivo
+   di inventarne uno quando la fabbrica ne ha gia' uno.
 
    Il disegno si genera con canvas invece di caricare un png:
-   cosi' si ridisegna alla misura giusta di ogni sopraluce e
-   non si stira. Un vetro largo e basso con un fiore ovalizzato
-   si vede subito.
+   cosi' si ridisegna alla misura giusta di ogni sopraluce e non
+   si stira. Un vetro largo e basso con un fiore ovalizzato si
+   vede subito.
    ============================================================ */
 
 import * as THREE from 'three';
 
-/* Quanto e' satinato il fondo e quanto il fiore, da 0 a 1. Il fondo non e'
-   zero: il vetro resta comunque satinato, il fiore e' solo piu' inciso. */
-const FONDO = 0.62;
-const FIORE = 1.0;
+/* La tavolozza, presa dal listino (LACCATI in app.js) e dal css del sito.
+   Terracotta e' l'accento, salvia e notte sono due laccati veri, e l'ottone
+   e' il tono del legno: caldo e freddo si tengono in equilibrio. */
+const TERRACOTTA = '#a9472f';   // --brass
+const NOTTE = '#39465a';        // laccato Blu Notte
+const SALVIA = '#8b9c85';       // laccato Verde Salvia
+const OTTONE = '#c8a271';       // il tono caldo del legno
+const VETRO = '#e8eef0';        // il colore del vetro satinato, come fondo
 
-/* E quanta luce passa. Il fiore ne lascia passare meno, ed e' quello che lo
-   fa vedere: senza questo il motivo si perde nel bianco del fondo. */
-const TRASM_FONDO = 1.0;
-const TRASM_FIORE = 0.45;
+/* Quanto e' inciso: il fondo resta satinato, il fiore lo e' di piu'. */
+const RUG_FONDO = 0.62;
+const RUG_FIORE = 1.0;
 
-const PX_PER_MM = 1.6;      // risoluzione del disegno
+/* E quanta luce passa. Il fiore ne lascia passare meno — e' quello che lo
+   stacca — ma non troppo, o il colore va a fondo e diventa una macchia. */
+const TRA_FONDO = 1.0;
+const TRA_FIORE = 0.58;
+
+const PX_PER_MM = 1.6;
+
+/* ---------------------------------------------------------------- disegno */
 
 /** Un petalo: una goccia che parte dal centro. */
 function petalo(g, r0, r1, largo) {
@@ -43,19 +58,21 @@ function petalo(g, r0, r1, largo) {
   g.fill();
 }
 
-/** Un fiore intero: n petali in giro piu' il cuore. */
-function fiore(g, x, y, r, petali = 6, giro = 0) {
+/** Un fiore intero: petali in giro piu' il cuore, di due colori. */
+function fiore(g, x, y, r, petali, giro, colPetalo, colCuore) {
   g.save();
   g.translate(x, y);
   g.rotate(giro);
+  g.fillStyle = colPetalo;
   for (let i = 0; i < petali; i++) {
     g.save();
     g.rotate((i * 2 * Math.PI) / petali);
     petalo(g, r * 0.22, r, r * 0.62);
     g.restore();
   }
+  g.fillStyle = colCuore;
   g.beginPath();
-  g.arc(0, 0, r * 0.2, 0, 2 * Math.PI);
+  g.arc(0, 0, r * 0.22, 0, 2 * Math.PI);
   g.fill();
   g.restore();
 }
@@ -84,74 +101,90 @@ function tralcio(g, x0, y0, x1, y1, curva, grosso) {
 }
 
 /**
- * Disegna il motivo su un canvas.
+ * Il motivo, disegnato con la tavolozza che gli si passa.
  *
- * Simmetrico rispetto all'asse verticale, che e' come si decorano i
- * sopraluci: si guardano da sotto e di fronte, e una composizione storta
- * si legge come un errore di montaggio.
+ * La stessa funzione fa il colore e i due dati: cambia solo di che tinta si
+ * riempie ogni cosa. Due disegni separati vorrebbero dire due disegni che
+ * prima o poi non coincidono piu', e il colore uscirebbe fuori dall'incisione.
+ *
+ * Simmetrico rispetto all'asse verticale, che e' come si decorano i sopraluci:
+ * si guardano di fronte, e una composizione storta si legge come un errore di
+ * montaggio.
+ *
+ * NIENTE FILETTO lungo il perimetro: le sue due righe orizzontali, cosi'
+ * vicine al telaio, sembravano un difetto del vetro e non una decorazione.
  */
-function dibuja(anchoMm, altoMm, blanco, fondo) {
+function dibuja(anchoMm, altoMm, p) {
   const c = document.createElement('canvas');
   c.width = Math.max(64, Math.round(anchoMm * PX_PER_MM));
   c.height = Math.max(64, Math.round(altoMm * PX_PER_MM));
   const g = c.getContext('2d');
   const W = c.width, H = c.height;
 
-  g.fillStyle = fondo;
+  g.fillStyle = p.fondo;
   g.fillRect(0, 0, W, H);
-  g.fillStyle = blanco;
-  g.strokeStyle = blanco;
   g.lineCap = 'round';
 
-  // un filetto lungo il perimetro, che incornicia
-  const m = Math.min(W, H) * 0.075;
-  g.lineWidth = Math.max(1.5, H * 0.012);
-  g.strokeRect(m, m, W - 2 * m, H - 2 * m);
-
   const cx = W / 2, cy = H / 2;
-  const R = Math.min(H * 0.30, W * 0.10);   // taglia del fiore centrale
+  const R = Math.min(H * 0.30, W * 0.10);
 
-  // il fiore in mezzo, con la sua corona
-  fiore(g, cx, cy, R, 8, Math.PI / 8);
-  fiore(g, cx, cy, R * 0.45, 6, 0);
-
-  // e due tralci che se ne vanno ai lati, uguali e specchiati
   for (const lado of [-1, 1]) {
     g.save();
     g.translate(cx, cy);
     g.scale(lado, 1);
 
+    g.strokeStyle = p.tralcio;
     tralcio(g, R * 0.9, 0, W * 0.40, -H * 0.06, H * 0.18, Math.max(1.2, H * 0.009));
     tralcio(g, R * 0.9, 0, W * 0.34, H * 0.14, -H * 0.10, Math.max(1.0, H * 0.007));
 
-    fiore(g, W * 0.235, H * 0.045, R * 0.5, 6, 0.4);
-    fiore(g, W * 0.375, -H * 0.055, R * 0.62, 6, -0.3);
-    fiore(g, W * 0.315, H * 0.145, R * 0.34, 5, 0.9);
-
+    g.fillStyle = p.foglia;
     foglia(g, R * 1.15, -H * 0.015, W * 0.075, H * 0.05, -0.55);
     foglia(g, W * 0.16, H * 0.055, W * 0.065, H * 0.042, 0.5);
     foglia(g, W * 0.30, -H * 0.10, W * 0.06, H * 0.038, -0.9);
     foglia(g, W * 0.115, -H * 0.075, W * 0.055, H * 0.035, -1.2);
 
+    fiore(g, W * 0.235, H * 0.045, R * 0.5, 6, 0.4, p.petalo2, p.cuore);
+    fiore(g, W * 0.375, -H * 0.055, R * 0.62, 6, -0.3, p.petalo, p.cuore);
+    fiore(g, W * 0.315, H * 0.145, R * 0.34, 5, 0.9, p.petalo2, p.cuore);
+
     g.restore();
   }
+
+  // il fiore in mezzo per ultimo, cosi' i tralci gli passano sotto
+  fiore(g, cx, cy, R, 8, Math.PI / 8, p.petalo, p.cuore);
+  fiore(g, cx, cy, R * 0.45, 6, 0, p.petalo2, p.cuore);
+
   return c;
 }
+
+/* --------------------------------------------------------------- tavolozze */
 
 const gris = (v) => {
   const n = Math.round(Math.max(0, Math.min(1, v)) * 255);
   return `rgb(${n},${n},${n})`;
 };
 
-const textura = (canvas) => {
+/** Tutto il motivo di un solo valore: serve per le due mappe di dati. */
+const plana = (fondo, motivo) => ({
+  fondo: gris(fondo), petalo: gris(motivo), petalo2: gris(motivo),
+  cuore: gris(motivo), foglia: gris(motivo), tralcio: gris(motivo),
+});
+
+const COLORE = {
+  fondo: VETRO, petalo: TERRACOTTA, petalo2: NOTTE,
+  cuore: OTTONE, foglia: SALVIA, tralcio: SALVIA,
+};
+
+const textura = (canvas, datos) => {
   const t = new THREE.CanvasTexture(canvas);
-  t.colorSpace = THREE.NoColorSpace;   // sono dati, non colore
+  // le due mappe di dati NON sono colore e non vanno convertite
+  t.colorSpace = datos ? THREE.NoColorSpace : THREE.SRGBColorSpace;
   t.anisotropy = 4;
   return t;
 };
 
 /**
- * Incide i fiori sul vetro.
+ * Incide e dipinge i fiori sul vetro.
  *
  * Il materiale si CLONA prima di toccarlo: quello del motore lo condividono
  * tutti i vetri del catalogo, e inciderlo li' vorrebbe dire trovarsi i fiori
@@ -192,17 +225,18 @@ export function incideFiori(obj) {
     };
 
     const mat = o.material.clone();
-    // il canvas si disegna alla misura vera del pezzo: 1 px = 1 mm, e il
-    // fiore non si ovalizza su un sopraluce largo e basso.
-    const rug = encuadra(textura(dibuja(du, dv, gris(FIORE), gris(FONDO))));
-    const tra = encuadra(textura(dibuja(du, dv, gris(TRASM_FIORE), gris(TRASM_FONDO))));
+    // il canvas si disegna alla misura vera del pezzo: 1 px = 1 mm
+    mat.map = encuadra(textura(dibuja(du, dv, COLORE), false));
+    mat.roughnessMap = encuadra(textura(dibuja(du, dv, plana(RUG_FONDO, RUG_FIORE)), true));
+    mat.transmissionMap = encuadra(textura(dibuja(du, dv, plana(TRA_FONDO, TRA_FIORE)), true));
 
-    /* I due valori del materiale si portano a fondo scala perche' le mappe
-       MOLTIPLICANO: lasciando 0,62 di rugosita' il fondo sarebbe finito a
-       0,38 e il vetro avrebbe cominciato a specchiare. */
+    /* I valori del materiale vanno a fondo scala perche' le mappe
+       MOLTIPLICANO. La rugosita' lasciata a 0,62 avrebbe portato il fondo a
+       0,38 e il vetro avrebbe cominciato a specchiare; e il colore lasciato
+       sul suo azzurrino avrebbe spento i fiori, perche' il fondo della mappa
+       porta gia' quella tinta. */
     mat.roughness = 1.0;
-    mat.roughnessMap = rug;
-    mat.transmissionMap = tra;
+    mat.color.set(0xffffff);
     mat.needsUpdate = true;
     o.material = mat;
   });
