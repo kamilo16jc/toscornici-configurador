@@ -20,10 +20,15 @@ import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
 import { conSopraluce, traversoDe, vanoSopraluce, piezaVidrio,
          SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
+import { incideFiori } from './vetro-decoro.js';
 
 /* Satinato. Un sopraluce sta sopra la testa: fa passare la luce senza dare
    a vedere cosa c'e' dietro, ed e' come si montano. Trasparente e' false. */
 const SOPRALUCE_SATINATO = true;
+
+/* I fiori incisi sul vetro. E' una prova per vedere come sta decorato: si
+   spegne mettendolo a false e il vetro torna liscio. */
+const SOPRALUCE_DECORO = true;
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -1000,6 +1005,11 @@ function loadModel(key) {
         );
         if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
         vestiConEssenza(vetro);
+        /* I fiori DOPO vestiConEssenza: quella lascia al vetro il materiale
+           del motore, e l'incisione lo clona e ci lavora sopra. */
+        if (SOPRALUCE_DECORO) {
+          incideFiori(vetro);
+        }
         vetro.position.set(hueco.sx, hueco.y0, 0);
         vetro.name = 'VetroSopraluce';
         conjunto.add(vetro);
