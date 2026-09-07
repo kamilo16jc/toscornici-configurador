@@ -164,6 +164,7 @@
     sez_coprifili: { it: 'Coprifili', en: 'Architraves' },
     sez_apertura: { it: 'Apertura e forma', en: 'Opening & shape' },
     sez_capitello: { it: 'Capitello', en: 'Door surround' },
+    sez_maniglia: { it: 'Maniglia', en: 'Handle' },
     sez_ferramenta: { it: 'Ferramenta', en: 'Ironmongery' },
     sez_finmaniglia: { it: 'Finitura maniglia', en: 'Handle finish' },
     sez_ambiente: { it: 'Ambiente', en: 'Setting' },

@@ -117,9 +117,32 @@
       <p class="pill-note" id="tipoNote"></p>
     </section>
 
+    <!-- Maniglia: modello e finitura. Le serrature, le cerniere e gli
+         accessori restano in Ferramenta: sono un altro mestiere. -->
+    <section class="section">
+      <h2 class="section-title"><span class="num">04</span> <span data-t="sez_maniglia">Maniglia</span></h2>
+      <p class="lacc-title" data-t="man_titolo">Modello maniglia — inventario fabbrica</p>
+      <div class="maniglie-grid" id="manigliaGrid"><!-- generato da MANIGLIE_MOD --></div>
+      <p class="lacc-title" data-t="sez_finmaniglia">Finitura maniglia</p>
+      <div class="metals" id="maniglie">
+        <button class="metal is-active" data-maniglia="ottone">
+          <span class="metal-chip chip-ottone"></span>
+          <span class="metal-label" data-t="met_ottone">Ottone</span>
+        </button>
+        <button class="metal" data-maniglia="nero">
+          <span class="metal-chip chip-nero"></span>
+          <span class="metal-label" data-t="met_nero">Nero opaco</span>
+        </button>
+        <button class="metal" data-maniglia="cromo">
+          <span class="metal-chip chip-cromo"></span>
+          <span class="metal-label" data-t="met_cromo">Cromo</span>
+        </button>
+      </div>
+    </section>
+
     <!-- Finitura -->
     <section class="section">
-      <h2 class="section-title"><span class="num">04</span> <span data-t="sez_finitura">Finitura</span></h2>
+      <h2 class="section-title"><span class="num">05</span> <span data-t="sez_finitura">Finitura</span></h2>
       <div class="pills" id="pills">
         <button class="pill is-active" data-finitura="grezza" data-t="fin_grezza">Grezza</button>
         <button class="pill" data-finitura="verniciata" data-t="fin_verniciata">Verniciata</button>
@@ -135,7 +158,7 @@
 
     <!-- Misure -->
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> <span data-t="sez_misure">Misure luce</span></h2>
+      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_misure">Misure luce</span></h2>
       <div class="measures">
         <label class="measure"><span data-t="mis_largh">Larghezza</span> <span class="en">mm</span>
           <input type="number" id="mW" value="900" min="500" max="1400" step="10">
@@ -155,7 +178,7 @@
 
     <!-- Muro e allargato -->
     <section class="section">
-      <h2 class="section-title"><span class="num">06</span> <span data-t="sez_muro">Muro e allargato</span></h2>
+      <h2 class="section-title"><span class="num">07</span> <span data-t="sez_muro">Muro e allargato</span></h2>
       <div class="measures">
         <label class="measure"><span data-t="muro_spess">Spessore muro</span> <span class="en">mm</span>
           <input type="number" id="mMuro" value="108" min="80" max="500" step="1">
@@ -174,7 +197,7 @@
 
     <!-- Telaio -->
     <section class="section">
-      <h2 class="section-title"><span class="num">07</span> <span data-t="sez_telaio">Telaio</span></h2>
+      <h2 class="section-title"><span class="num">08</span> <span data-t="sez_telaio">Telaio</span></h2>
       <select class="model-select" id="telaioSelect" aria-label="Telaio"></select>
       <figure class="schema">
         <img id="telaioSchema" src="assets/telai/std.svg" alt="Sezione del telaio">
@@ -185,14 +208,14 @@
 
     <!-- Coprifili -->
     <section class="section">
-      <h2 class="section-title"><span class="num">08</span> <span data-t="sez_coprifili">Coprifili</span></h2>
+      <h2 class="section-title"><span class="num">09</span> <span data-t="sez_coprifili">Coprifili</span></h2>
       <div class="maniglie-grid" id="copriGrid"><!-- generato dal listino --></div>
       <p class="pill-note" id="copriNote">Il coprifilo è un pezzo indipendente dall'anta: il listino lo produce solo in frassino, toulipier e pino. Liscio listellare (90/70) compreso nel prezzo. Con la lente sulla scheda si vede il profilo in grande e si sceglie legno e misura.</p>
     </section>
 
     <!-- Apertura e forma -->
     <section class="section">
-      <h2 class="section-title"><span class="num">09</span> <span data-t="sez_apertura">Apertura e forma</span></h2>
+      <h2 class="section-title"><span class="num">10</span> <span data-t="sez_apertura">Apertura e forma</span></h2>
       <select class="model-select" id="aperturaSelect" aria-label="Apertura"></select>
       <figure class="anim"><svg id="aperturaAnim" role="img" aria-label="Schema del movimento"></svg></figure>
       <select class="model-select" id="formaSelect" aria-label="Forma"></select>
@@ -212,7 +235,7 @@
 
     <!-- Capitello -->
     <section class="section">
-      <h2 class="section-title"><span class="num">10</span> <span data-t="sez_capitello">Capitello</span></h2>
+      <h2 class="section-title"><span class="num">11</span> <span data-t="sez_capitello">Capitello</span></h2>
       <select class="model-select" id="capitelloSelect" aria-label="Capitello"></select>
       <div class="pills" id="capLatiPills">
         <button class="pill is-active" data-lati="1">1 lato</button>
@@ -228,7 +251,7 @@
 
     <!-- Ferramenta -->
     <section class="section">
-      <h2 class="section-title"><span class="num">11</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
+      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
       <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
       <div class="pills" id="serrExtraPills">
         <button class="pill" data-nottolino="1">Predisp. nottolino <span class="en">+€10</span></button>
@@ -247,27 +270,6 @@
       </div>
       <p class="lacc-title" data-t="acc_titolo">Accessori</p>
       <div class="pills" id="accPills"><!-- generato da ACCESSORI --></div>
-      <p class="lacc-title" data-t="man_titolo">Modello maniglia — inventario fabbrica</p>
-      <div class="maniglie-grid" id="manigliaGrid"><!-- generato da MANIGLIE_MOD --></div>
-    </section>
-
-    <!-- Maniglia -->
-    <section class="section">
-      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_finmaniglia">Finitura maniglia</span></h2>
-      <div class="metals" id="maniglie">
-        <button class="metal is-active" data-maniglia="ottone">
-          <span class="metal-chip chip-ottone"></span>
-          <span class="metal-label" data-t="met_ottone">Ottone</span>
-        </button>
-        <button class="metal" data-maniglia="nero">
-          <span class="metal-chip chip-nero"></span>
-          <span class="metal-label" data-t="met_nero">Nero opaco</span>
-        </button>
-        <button class="metal" data-maniglia="cromo">
-          <span class="metal-chip chip-cromo"></span>
-          <span class="metal-label" data-t="met_cromo">Cromo</span>
-        </button>
-      </div>
     </section>
 
     <!-- Ambiente -->
@@ -374,7 +376,7 @@
   </div>
 </div>
 
-<script src="js/lingua.js?v=4"></script>
+<script src="js/lingua.js?v=5"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script type="module" src="js/app.js?v=71"></script>
 </body>
