@@ -1405,6 +1405,107 @@ function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
    numero e basta. */
 const SCARTO_ROSETTA = 14;
 
+/* ============================================================
+   LA BOCCHETTA — la serratura sotto la maniglia
+   ------------------------------------------------------------
+   Non e' un GLB: e' disegnata qui. Le maniglie del catalogo sono dodici e
+   tutte diverse, ma la serratura e' UNA SOLA per tutte — cosi' l'ha chiesta
+   la fabbrica, e cosi' non serve un modello nuovo ogni volta che entra una
+   maniglia in listino.
+
+   Prende handleMat, lo stesso materiale della maniglia: cambiando finitura
+   —ottone, nero, cromo— la seguono tutt'e due insieme, che e' come si vende
+   una porta. Un ottone con la bocchetta cromata non lo vuole nessuno.
+
+   L'INTERASSE e' la quota che conta: 85 mm fra il centro del quadro della
+   maniglia e il centro del foro della chiave. E' quella della serratura
+   patent, la piu' comune su una porta interna.
+   ============================================================ */
+const INTERASSE = 85;            // dal centro della maniglia al foro della chiave
+const RAGGIO_BOCCHETTA = 16;     // piccola: la rosetta della maniglia ne misura 21,5
+const SPESSORE_BOCCHETTA = 3;
+
+/* Il buco della chiave in UN SOLO contorno, non due sovrapposti.
+   Un tondo e una fessura messi come due fori separati si toccano, e dove si
+   toccano l'estrusione fa capriole. Si tracciano insieme: si sale per il
+   fianco della fessura fino a dove incontra il tondo, si gira sopra la testa
+   del tondo, e si riscende dall'altro fianco. */
+function contornoDellaChiave() {
+  const rTondo = 3.4;            // il foro dove entra la canna
+  const yTondo = 3.5;
+  const mezzaFessuraSu = 1.8;    // la fessura sotto, che si allarga scendendo
+  const mezzaFessuraGiu = 2.9;
+  const yFessura = -7;
+
+  // dove il fianco della fessura incontra il tondo
+  const dy = Math.sqrt(rTondo * rTondo - mezzaFessuraSu * mezzaFessuraSu);
+  const yIncontro = yTondo - dy;
+  const aSinistra = Math.atan2(-dy, -mezzaFessuraSu);
+  const aDestra = Math.atan2(-dy, mezzaFessuraSu);
+
+  const p = new THREE.Path();
+  p.moveTo(-mezzaFessuraGiu, yFessura);
+  p.lineTo(-mezzaFessuraSu, yIncontro);
+  p.absarc(0, yTondo, rTondo, aSinistra, aDestra, true);   // sopra la testa
+  p.lineTo(mezzaFessuraGiu, yFessura);
+  p.closePath();
+  return p;
+}
+
+let geoBocchetta = null;
+function geometriaBocchetta() {
+  if (geoBocchetta) return geoBocchetta;
+  const piastra = new THREE.Shape();
+  piastra.absarc(0, 0, RAGGIO_BOCCHETTA, 0, Math.PI * 2, false);
+  piastra.holes.push(contornoDellaChiave());
+  /* Lo smusso e' generoso di proposito. Un disco PIATTO e tutto metallo fa
+     da specchio all'ambiente, che qui e' chiaro, e sparisce sul legno: la
+     prima prova sembrava di pino come la porta. Con un bordo smussato largo
+     il rim prende la luce di taglio e si legge subito che e' ferramenta.
+     Le normali le fa gia' l'estrusione: ricalcolarle non serve. */
+  geoBocchetta = new THREE.ExtrudeGeometry(piastra, {
+    depth: SPESSORE_BOCCHETTA,
+    bevelEnabled: true,
+    bevelThickness: 0.9,
+    bevelSize: 1.3,
+    bevelSegments: 3,
+    curveSegments: 48,
+  });
+  return geoBocchetta;
+}
+
+/* Dietro al buco ci vuole il buio. Senza, dal foro si vede il legno
+   dell'anta e non sembra un buco: sembra un disegno. */
+const buioMat = new THREE.MeshStandardMaterial({ color: 0x120f0c, roughness: 0.95, metalness: 0 });
+let geoBuio = null;
+
+let serraturaMesh = null;
+
+function montaSerratura(sitio) {
+  if (serraturaMesh) { disposeSubtree(serraturaMesh); serraturaMesh.parent?.remove(serraturaMesh); serraturaMesh = null; }
+  if (!doorPivot || !sitio) return;
+
+  if (!geoBuio) geoBuio = new THREE.CircleGeometry(RAGGIO_BOCCHETTA - 1, 40);
+
+  const gruppo = new THREE.Group();
+  gruppo.name = 'Serratura';
+
+  const piastra = new THREE.Mesh(geometriaBocchetta(), handleMat);
+  piastra.name = 'Bocchetta';
+  piastra.castShadow = piastra.receiveShadow = true;
+  gruppo.add(piastra);
+
+  const buio = new THREE.Mesh(geoBuio, buioMat);
+  buio.position.z = 0.4;         // dentro allo spessore, si vede solo dal foro
+  gruppo.add(buio);
+
+  /* Sotto la maniglia e sulla stessa verticale: la bocchetta e il quadro
+     stanno sull'asse del montante, sempre. */
+  gruppo.position.set(sitio.x, sitio.y - INTERASSE, sitio.z);
+  doorPivot.add(gruppo);
+  serraturaMesh = gruppo;
+}
+
 /* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
    GLB ne portava una fissa e il menu cambiava solo il prezzo. */
 const cacheManiglia = new Map();
@@ -1414,7 +1515,9 @@ let sitioManiglia = null;   // dove va, in millimetri e in coordinate d'anta
 async function montaManiglia(mio, sitio, manoDx) {
   if (manigliaMesh) { disposeSubtree(manigliaMesh); manigliaMesh.parent?.remove(manigliaMesh); manigliaMesh = null; }
   const mod = state.manigliaMod;
-  if (!mod || mod === 'no' || !doorPivot || !sitio) return;
+  /* La serratura segue la maniglia: senza maniglia non si mette nemmeno lei,
+     che una bocchetta sola su una porta liscia non l'ha mai vista nessuno. */
+  if (!mod || mod === 'no' || !doorPivot || !sitio) { montaSerratura(null); return; }
 
   const url = `assets/maniglie/${mod}.glb`;
   try {
@@ -1475,6 +1578,7 @@ async function montaManiglia(mio, sitio, manoDx) {
     manigliaMesh.position.set(
       sitio.x + versoCanto * SCARTO_ROSETTA - capo, sitio.y, sitio.z - b.min.z);
     doorPivot.add(manigliaMesh);
+    montaSerratura(sitio);
   } catch (err) {
     console.warn(`maniglia ${mod} non caricata`, err);
   }
