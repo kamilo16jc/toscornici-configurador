@@ -49,17 +49,17 @@ export const PAPELES = [
   {
     id: 'pannello',
     emoji: '▭',
-    it: 'Pannello',
-    es: 'Panel liso',
-    ayuda: 'La tabla que rellena el entrepaño, sin relieve. Flota en la ranura.',
+    it: 'Pannello liso — TIPO 3',
+    es: 'TIPO 3 · liso',
+    ayuda: 'El TIPO 3 de fábrica. La tabla que rellena el entrepaño, sin relieve: flota en la ranura y queda a ras. Va con la moldura TIPO 3, a arista viva.',
     props: { espesor: 21, bisel: 0, biselAncho: 0, rientro: 16, bastoneAncho: 12, bastoneForma: 'sagomato', z: -1.5, acabado: 'robleClaro' },
   },
   {
     id: 'bugnato',
-    emoji: '1️⃣',
-    it: 'Finitura 1 — bisello doppio gradino',
-    es: 'TIPO 1',
-    ayuda: 'Panel realzado con el bisel de doble escalón de 14 mm dando la vuelta. El campo sube 4 mm sobre el canto.',
+    emoji: '🔲',
+    it: 'Bugnato — TIPO 1 o 2',
+    es: 'Bugna',
+    ayuda: 'Panel realzado con el bisel de doble escalón de 14 mm dando la vuelta. El campo sube 4 mm sobre el canto. Es TIPO 1 o TIPO 2 según la moldura que se le elija abajo: doble escalón o media caña.',
     props: {
       // 16 de lengueta escondida + 14 de bisel = 30.
       espesor: 21, biselAncho: 30, bisel: 4, biselPerfil: 'recto', rientro: 16,

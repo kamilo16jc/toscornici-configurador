@@ -349,11 +349,19 @@ export function aligerar(muestras, tolerancia = 0.04) {
  * travesano o del larguero hasta el panel. No pertenece al panel — pertenece a
  * la madera que lo rodea, y por eso la marca la misma pieza que hace el hueco.
  *
- * La fabrica ofrece tres remates, y cada uno va con su tipo de panel:
+ * La fabrica nombra tres acabados, y son ESTOS TRES remates los que los
+ * distinguen. Sale de las tres versiones trazadas de la ROMA, que son la misma
+ * puerta y solo se diferencian en esto:
  *
- *   sagomato  caida recta con un filete arriba   -> TIPO 1
- *   tondo     caida redondeada, un cuarto bocel  -> TIPO 2
- *   vivo      caida a plomo, arista viva         -> TIPO 3
+ *   doppioGradinoCurvo  doble escalon, medio curvo  -> TIPO 1
+ *   cavetto             media cana                  -> TIPO 2
+ *   vivo                arista viva                 -> TIPO 3
+ *
+ * El TIPO 3 ademas lleva el panel LISO: papel 'pannello' en vez de 'bugnato',
+ * sin bisel y sin perfil de bugna. Los tipos 1 y 2 comparten panel realzado y
+ * solo cambian el remate.
+ *
+ * Las otras molduras de aqui abajo no son de catalogo: estan para trazar.
  *
  * Va al reves que el perfil de un panel: alto por fuera y bajo por dentro. El
  * tejido no distingue —solo coloca anillos a las alturas que se le den— asi que
@@ -468,17 +476,21 @@ const FORMAS = {
   },
 };
 
+/* Los tres de catalogo van primero y llevan el TIPO en el nombre: quien traza
+   los ve juntos al principio del selector y el archivo guardado queda
+   identificado sin tener que acordarse de que 'cavetto' era el TIPO 2. */
 export const MOLDURAS = {
+  doppioGradinoCurvo: { nombre: 'TIPO 1 · doble escalón', forma: FORMAS.doppioGradinoCurvo },
+  cavetto: { nombre: 'TIPO 2 · media caña', forma: FORMAS.cavetto },
+  vivo: { nombre: 'TIPO 3 · arista viva', forma: FORMAS.vivo },
+
   sagomato: { nombre: 'Filete y caída', forma: FORMAS.sagomato },
-  vivo: { nombre: 'Arista viva', forma: FORMAS.vivo },
   smusso: { nombre: 'Chaflán a 45°', forma: FORMAS.smusso },
   tondo: { nombre: 'Bocel', forma: FORMAS.tondo },
-  cavetto: { nombre: 'Media caña', forma: FORMAS.cavetto },
   gola: { nombre: 'Gola (ese)', forma: FORMAS.gola },
   talon: { nombre: 'Talón (ese invertida)', forma: FORMAS.talon },
   astragalo: { nombre: 'Junquillo', forma: FORMAS.astragalo },
-  doppioGradino: { nombre: 'Doble escalón', forma: FORMAS.doppioGradino },
-  doppioGradinoCurvo: { nombre: 'Doble escalón, medio curvo', forma: FORMAS.doppioGradinoCurvo },
+  doppioGradino: { nombre: 'Doble escalón recto', forma: FORMAS.doppioGradino },
   unghietta: { nombre: 'Uña', forma: FORMAS.unghietta },
 };
 
