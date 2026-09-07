@@ -1176,6 +1176,23 @@ function loadModel(key) {
       const cajaHoja = new THREE.Box3()
         .setFromObject(anta)
         .applyMatrix4(new THREE.Matrix4().copy(conjunto.matrixWorld).invert());
+      /* IL MONTANTE DI CHIUSURA, misurato sulla maglia.
+         La maniglia va sul montante, e il montante non e' un numero fisso:
+         sulla Siena e' largo 95 mm, un altro modello lo fara' diverso. Si
+         riconosce da solo — e' un pezzo che va da cielo a terra e finisce
+         sul canto dell'anta dalla parte opposta alle cerniere. */
+      const altoAnta = cajaHoja.max.y - cajaHoja.min.y;
+      const cantoLibero = manoDx ? cajaHoja.max.x : cajaHoja.min.x;
+      let montanteChiusura = null;
+      anta.traverse((o) => {
+        if (!o.isMesh) return;
+        const c = new THREE.Box3().setFromObject(o).applyMatrix4(
+          new THREE.Matrix4().copy(conjunto.matrixWorld).invert());
+        if ((c.max.y - c.min.y) < altoAnta * 0.85) return;          // non arriva da cielo a terra
+        if (Math.abs((manoDx ? c.max.x : c.min.x) - cantoLibero) > 2) return;   // non e' sul canto giusto
+        montanteChiusura = c;
+      });
+
       doorPivot.position.set(manoDx ? cajaHoja.min.x : cajaHoja.max.x, 0, -spessore / 2);
       anta.position.sub(doorPivot.position);
       leafParts = [anta];
@@ -1244,7 +1261,7 @@ function loadModel(key) {
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
          nello spazio del perno — che e' quello dell'insieme meno l'offset del
          perno stesso. */
-      const punto = puntoDellaManiglia(pezzi, manoDx, cajaHoja);
+      const punto = puntoDellaManiglia(pezzi, manoDx, cajaHoja, montanteChiusura);
       if (!punto.sobreMontante) console.warn(`${key}: la maniglia non cade sul montante`);
       sitioManiglia = {
         x: punto.x - doorPivot.position.x,
@@ -1339,12 +1356,25 @@ const RITIRO_MANIGLIA = 89;      // dal canto dell'anta al canto della rosetta
    catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
 const LARGO_MANIGLIA = 135;
 
-function puntoDellaManiglia(pezzi, manoDx, cajaHoja) {
-  /* Il canto buono e' quello dell'anta VERA, misurata sulla maglia — non
-     quello dei pezzi del disegno, che stanno in un altro sistema (sulla Siena
-     danno 925 dove l'anta finisce a 833), e nemmeno quello del vano, che e'
-     piu' largo di una holgura e porta la rosetta dentro la battuta. */
-  const x = (manoDx ? cajaHoja.max.x - RITIRO_MANIGLIA : cajaHoja.min.x + RITIRO_MANIGLIA);
+function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
+  /* IN MEZZO AL MONTANTE, e non a tot millimetri dal canto.
+     ------------------------------------------------------------
+     Misurato sulla Siena: l'anta va da -419,7 a +419,7 e il montante di
+     chiusura da 324,7 a 419,7 — novantacinque millimetri. Il suo centro
+     cade a 47,5 dal canto.
+
+     I 25 mm presi dal vano mettevano la rosetta a 16 dal canto: mezza sotto
+     la battuta del telaio, e infatti lo toccava. Gli 89 che ho provato dopo
+     la mandavano a 89, cioe' OLTRE il montante, in mezzo al pannello — dove
+     una maniglia non si avvita, perche' li' sotto non c'e' legno da mordere.
+
+     Il montante e' il posto giusto e si misura sulla maglia, cosi' vale per
+     qualunque modello invece che per quello su cui e' stato tarato il
+     numero. Il ritiro dal canto resta solo come rete se il montante non si
+     trovasse. */
+  const x = montante
+    ? (montante.min.x + montante.max.x) / 2
+    : (manoDx ? cajaHoja.max.x - RITIRO_MANIGLIA : cajaHoja.min.x + RITIRO_MANIGLIA);
 
   const cajas = pezzi.map((p) => ({ p, c: cajaDe(p) }));
   const hoja = cajas.reduce(
@@ -1355,6 +1385,37 @@ function puntoDellaManiglia(pezzi, manoDx, cajaHoja) {
   const sobreMontante = cajas.some(({ p, c }) => p.papel === 'montante' && y >= c[1] && y <= c[3]);
 
   return { x, y: ALTO_MANIGLIA, sobreMontante };
+}
+
+/**
+ * Dove sta il centro della rosetta dentro la maglia della maniglia.
+ *
+ * Si guarda quanto e' ALTA la maniglia lungo tutta la sua lunghezza: la leva
+ * e' un tondino sottile, la rosetta un disco largo. Il punto piu' alto e' il
+ * mezzo del disco. Niente numeri a mano: ogni modello si misura da se'.
+ */
+function centroDellaRosetta(geo) {
+  geo.computeBoundingBox();
+  const b = geo.boundingBox;
+  const pos = geo.attributes.position;
+  const N = 24;
+  const passo = (b.max.x - b.min.x) / N;
+  if (!(passo > 0)) return (b.min.x + b.max.x) / 2;
+  const giu = new Array(N).fill(Infinity);
+  const su = new Array(N).fill(-Infinity);
+  for (let i = 0; i < pos.count; i++) {
+    const k = Math.min(N - 1, Math.max(0, Math.floor((pos.getX(i) - b.min.x) / passo)));
+    const y = pos.getY(i);
+    if (y < giu[k]) giu[k] = y;
+    if (y > su[k]) su[k] = y;
+  }
+  let miglior = 0;
+  let alto = -Infinity;
+  for (let k = 0; k < N; k++) {
+    const a = su[k] - giu[k];
+    if (a > alto) { alto = a; miglior = k; }
+  }
+  return b.min.x + passo * (miglior + 0.5);
 }
 
 /* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
@@ -1419,10 +1480,17 @@ async function montaManiglia(mio, sitio, manoDx) {
     manigliaMesh = new THREE.Mesh(usada, handleMat);
     manigliaMesh.name = 'Maniglia';
     manigliaMesh.castShadow = manigliaMesh.receiveShadow = true;
-    /* Riferita al canto della ROSETTA e non al centro: il modello la tiene a
-       un estremo, e centrarlo la lasciava a meta' fuori dall'anta. */
-    const cantoRoseta = espejo ? b.max.x : b.min.x;
-    manigliaMesh.position.set(sitio.x - cantoRoseta, sitio.y, sitio.z - b.min.z);
+    /* Riferita al CENTRO della rosetta, che e' dove si avvita.
+       Prima si riferiva al suo canto, e il canto non e' il centro: misurata
+       la Simona, il disco della rosetta e' largo 43 mm e il suo centro cade
+       una ventina di millimetri piu' dentro del capo del modello. Riferendo
+       il canto, tutta la maniglia scivolava di quei venti verso il bordo.
+
+       Il centro si trova da solo invece di scriverlo: e' il punto dove la
+       maniglia e' piu' ALTA. La leva e' un tondino da 21 mm, la rosetta un
+       disco da 43 — il massimo cade in mezzo al disco. Cosi' vale per tutte
+       le maniglie della serie e non solo per quella su cui si e' misurato. */
+    manigliaMesh.position.set(sitio.x - centroDellaRosetta(usada), sitio.y, sitio.z - b.min.z);
     doorPivot.add(manigliaMesh);
   } catch (err) {
     console.warn(`maniglia ${mod} non caricata`, err);
