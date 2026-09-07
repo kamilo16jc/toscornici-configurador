@@ -1227,18 +1227,18 @@ function loadModel(key) {
         .setFromObject(anta)
         .applyMatrix4(doorPivot.matrixWorld.clone().invert());
       const pendeVersoPiuX = (antaRelativa.min.x + antaRelativa.max.x) >= 0;
-      /* VENTIQUATTRO GRADI: socchiusa, non spalancata.
-         Aprendo in dentro l'anta finisce DIETRO il piano del muro, e in
-         galleria non c'e' nessuna stanza da cui guardarla: il muro la copre
-         da qualunque angolo frontale. A 82 gradi si vedeva solo il fondale
-         bianco dentro il vano; a 45 una striscia; e nemmeno girando la
-         camera si recupera —provato a -38 e +42, da una parte sparisce del
-         tutto, dall'altra resta un filo.
-         Il punto non era l'inquadratura: era quanto si apre. Socchiusa a 24
-         gradi la faccia si vede intera —bugna, veta, spessore— e il filo di
-         vano che resta scoperto racconta da solo che apre verso l'interno.
-         Una porta di catalogo si mostra, non si spalanca. */
-      doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(24);
+      /* TRENTACINQUE GRADI.
+         I ventiquattro di prima erano una difesa: con l'anta montata sul filo
+         davanti e il fondale a due dita dal muro, aprire di piu' voleva dire
+         perderla dietro al muro. Adesso che l'anta sta in fondo al telaio e
+         il fondale e' arretrato dietro al suo giro, quel vincolo non c'e'
+         piu' e la porta puo' aprirsi come si apre una porta.
+
+         Il tetto vero adesso lo mette il fondale, che arretra di una
+         larghezza di vano: fin verso i settanta gradi l'anta gli resta
+         davanti. Trentacinque e' dove si legge meglio la merce — la faccia
+         quasi intera, e la mazzetta che racconta la profondita'. */
+      doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(35);
       doorBtn.hidden = false;
 
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
