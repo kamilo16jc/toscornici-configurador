@@ -18,8 +18,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
-import { conSopraluce, traversoDe, vanoSopraluce, piezaPanel,
-         SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
+import { conSopraluce, traversoDe, SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -971,26 +970,6 @@ function loadModel(key) {
       const marco = montar(datiMarco, { conTapajuntas: false, conSuelo: false, material: woodMat });
       if (conSopra) marco.add(traversoDe(datiTelaio, datiMarco, woodMat));
       conjunto.add(marco);
-
-      /* Il pannello del sopraluce. Va nell'insieme e NON in doorPivot: quando
-         la porta si apre, il sopraluce resta dov'e' — e' fisso, sta nel telaio.
-         Prende il tipo della porta: una bugna sotto e un'altra sopra sarebbero
-         due porte diverse una sull'altra. */
-      if (conSopra) {
-        const hueco = vanoSopraluce(datiTelaio, datiMarco);
-        const pezzo = piezaPanel(hueco.dx - hueco.sx, hueco.y1 - hueco.y0);
-        const pannello = tejerHoja(applicaTipo([pezzo], state.tipo),
-          { veta: null, uv: true, espesorHoja: spessore });
-        pannello.traverse((o) => {
-          if (!o.isMesh) return;
-          o.castShadow = o.receiveShadow = true;
-          if (o.material) disposeMaterial(o.material);
-          o.material = woodMat;
-        });
-        pannello.position.set(hueco.sx, hueco.y0, 0);
-        pannello.name = 'PannelloSopraluce';
-        conjunto.add(pannello);
-      }
 
       // L'anta si incastra nel vano del telaio. Il vano largo e' lo stesso —
       // il sopraluce alza, non allarga — quindi sx e dx valgono per entrambi.
