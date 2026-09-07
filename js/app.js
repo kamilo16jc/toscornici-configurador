@@ -1387,36 +1387,23 @@ function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
   return { x, y: ALTO_MANIGLIA, sobreMontante };
 }
 
-/**
- * Dove sta il centro della rosetta dentro la maglia della maniglia.
- *
- * Si guarda quanto e' ALTA la maniglia lungo tutta la sua lunghezza: la leva
- * e' un tondino sottile, la rosetta un disco largo. Il punto piu' alto e' il
- * mezzo del disco. Niente numeri a mano: ogni modello si misura da se'.
- */
-function centroDellaRosetta(geo) {
-  geo.computeBoundingBox();
-  const b = geo.boundingBox;
-  const pos = geo.attributes.position;
-  const N = 24;
-  const passo = (b.max.x - b.min.x) / N;
-  if (!(passo > 0)) return (b.min.x + b.max.x) / 2;
-  const giu = new Array(N).fill(Infinity);
-  const su = new Array(N).fill(-Infinity);
-  for (let i = 0; i < pos.count; i++) {
-    const k = Math.min(N - 1, Math.max(0, Math.floor((pos.getX(i) - b.min.x) / passo)));
-    const y = pos.getY(i);
-    if (y < giu[k]) giu[k] = y;
-    if (y > su[k]) su[k] = y;
-  }
-  let miglior = 0;
-  let alto = -Infinity;
-  for (let k = 0; k < N; k++) {
-    const a = su[k] - giu[k];
-    if (a > alto) { alto = a; miglior = k; }
-  }
-  return b.min.x + passo * (miglior + 0.5);
-}
+/* QUANTO STA DENTRO IL CENTRO DELLA ROSETTA, dal capo del modello.
+   ------------------------------------------------------------
+   Avevo provato a cercarlo maglia per maglia, col punto piu' ALTO: la leva e'
+   un tondino, la rosetta un disco, e sembrava che il massimo dovesse cadere
+   in mezzo al disco. Su alcune maniglie ci cade e su altre no — misurato, il
+   capo dista dal massimo 14,1 mm sulla Square, 19,7 sulla Simona, 42,2 sulla
+   Ariana e 2,8 sulla Spigola. Quattro modelli, quattro posti diversi, e
+   infatti a schermo se ne salvava una sola.
+
+   Ma il capo, quello, e' comune: tutte le maniglie della serie sono
+   normalizzate a 135 mm e tengono la rosetta allo stesso estremo. Riferendo
+   il CAPO cadono tutte nello stesso punto, che e' quello che serve.
+
+   I quattordici millimetri escono dalla Square, che e' quella che stava
+   giusta. Se un domani la serie cambiasse taglio di rosetta, e' questo
+   numero e basta. */
+const SCARTO_ROSETTA = 14;
 
 /* La maniglia e' un modello a parte, e adesso si VEDE quella scelta: prima il
    GLB ne portava una fissa e il menu cambiava solo il prezzo. */
@@ -1480,17 +1467,13 @@ async function montaManiglia(mio, sitio, manoDx) {
     manigliaMesh = new THREE.Mesh(usada, handleMat);
     manigliaMesh.name = 'Maniglia';
     manigliaMesh.castShadow = manigliaMesh.receiveShadow = true;
-    /* Riferita al CENTRO della rosetta, che e' dove si avvita.
-       Prima si riferiva al suo canto, e il canto non e' il centro: misurata
-       la Simona, il disco della rosetta e' largo 43 mm e il suo centro cade
-       una ventina di millimetri piu' dentro del capo del modello. Riferendo
-       il canto, tutta la maniglia scivolava di quei venti verso il bordo.
-
-       Il centro si trova da solo invece di scriverlo: e' il punto dove la
-       maniglia e' piu' ALTA. La leva e' un tondino da 21 mm, la rosetta un
-       disco da 43 — il massimo cade in mezzo al disco. Cosi' vale per tutte
-       le maniglie della serie e non solo per quella su cui si e' misurato. */
-    manigliaMesh.position.set(sitio.x - centroDellaRosetta(usada), sitio.y, sitio.z - b.min.z);
+    /* Il CAPO del modello, spostato di SCARTO_ROSETTA verso il canto: cosi'
+       il centro della rosetta cade sul centro del montante, che e' sitio.x.
+       Il capo e' l'unico riferimento che tutte le maniglie hanno uguale. */
+    const capo = espejo ? b.max.x : b.min.x;
+    const versoCanto = espejo ? 1 : -1;
+    manigliaMesh.position.set(
+      sitio.x + versoCanto * SCARTO_ROSETTA - capo, sitio.y, sitio.z - b.min.z);
     doorPivot.add(manigliaMesh);
   } catch (err) {
     console.warn(`maniglia ${mod} non caricata`, err);
