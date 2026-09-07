@@ -1099,13 +1099,25 @@ function loadModel(key) {
          sfumatura del CSS— ma metterci dietro qualcosa DA GUARDARE, che e'
          quello che in un negozio si chiama fondale. Serve anche al vano: senza,
          attraverso la porta aperta si vedeva la pagina. */
+      /* IL FONDALE STA DIETRO ALLA PORTA APERTA, non a quaranta millimetri.
+         Stava appena dietro il muro, e da quando la porta apre in dentro
+         l'anta gli finiva DAVANTI: il fondale la copriva e nel vano si vedeva
+         solo bianco. Non era il muro a nascondere la porta —era il fondale.
+
+         Quanto arretrare non e' un numero a piacere: e' quanto sporge l'anta
+         girando, cioe' la sua larghezza per il seno dell'angolo. Si prende la
+         larghezza intera come margine buono per qualunque angolo, e il piano
+         cresce in proporzione perche' piu' e' lontano piu' deve essere largo
+         per coprire lo stesso vano. */
+      const larghezzaVano = vano.dx - vano.sx;
+      const fondoMuro = (datiTelaio.muro ? datiTelaio.muro.z0 : -110);
+      const arretra = larghezzaVano + 200;
       telon = new THREE.Mesh(
-        new THREE.PlaneGeometry((vano.dx - vano.sx) * 3, vano.su * 2.4),
+        new THREE.PlaneGeometry(larghezzaVano * 5, vano.su * 3.2),
         new THREE.MeshBasicMaterial({ toneMapped: false }),
       );
       telon.name = 'Fondale';
-      telon.position.set((vano.sx + vano.dx) / 2, vano.su * 0.55,
-        (datiTelaio.muro ? datiTelaio.muro.z0 : -110) - 40);
+      telon.position.set((vano.sx + vano.dx) / 2, vano.su * 0.55, fondoMuro - arretra);
       pintaTelon();
       marco.add(telon);
 
@@ -1167,6 +1179,37 @@ function loadModel(key) {
       doorPivot.position.set(manoDx ? cajaHoja.min.x : cajaHoja.max.x, 0, -spessore / 2);
       anta.position.sub(doorPivot.position);
       leafParts = [anta];
+
+      /* L'ANTA VA IN FONDO AL TELAIO, non sul suo filo davanti.
+         ------------------------------------------------------------
+         Misurato: il telaio sta fra -61 e +57 millimetri, l'anta fra +27 e
+         +72. Cioe' tutti gli ottantotto millimetri di telaio stanno DIETRO
+         l'anta e davanti non ce n'e' nessuno. Quella e' la geometria di una
+         porta che apre verso chi guarda — ed e' il motivo per cui il codice
+         di prima apriva in fuori: rispettava il telaio.
+
+         Aprendo in dentro, invece, il canto delle cerniere se ne va contro
+         il montante e lo attraversa: e' il "invade il telaio" che si vedeva.
+         Non era il perno ne' l'angolo, era DOVE sta l'anta nel telaio.
+
+         Una porta che apre in dentro si monta in fondo al vano: da fuori si
+         vede la mazzetta e poi l'anta rientrata, e lo spazio per gitare le
+         resta tutto davanti a se'. Il ritiro non si scrive a mano, si misura
+         sul telaio di questo modello: i telai del listino non hanno tutti la
+         stessa battuta. */
+      const invConjunto = new THREE.Matrix4().copy(conjunto.matrixWorld).invert();
+      const cajaTelaio = new THREE.Box3();
+      marco.traverse((o) => {
+        if (o.isMesh && /telaio/i.test(o.name || '')) cajaTelaio.expandByObject(o);
+      });
+      if (!cajaTelaio.isEmpty()) {
+        cajaTelaio.applyMatrix4(invConjunto);
+        const ritiro = cajaHoja.min.z - cajaTelaio.min.z;
+        /* Si sposta il PERNO, non l'anta: cosi' l'asse di rotazione arretra
+           insieme a lei e resta sul suo canto. Spostando l'anta soltanto,
+           girerebbe attorno a un asse rimasto avanti. */
+        if (ritiro > 0) doorPivot.position.z -= ritiro;
+      }
       /* La porta apre VERSO L'INTERNO: l'anta se ne va dietro il muro, non
          addosso a chi guarda.
 
