@@ -1387,23 +1387,41 @@ function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
   return { x, y: ALTO_MANIGLIA, sobreMontante };
 }
 
-/* QUANTO STA DENTRO IL CENTRO DELLA ROSETTA, dal capo del modello.
-   ------------------------------------------------------------
-   Avevo provato a cercarlo maglia per maglia, col punto piu' ALTO: la leva e'
-   un tondino, la rosetta un disco, e sembrava che il massimo dovesse cadere
-   in mezzo al disco. Su alcune maniglie ci cade e su altre no — misurato, il
-   capo dista dal massimo 14,1 mm sulla Square, 19,7 sulla Simona, 42,2 sulla
-   Ariana e 2,8 sulla Spigola. Quattro modelli, quattro posti diversi, e
-   infatti a schermo se ne salvava una sola.
-
-   Ma il capo, quello, e' comune: tutte le maniglie della serie sono
-   normalizzate a 135 mm e tengono la rosetta allo stesso estremo. Riferendo
-   il CAPO cadono tutte nello stesso punto, che e' quello che serve.
-
-   I quattordici millimetri escono dalla Square, che e' quella che stava
-   giusta. Se un domani la serie cambiasse taglio di rosetta, e' questo
-   numero e basta. */
-const SCARTO_ROSETTA = 14;
+/**
+ * Il centro della rosetta: e' cio' che APPOGGIA sulla porta.
+ *
+ * Due tentativi buttati prima di arrivarci, e vale la pena scriverli.
+ * Il primo cercava il punto piu' ALTO della maglia, pensando che il massimo
+ * cadesse in mezzo al disco: dal capo distava 14,1 mm sulla Square, 19,7
+ * sulla Simona, 42,2 sulla Ariana, 2,8 sulla Spigola — quattro modelli,
+ * quattro posti. Il secondo prendeva il capo e ci toglieva quei 14 della
+ * Square per tutte: le maniglie cadevano si' tutte uguali, ma la rosetta
+ * finiva sette millimetri fuori dall'asse, e sotto la bocchetta si vedeva
+ * storta.
+ *
+ * Quello che non cambia da un modello all'altro e' cosa TOCCA la porta: la
+ * rosetta appoggia, la leva sta per aria. Prendendo i vertici a filo del
+ * piano d'appoggio esce una impronta di 41,5-43,1 mm su tutt'e quattro, col
+ * centro a 20,7-21,6 dal capo. Meno di un millimetro di differenza fra
+ * modelli, ed e' una misura che significa qualcosa invece di un numero
+ * pescato su una maniglia sola.
+ */
+function centroDellaRosetta(geo) {
+  geo.computeBoundingBox();
+  const b = geo.boundingBox;
+  const pos = geo.attributes.position;
+  const soglia = b.min.z + 2;           // due millimetri di tolleranza sul contatto
+  let giu = Infinity;
+  let su = -Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getZ(i) > soglia) continue;
+    const x = pos.getX(i);
+    if (x < giu) giu = x;
+    if (x > su) su = x;
+  }
+  if (!Number.isFinite(giu)) return (b.min.x + b.max.x) / 2;   // rete, non dovrebbe servire
+  return (giu + su) / 2;
+}
 
 /* ============================================================
    LA BOCCHETTA — la serratura sotto la maniglia
@@ -1570,13 +1588,13 @@ async function montaManiglia(mio, sitio, manoDx) {
     manigliaMesh = new THREE.Mesh(usada, handleMat);
     manigliaMesh.name = 'Maniglia';
     manigliaMesh.castShadow = manigliaMesh.receiveShadow = true;
-    /* Il CAPO del modello, spostato di SCARTO_ROSETTA verso il canto: cosi'
-       il centro della rosetta cade sul centro del montante, che e' sitio.x.
-       Il capo e' l'unico riferimento che tutte le maniglie hanno uguale. */
-    const capo = espejo ? b.max.x : b.min.x;
-    const versoCanto = espejo ? 1 : -1;
+    /* Il centro della rosetta sull'asse del montante, che e' sitio.x — lo
+       stesso punto dove va la bocchetta. Cosi' le due stanno per forza sulla
+       stessa verticale: non si allineano a mano, si allineano perche' hanno
+       lo stesso riferimento. Lo specchio della mano destra non conta, il
+       centro dell'impronta si misura sulla maglia gia' specchiata. */
     manigliaMesh.position.set(
-      sitio.x + versoCanto * SCARTO_ROSETTA - capo, sitio.y, sitio.z - b.min.z);
+      sitio.x - centroDellaRosetta(usada), sitio.y, sitio.z - b.min.z);
     doorPivot.add(manigliaMesh);
     montaSerratura(sitio);
   } catch (err) {
