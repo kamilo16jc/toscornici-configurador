@@ -172,6 +172,10 @@
       it: 'Colore laccato — su qualsiasi essenza',
       en: 'Lacquer colour — on any wood species',
     },
+    fin_nota_grezza: {
+      it: 'La porta esce grezza, pronta da finire. Scegliendo "Verniciata" si aprono i colori laccati.',
+      en: 'The door ships unfinished, ready to be finished. Choose "Painted" to open the lacquer colours.',
+    },
     fin_grezza: { it: 'Grezza', en: 'Unfinished' },
     fin_verniciata: { it: 'Verniciata', en: 'Finished' },
     mis_largh: { it: 'Larghezza', en: 'Width' },

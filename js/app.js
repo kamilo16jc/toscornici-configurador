@@ -102,7 +102,10 @@ const state = {
   essenza: 'rovere',
   colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
   tipo: TIPO_DEFAULT,  // 1, 2 o 3 — la finitura del campo. Vedi js/tipi.js
-  finitura: 'verniciata',
+  /* GREZZA di partenza. La fabbrica vende la porta grezza e la verniciatura
+     e' un di piu': mostrare per primo il prezzo verniciato faceva sembrare
+     piu' cara ogni porta del catalogo. Chi la vuole finita lo dice. */
+  finitura: 'grezza',
   ambiente: 'galleria',
   maniglia: 'ottone',
   // — misure e extra (listino 2025, pagg. 48–65) —
@@ -2070,11 +2073,21 @@ function refreshUI() {
   // la laccatura è una verniciatura: "grezza" resta cliccabile e,
   // se scelta, toglie il colore e torna al legno a vista
   document.querySelector('[data-finitura="grezza"]').disabled = false;
-  pillNoteEl.textContent = !isLaccato() ? ''
-    : (laccatoExtra()
-        ? `La laccatura è una verniciatura. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50). `
-        : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
-      + 'Scegliendo "Grezza" si torna al legno a vista.';
+
+  /* I colori laccati stanno dentro la verniciatura e si vedono solo li'.
+     Sulla porta grezza non c'e' niente da colorare. */
+  const laccBox = document.getElementById('laccatiBox');
+  if (laccBox) laccBox.hidden = state.finitura !== 'verniciata';
+
+  pillNoteEl.textContent = state.finitura === 'grezza'
+    /* Nascondendo i colori spariva anche l'indizio che esistono: senza questa
+       riga il cliente non ha modo di sapere che la porta si puo' laccare. */
+    ? (window.T ? window.T('fin_nota_grezza') : '')
+    : !isLaccato() ? ''
+      : (laccatoExtra()
+          ? `La laccatura è una verniciatura. Colore RAL: + ${eur.format(RAL_EXTRA)} (listino n. 50). `
+          : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
+        + 'Scegliendo "Grezza" si torna al legno a vista.';
 
   /* il TIPO. La sezione sparisce sulle porte con vetro invece di restare
      disattivata: una scelta che non si puo' fare non deve nemmeno vedersi. */

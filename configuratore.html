@@ -104,8 +104,6 @@
     <section class="section">
       <h2 class="section-title"><span class="num">02</span> <span data-t="sez_essenza">Essenza</span></h2>
       <div class="swatches" id="swatches"><!-- essenze generate dal catalogo --></div>
-      <p class="lacc-title" data-t="lacc_titolo">Colore laccato — su qualsiasi essenza</p>
-      <div class="laccati" id="laccati"><!-- colori generati dal catalogo --></div>
     </section>
 
     <!-- Tipo: la finitura del campo. Le porte con vetro non ce l'hanno. -->
@@ -123,10 +121,16 @@
     <section class="section">
       <h2 class="section-title"><span class="num">04</span> <span data-t="sez_finitura">Finitura</span></h2>
       <div class="pills" id="pills">
-        <button class="pill" data-finitura="grezza" data-t="fin_grezza">Grezza</button>
-        <button class="pill is-active" data-finitura="verniciata" data-t="fin_verniciata">Verniciata</button>
+        <button class="pill is-active" data-finitura="grezza" data-t="fin_grezza">Grezza</button>
+        <button class="pill" data-finitura="verniciata" data-t="fin_verniciata">Verniciata</button>
       </div>
       <p class="pill-note" id="pillNote"></p>
+      <!-- I colori laccati vivono qui dentro: una laccatura E' una
+           verniciatura, e sulla porta grezza non esistono. -->
+      <div id="laccatiBox" hidden>
+        <p class="lacc-title" data-t="lacc_titolo">Colore laccato — su qualsiasi essenza</p>
+        <div class="laccati" id="laccati"><!-- colori generati dal catalogo --></div>
+      </div>
     </section>
 
     <!-- Misure -->
@@ -370,8 +374,8 @@
   </div>
 </div>
 
-<script src="js/lingua.js?v=3"></script>
+<script src="js/lingua.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=70"></script>
+<script type="module" src="js/app.js?v=71"></script>
 </body>
 </html>
