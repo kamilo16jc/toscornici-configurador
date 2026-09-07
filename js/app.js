@@ -1244,7 +1244,7 @@ function loadModel(key) {
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
          nello spazio del perno — che e' quello dell'insieme meno l'offset del
          perno stesso. */
-      const punto = puntoDellaManiglia(pezzi, vano, manoDx);
+      const punto = puntoDellaManiglia(pezzi, manoDx, cajaHoja);
       if (!punto.sobreMontante) console.warn(`${key}: la maniglia non cade sul montante`);
       sitioManiglia = {
         x: punto.x - doorPivot.position.x,
@@ -1324,16 +1324,28 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
    990 riporta la maniglia dove sta nello scaparate — 49 % — restando una quota
    verosimile per una porta di questa altezza.
    Se la si vuole piu' su o piu' giu', e' questo numero e basta. */
-const ALTO_MANIGLIA = 990;
-const RETRANQUEO = 25;           // dal bordo del vano al canto della rosetta
+const ALTO_MANIGLIA = 950;
+/* IL RITIRO SI MISURA DAL CANTO DELL'ANTA, non dal bordo del vano.
+   Prima era 25 mm presi dal VANO, e il vano non e' l'anta: e' piu' largo di
+   una holgura per banda, e per giunta il montante del telaio ricopre l'anta
+   di una ventina di millimetri con la battuta. Misurato sulla Siena, la
+   rosetta finiva a 16 mm dal canto dell'anta e arrivava a x=403 dove il
+   montante comincia a 400: la maniglia TOCCAVA il telaio.
+   Ottantanove e' la quota dello scaparate — quella che il commento qui sopra
+   da' gia' per buona — e presa dal canto dell'anta lascia la rosetta ben
+   dentro il suo montante, lontana dalla battuta. */
+const RITIRO_MANIGLIA = 89;      // dal canto dell'anta al canto della rosetta
 /* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
    catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
 const LARGO_MANIGLIA = 135;
 
-function puntoDellaManiglia(pezzi, vano, manoDx) {
-  const x = (manoDx ? vano.dx - RETRANQUEO : vano.sx + RETRANQUEO);
+function puntoDellaManiglia(pezzi, manoDx, cajaHoja) {
+  /* Il canto buono e' quello dell'anta VERA, misurata sulla maglia — non
+     quello dei pezzi del disegno, che stanno in un altro sistema (sulla Siena
+     danno 925 dove l'anta finisce a 833), e nemmeno quello del vano, che e'
+     piu' largo di una holgura e porta la rosetta dentro la battuta. */
+  const x = (manoDx ? cajaHoja.max.x - RITIRO_MANIGLIA : cajaHoja.min.x + RITIRO_MANIGLIA);
 
-  // Controllo: a quell'altezza li' sotto ci dev'essere il montante.
   const cajas = pezzi.map((p) => ({ p, c: cajaDe(p) }));
   const hoja = cajas.reduce(
     (b, { c }) => [Math.min(b[0], c[0]), Math.min(b[1], c[1]), Math.max(b[2], c[2]), Math.max(b[3], c[3])],
