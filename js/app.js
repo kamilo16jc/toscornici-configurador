@@ -540,8 +540,43 @@ const viewerEl = document.getElementById('viewer');
 const loaderEl = document.getElementById('loader');
 const loaderFill = document.getElementById('loaderFill');
 
+/* ============================================================
+   QUALITA' — quanto lavoro si chiede alla GPU per fotogramma
+   ------------------------------------------------------------
+   Lo stesso codice gira liscio su un monitor a 1080p e a scatti su
+   uno schermo Retina, e non e' la macchina: e' il numero di pixel.
+   A devicePixelRatio 2 la stessa finestra ha QUATTRO volte i
+   frammenti da riempire, e quel fattore moltiplica tutto il resto —
+   l'occlusione, il multisampling, l'ombra si pagano per pixel.
+
+   Di qui si sceglie quanto spendere. La porta a schermo resta la
+   stessa: cambia la finezza con cui si disegna, non la geometria.
+   ============================================================ */
+
+const PROFILI = {
+  alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, msaa: 4, ao: true  },
+  media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  msaa: 4, ao: true  },
+  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 0, ao: false },
+};
+
+/* Ordine: ?qualita= nell'indirizzo (per provare al volo), poi la scelta
+   salvata, poi 'media' — che su Retina e' quasi indistinguibile da 'alta'
+   e costa meno della meta'. */
+function qualitaScelta() {
+  const q = new URLSearchParams(location.search).get('qualita');
+  if (PROFILI[q]) return q;
+  try {
+    const salvata = localStorage.getItem('tc-qualita');
+    if (PROFILI[salvata]) return salvata;
+  } catch { /* localStorage negato in navigazione privata: pazienza */ }
+  return 'media';
+}
+
+let QUALITA = qualitaScelta();
+const profilo = () => PROFILI[QUALITA];
+
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, profilo().pixelRatio));
 renderer.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
 /* LO MISMO QUE EL ESCAPARATE, y no es un capricho de estilo.
    Estaba en Neutral y el escaparate en ACESFilmic, y esas dos curvas revelan
@@ -583,7 +618,7 @@ renderer.domElement.addEventListener('pointerdown', () => {
 const key = new THREE.DirectionalLight(0xffffff, 2.1);
 key.position.set(-3.2, 3.6, 1.6);
 key.castShadow = true;
-key.shadow.mapSize.set(4096, 4096);
+key.shadow.mapSize.set(profilo().ombra, profilo().ombra);
 key.shadow.bias = -0.0003;
 key.shadow.normalBias = 0.008;
 key.shadow.radius = 3;
@@ -624,7 +659,10 @@ let composer = null;
 let gtaoPass = null;
 
 function montaOcclusione() {
-  if (!OCCLUSIONE) return;
+  /* In qualita' bassa si esce di qui e si torna al render diretto: niente
+     composer, niente target, niente pass. E' il taglio piu' grosso che si
+     puo' fare, ed e' proprio quello che serve sulle macchine lente. */
+  if (!OCCLUSIONE || !profilo().ao) return;
   try {
     const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
 
@@ -633,7 +671,7 @@ function montaOcclusione() {
        perde, e i bordi della porta tornerebbero a scaletta. */
     const bersaglio = new THREE.WebGLRenderTarget(w, h, {
       type: THREE.HalfFloatType,
-      samples: 4,
+      samples: profilo().msaa,
     });
 
     const c = new EffectComposer(renderer, bersaglio);
@@ -646,12 +684,13 @@ function montaOcclusione() {
        ci sta dentro alta due dita: l'occlusione si legge lo stesso, e quello
        che si guadagna e' che il visore continua a girare fluido. */
     const fine = Math.min(w, h) >= 520;
+    const campioni = fine ? profilo().aoCampioni : Math.max(4, profilo().aoCampioni >> 1);
     ao.updateGtaoMaterial({
       radius: 0.05,           // metri: l'incasso da risolvere e' 0,0138
       distanceExponent: 1,
       thickness: 0.5,
       scale: 1.1,
-      samples: fine ? 16 : 8,
+      samples: campioni,
       distanceFallOff: 1,
       screenSpaceRadius: false,
     });
@@ -1106,11 +1145,57 @@ function loadModel(key) {
          Il perno adesso e' DENTRO l'insieme e in millimetri: gira solo l'anta,
          il telaio e il muro restano fermi, che e' come funziona una porta. */
       const manoDx = state.mano !== 'sx';
-      const cajaHoja = new THREE.Box3().setFromObject(anta);
+
+      /* LA CAJA DE LA HOJA, EN MILIMETROS.
+         setFromObject la da in MONDO, cioe' in metri: l'insieme e' gia' stato
+         scalato di 1/1000. Ma il perno sta DENTRO l'insieme, dove si misura in
+         millimetri —lo dice il -spessore/2 qui sotto, che e' sempre stato in
+         millimetri. Mescolare i due spazi voleva dire leggere un canto di
+         -0,42 m come -0,42 mm: praticamente zero, e l'asse finiva in mezzo
+         all'anta invece che sul suo canto. Di li' l'anta che pareva spezzarsi,
+         che entrava nel telaio, e le due mani che giravano quasi uguali.
+         Si riporta la caja nello spazio dell'insieme e i conti tornano. */
+      /* Le matrici vanno aggiornate PRIMA di leggerle: qui sopra si e' appena
+         spostato l'insieme (position.sub(center)) e con il disegno a richiesta
+         puo' non essere passato nessun fotogramma a rifarle. Le due letture
+         devono venire dallo stesso istante, o l'una corregge uno spazio che
+         l'altra non ha ancora. */
+      conjunto.updateMatrixWorld(true);
+      const cajaHoja = new THREE.Box3()
+        .setFromObject(anta)
+        .applyMatrix4(new THREE.Matrix4().copy(conjunto.matrixWorld).invert());
       doorPivot.position.set(manoDx ? cajaHoja.min.x : cajaHoja.max.x, 0, -spessore / 2);
       anta.position.sub(doorPivot.position);
       leafParts = [anta];
-      doorOpenAngle = (manoDx ? -1 : 1) * THREE.MathUtils.degToRad(82);
+      /* La porta apre VERSO L'INTERNO: l'anta se ne va dietro il muro, non
+         addosso a chi guarda.
+
+         Il verso NON si suppone dalla mano, si legge dalla geometria. Prima
+         qui c'era (manoDx ? -1 : 1), che dava per scontato che DX e SX
+         appendessero l'anta da parti opposte del perno. Misurato, non e'
+         vero: in tutt'e due le mani l'anta pende verso +X rispetto al perno
+         —833 mm da un lato, 6 dalla parte opposta— e quel segno alternato
+         faceva aprire bene una mano e al contrario l'altra.
+
+         Guardando da che parte pende si azzecca sempre, e resta giusto anche
+         il giorno in cui il perno cambiera' lato per davvero. */
+      doorPivot.updateMatrixWorld(true);
+      const antaRelativa = new THREE.Box3()
+        .setFromObject(anta)
+        .applyMatrix4(doorPivot.matrixWorld.clone().invert());
+      const pendeVersoPiuX = (antaRelativa.min.x + antaRelativa.max.x) >= 0;
+      /* VENTIQUATTRO GRADI: socchiusa, non spalancata.
+         Aprendo in dentro l'anta finisce DIETRO il piano del muro, e in
+         galleria non c'e' nessuna stanza da cui guardarla: il muro la copre
+         da qualunque angolo frontale. A 82 gradi si vedeva solo il fondale
+         bianco dentro il vano; a 45 una striscia; e nemmeno girando la
+         camera si recupera —provato a -38 e +42, da una parte sparisce del
+         tutto, dall'altra resta un filo.
+         Il punto non era l'inquadratura: era quanto si apre. Socchiusa a 24
+         gradi la faccia si vede intera —bugna, veta, spessore— e il filo di
+         vano che resta scoperto racconta da solo che apre verso l'interno.
+         Una porta di catalogo si mostra, non si spalanca. */
+      doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(24);
       doorBtn.hidden = false;
 
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
@@ -1484,17 +1569,108 @@ function resize() {
   renderer.setSize(w, h);
   if (composer) composer.setSize(w, h);
   if (gtaoPass) gtaoPass.setSize(w, h);
+  chiediFotogramma(30);
 }
 window.addEventListener('resize', resize);
 
+/* ============================================================
+   SI DISEGNA A RICHIESTA
+   ------------------------------------------------------------
+   Con la porta ferma il visore ridisegnava lo stesso fotogramma
+   sessanta volte al secondo: occlusione, ombra e multisampling
+   pagati interi per non cambiare un pixel. Sul portatile e' la
+   ventola che parte e, quando la GPU si scalda, il giro della
+   porta che comincia a scattare.
+
+   Il contatore dice quanti fotogrammi restano da disegnare. Chi
+   cambia qualcosa ne chiede un po'; finiti, il visore si ferma.
+
+   Il rischio di questo schema e' l'opposto della lentezza: una
+   modifica che nessuno annuncia e uno schermo che resta indietro.
+   Per questo le richieste sono larghe e da piu' parti — l'orbita,
+   qualunque tocco sulla pagina, e il caricamento di texture e GLB
+   che arriva quando vuole lui. Meglio qualche fotogramma di troppo
+   che una porta che non si aggiorna.
+   ============================================================ */
+
+let fotogrammiDaFare = 60;
+const chiediFotogramma = (n = 3) => { fotogrammiDaFare = Math.max(fotogrammiDaFare, n); };
+
+// L'orbita: copre trascinamento, inerzia dello smorzamento e giro automatico.
+controls.addEventListener('change', () => chiediFotogramma(3));
+
+/* Qualunque interazione con la pagina. In cattura, cosi' arriva anche se chi
+   ascolta piu' sotto ferma la propagazione. Un secondo e mezzo di fotogrammi
+   copre pure il lavoro asincrono che parte da quel clic. */
+for (const ev of ['pointerdown', 'pointerup', 'click', 'change', 'input', 'keydown', 'wheel']) {
+  document.addEventListener(ev, () => chiediFotogramma(90), true);
+}
+
+/* Texture e modelli finiscono di caricare per conto loro, senza che nessuno
+   abbia toccato niente: senza questo, la porta nuova arriverebbe a schermo
+   solo al primo movimento del mouse. */
+THREE.DefaultLoadingManager.onStart = () => chiediFotogramma(120);
+THREE.DefaultLoadingManager.onProgress = () => chiediFotogramma(120);
+THREE.DefaultLoadingManager.onLoad = () => chiediFotogramma(120);
+
 renderer.setAnimationLoop(() => {
   controls.update();
+
   if (doorPivot) {
-    doorPivot.rotation.y += (doorTargetAngle - doorPivot.rotation.y) * 0.07;
+    const resta = doorTargetAngle - doorPivot.rotation.y;
+    if (Math.abs(resta) > 1e-4) {
+      doorPivot.rotation.y += resta * 0.07;
+      chiediFotogramma(2);
+    } else {
+      doorPivot.rotation.y = doorTargetAngle;   // si posa esatto, non a un capello
+    }
   }
+
+  if (fotogrammiDaFare <= 0) return;
+  fotogrammiDaFare--;
+
   if (composer) composer.render();
   else renderer.render(scene, camera);
 });
+
+/* Cambio di qualita' a caldo, senza ricaricare: chi sta configurando una
+   porta non deve perderla per aver scelto un'altra finezza. */
+function applicaQualita(nome) {
+  if (!PROFILI[nome]) return;
+  QUALITA = nome;
+  try { localStorage.setItem('tc-qualita', nome); } catch { /* pazienza */ }
+
+  const p = profilo();
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, p.pixelRatio));
+
+  // L'ombra si rifa' da sola al primo giro: basta buttare la mappa vecchia.
+  key.shadow.mapSize.set(p.ombra, p.ombra);
+  if (key.shadow.map) { key.shadow.map.dispose(); key.shadow.map = null; }
+
+  /* Il composer si rimonta da zero. Il multisampling sta nel render target e
+     il target non si cambia a caldo: si getta e se ne fa un altro. */
+  gtaoPass?.dispose?.();
+  composer?.dispose?.();
+  composer = null;
+  gtaoPass = null;
+  montaOcclusione();
+
+  resize();
+  chiediFotogramma(60);
+
+  document.querySelectorAll('[data-qualita]').forEach((b) =>
+    b.classList.toggle('is-active', b.dataset.qualita === nome));
+}
+
+document.getElementById('qualita')?.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-qualita]');
+  if (b) applicaQualita(b.dataset.qualita);
+});
+
+// All'avvio il profilo e' gia' montato: qui si segna solo il bottone giusto.
+document.querySelectorAll('[data-qualita]').forEach((b) =>
+  b.classList.toggle('is-active', b.dataset.qualita === QUALITA));
 
 // click sulla porta → apri/chiudi (senza interferire con l'orbita)
 const raycaster = new THREE.Raycaster();
