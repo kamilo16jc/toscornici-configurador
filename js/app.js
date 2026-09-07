@@ -1353,8 +1353,19 @@ const ALTO_MANIGLIA = 950;
    dentro il suo montante, lontana dalla battuta. */
 const RITIRO_MANIGLIA = 89;      // dal canto dell'anta al canto della rosetta
 /* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
-   catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo. */
-const LARGO_MANIGLIA = 135;
+   catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo.
+
+   Erano 135, la quota di scheda. A schermo pero' sembravano grosse, e il
+   motivo si vede misurando: normalizzando il lato piu' lungo a 135, la
+   maniglia sporge 70 mm dall'anta, dove una maniglia da interno sta sui
+   55-60. Il GLB e' piu' tozzo del pezzo vero, e quel di piu' si vede tutto
+   nello sporgere, che e' proprio cio' che l'occhio legge come ingombro.
+
+   A 120 lo sporgere torna a 62 e la maniglia si legge giusta sul montante —
+   1,26 volte la sua larghezza invece di 1,42. Si perde qualcosa sulla quota
+   di scheda: e' una scelta di resa, non un errore di misura, e sta tutta in
+   questo numero se un domani si vuole tornare al vero. */
+const LARGO_MANIGLIA = 120;
 
 function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
   /* IN MEZZO AL MONTANTE, e non a tot millimetri dal canto.
