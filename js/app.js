@@ -18,7 +18,12 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
-import { conSopraluce, traversoDe, SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
+import { conSopraluce, traversoDe, vanoSopraluce, piezaVidrio,
+         SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
+
+/* Trasparente o satinato. Il sopraluce sta sopra la testa e serve a far
+   passare la luce, quindi di serie e' trasparente; il satinato e' una riga. */
+const SOPRALUCE_SATINATO = false;
 
 /* ============================================================
    CATALOGO — modelli, essenze e listino 2026
@@ -873,6 +878,37 @@ let numeroCarico = 0;
    sola di avere i tre tipi. */
 let modelloConVetro = false;
 
+/**
+ * Veste di essenza quello che esce dal motore.
+ *
+ * I materiali del motore si buttano e si mettono quelli del configuratore:
+ * l'essenza e la finitura sono il cuore commerciale di questa pagina e devono
+ * comandare loro. Il VETRO invece resta com'e': il motore lo fa con la
+ * trasmissione, che e' come si riconosce un cristallo, e il configuratore non
+ * ne ha uno suo.
+ *
+ * E il vetro sta FUORI dalle ombre, ne' proiettate ne' ricevute. La mappa
+ * d'ombra non sa cos'e' la trasmissione: per lei un vetro e' un corpo opaco.
+ * Cosi' proiettava un'ombra nera e piena come fosse un'asse, e ricevendola si
+ * riempiva di macchie scure — quelle ombre marroni che si vedevano galleggiare
+ * dentro il cristallo. Non erano un riflesso: era l'ombra della porta stessa
+ * che gli cadeva addosso. Un vetro vero nemmeno fa ombra: lascia passare la
+ * luce.
+ */
+function vestiConEssenza(obj) {
+  obj.traverse((o) => {
+    if (!o.isMesh) return;
+    const m = o.material;
+    if (m && (m.transmission ?? 0) > 0) {
+      o.castShadow = o.receiveShadow = false;
+      return;                                    // e il materiale resta suo
+    }
+    o.castShadow = o.receiveShadow = true;
+    if (m) disposeMaterial(m);
+    o.material = woodMat;
+  });
+}
+
 function loadModel(key) {
   const mio = ++numeroCarico;
   currentModelKey = key;
@@ -912,26 +948,7 @@ function loadModel(key) {
          questa pagina e devono comandare loro. Il vetro invece resta com'e':
          il motore lo fa con la trasmissione, che e' come si riconosce un
          cristallo, e il configuratore non ne ha uno suo. */
-      anta.traverse((o) => {
-        if (!o.isMesh) return;
-        const m = o.material;
-        if (m && (m.transmission ?? 0) > 0) {
-          /* Il vetro FUORI dalle ombre, ne' proiettate ne' ricevute.
-             La mappa d'ombra non sa cos'e' la trasmissione: per lei un vetro e'
-             un corpo opaco. Cosi' proiettava un'ombra nera e piena come fosse
-             un'asse, e ricevendola si riempiva di macchie scure — quelle ombre
-             marroni che si vedevano galleggiare dentro il cristallo. Non erano
-             un riflesso: era l'ombra della porta stessa che gli cadeva addosso.
-             Era una riga ereditata dal motore vecchio, dove ogni nodo del GLB
-             prendeva castShadow e receiveShadow senza guardare di che materiale
-             fosse. Un vetro vero nemmeno fa ombra: lascia passare la luce. */
-          o.castShadow = o.receiveShadow = false;
-          return;                                        // e il materiale resta suo
-        }
-        o.castShadow = o.receiveShadow = true;
-        if (m) disposeMaterial(m);
-        o.material = woodMat;
-      });
+      vestiConEssenza(anta);
 
       /* TUTTO IN UN SOLO INSIEME, e in millimetri.
          L'anta, il telaio, il muro e il coprifilo devono stare nello stesso
@@ -970,6 +987,23 @@ function loadModel(key) {
       const marco = montar(datiMarco, { conTapajuntas: false, conSuelo: false, material: woodMat });
       if (conSopra) marco.add(traversoDe(datiTelaio, datiMarco, woodMat));
       conjunto.add(marco);
+
+      /* IL VETRO del sopraluce. Va nell'insieme e NON in doorPivot: aprendo la
+         porta il sopraluce resta dov'e', perche' e' fisso e sta nel telaio.
+         Passa da vestiConEssenza come l'anta, che sa lasciargli il suo
+         materiale e tenerlo fuori dalle ombre. */
+      if (conSopra) {
+        const hueco = vanoSopraluce(datiTelaio, datiMarco);
+        const vetro = tejerHoja(
+          [piezaVidrio(hueco.dx - hueco.sx, hueco.y1 - hueco.y0, SOPRALUCE_SATINATO)],
+          { veta: null, uv: true, espesorHoja: spessore },
+        );
+        if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
+        vestiConEssenza(vetro);
+        vetro.position.set(hueco.sx, hueco.y0, 0);
+        vetro.name = 'VetroSopraluce';
+        conjunto.add(vetro);
+      }
 
       // L'anta si incastra nel vano del telaio. Il vano largo e' lo stesso —
       // il sopraluce alza, non allarga — quindi sx e dx valgono per entrambi.

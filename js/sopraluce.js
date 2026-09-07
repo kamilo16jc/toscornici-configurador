@@ -79,3 +79,46 @@ export function traversoDe(datosPuerta, datosAlto, material) {
   }
   return g;
 }
+
+/**
+ * Il vano libero del sopraluce, in coordinate di mondo.
+ *
+ * Sotto finisce dove finiva la porta, sopra dove comincia il capotelaio che
+ * si e' alzato. In mezzo restano esattamente i millimetri chiesti.
+ */
+export function vanoSopraluce(datosPuerta, datosAlto) {
+  const vP = vanoDe(datosPuerta);
+  const vA = vanoDe(datosAlto);
+  return {
+    sx: vA.sx,
+    dx: vA.dx,
+    y0: vP.su,
+    y1: vA.su - altoTraverso(datosAlto),
+  };
+}
+
+/**
+ * Il vetro che riempie il sopraluce.
+ *
+ * E' il papel 'vetro' del motore, non un vetro fatto a mano: cosi' porta il
+ * suo materiale con la trasmissione, che e' come si riconosce un cristallo, e
+ * il configuratore lo tratta come tratta quello delle porte a vetri.
+ *
+ * La misura si ricava dal vano e non si scrive: cambia con la porta e con
+ * l'altezza scelta. Si disegna il vano VISIBILE — il motore fa crescere la
+ * lastra di `rientro` per conto suo, che e' il bordo che sta nella battuta.
+ *
+ * @param {boolean} satinato  true = vetro satinato, false = trasparente
+ */
+export function piezaVidrio(ancho, alto, satinato = false) {
+  return {
+    tipo: 'rect', papel: satinato ? 'vetroSatinato' : 'vetro',
+    nombre: 'Vetro sopraluce', id: 'sopraluce-vetro',
+    x: 0, y: 0, w: ancho, h: alto, r: 0, angulo: 0,
+    espesor: 4, bisel: 0, biselAncho: 0, biselPerfil: 'recto',
+    perfilBugna: null, perfilPuntos: null, rientro: 16,
+    bastoneAncho: 12, bastoneForma: 'sagomato',
+    z: -1.5, acabado: satinato ? 'vidrioSatinado' : 'vidrio',
+    vidrioEnElCampo: false, huecos: [], grupo: null, visible: true,
+  };
+}
