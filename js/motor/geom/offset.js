@@ -246,7 +246,31 @@ function hayLadoDelReves(p, salida, d) {
   return false;
 }
 
+/* EL CINTURON DE SEGURIDAD DE TODO EL MOTOR.
+   haciaDentro es el paso por el que entra cualquier desplazamiento de un
+   contorno: el rientro, los anillos de la bugna, el recorte entre piezas y las
+   22 sondas con las que maximoHaciaDentro busca el limite. Por dentro usa
+   PolyBool, que ante ciertos poligonos degenerados no devuelve un resultado
+   pobre: LANZA.
+   Y lanzando desde aqui se llevaba por delante la hoja entera. Medido en el
+   configurador con la MATERA y la POTENZA: una de las sondas sobre un panel
+   con el lado de abajo en arco reventaba con "Zero-length segment detected",
+   la excepcion subia hasta tejerHoja y el visor se quedaba en cero mallas
+   enseñando "Errore nel caricamento del modello". En el plano 2D se veian
+   perfectas, porque alli el contorno no se desplaza nunca.
+   Una sonda que revienta no es una tragedia: significa "por aqui no se puede".
+   Devolviendo null se comporta como el resto de casos imposibles, la busqueda
+   binaria la descarta y sigue, y el tejido continua. Lo que ya funcionaba no
+   cambia: si no lanza, se devuelve exactamente lo de siempre. */
 export function haciaDentro(puntos, d) {
+  try {
+    return haciaDentroCrudo(puntos, d);
+  } catch (e) {
+    return null;
+  }
+}
+
+function haciaDentroCrudo(puntos, d) {
   const p = limpiar(antihorario(puntos));
   const n = p.length;
   if (n < 3) return null;

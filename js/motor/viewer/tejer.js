@@ -183,20 +183,40 @@ export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, g
   const mats = cache ?? new Map();
   const ctx = { _veta: veta, uv, espesorHoja, grupo: g };
 
+  /* UNA PIEZA QUE REVIENTA NO PUEDE LLEVARSE LA PUERTA ENTERA.
+     Aqui dentro se llama a todo el motor —el recorte entre piezas, el
+     desplazamiento de contornos, el tejido del relieve— y ahi abajo hay
+     PolyBool, que ante un poligono degenerado no devuelve un resultado pobre:
+     LANZA. Sin esta red, esa excepcion sube hasta quien llama y el visor se
+     queda en cero mallas: el cliente ve un cartel de error en lugar de una
+     puerta. Paso de verdad con la MATERA y la POTENZA.
+     Con la red, lo peor que puede pasar es una puerta a la que le falta un
+     panel — que se sigue entendiendo y se sigue vendiendo. El fallo se anota
+     en el grupo para que quien llama pueda avisar sin tener que adivinarlo. */
+  const fallos = [];
+
   for (const pieza of piezas) {
     if (!pieza.visible) continue;
-    /* Contorno EFECTIVO, no el dibujado: si un panel le pisa, el armazon se
-       aparta solo. Ver geom/efectivo.js. */
-    const efectivo = contornoEfectivo(pieza, piezas, 128);
+    try {
+      /* Contorno EFECTIVO, no el dibujado: si un panel le pisa, el armazon se
+         aparta solo. Ver geom/efectivo.js. */
+      const efectivo = contornoEfectivo(pieza, piezas, 128);
 
-    /* Una pieza puede haber quedado partida en varios trozos. Pasa cuando un
-       perfilado cruza un entrepano: lo que queda arriba y abajo de la curva son
-       dos paneles, no uno, y los dos llevan su relieve y su moldura. Se teje
-       cada uno por su cuenta y todos con las medidas de la pieza. */
-    for (const trozo of [efectivo, ...(efectivo.restos ?? []).map((x) => ({ puntos: x.exterior, huecos: x.huecos ?? [] }))]) {
-      tejerPieza(ctx, pieza, trozo, piezas, mats);
+      /* Una pieza puede haber quedado partida en varios trozos. Pasa cuando un
+         perfilado cruza un entrepano: lo que queda arriba y abajo de la curva son
+         dos paneles, no uno, y los dos llevan su relieve y su moldura. Se teje
+         cada uno por su cuenta y todos con las medidas de la pieza. */
+      for (const trozo of [efectivo, ...(efectivo.restos ?? []).map((x) => ({ puntos: x.exterior, huecos: x.huecos ?? [] }))]) {
+        tejerPieza(ctx, pieza, trozo, piezas, mats);
+      }
+    } catch (e) {
+      const nombre = pieza.nombre ?? pieza.id ?? '(sin nombre)';
+      fallos.push({ pieza: nombre, motivo: e?.message ?? String(e) });
+      console.warn(`No se pudo tejer la pieza "${nombre}": ${e?.message ?? e}`);
     }
   }
+
+  if (fallos.length) g.userData.fallos = fallos;
   return g;
 }
 

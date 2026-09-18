@@ -26,6 +26,37 @@ import { haciaDentro, esquinas, maximoHaciaDentro } from './offset.js';
  * @param {boolean} opciones.simetrico  mismo relieve por las dos caras
  * @returns {THREE.BufferGeometry|null} null si el relieve no cabe en la figura
  */
+/**
+ * Hasta donde se puede meter este contorno hacia dentro SIN QUE SE ENSUCIE.
+ *
+ * maximoHaciaDentro dice hasta donde el desplazamiento "funciona", y para casi
+ * todo vale. Para la bugna no: cuando los lados se cruzan —y con un lado en
+ * arco se cruzan pronto— el desplazamiento entra en su rama de emergencia,
+ * deshace el nudo y devuelve un contorno APROVECHABLE, pero dentado y con otro
+ * numero de puntos.
+ *
+ * Ese contorno sirve para recortar una pieza, pero no para tejer un relieve:
+ * los anillos se cosen punto con punto, asi que uno dentado pliega la malla y
+ * deja los dientes a la vista. Aqui se busca el limite con la vara mas
+ * estricta —mismo numero de puntos que el original, es decir correspondencia
+ * uno a uno— y el perfil se encoge a esa medida. La bugna sale mas estrecha
+ * de lo pedido en los paneles con arco, pero sale limpia.
+ */
+function maximoLimpio(contorno, tope = 400) {
+  const vale = (d) => {
+    const a = haciaDentro(contorno, d);
+    return !!a && a.length === contorno.length;
+  };
+  if (!vale(1)) return 0;
+  if (vale(tope)) return tope;
+  let bajo = 1, alto = tope;
+  for (let i = 0; i < 22; i++) {
+    const medio = (bajo + alto) / 2;
+    if (vale(medio)) bajo = medio; else alto = medio;
+  }
+  return bajo;
+}
+
 export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = false, huecos = [] } = {}) {
   if (contorno.length < 3 || perfil.length < 2) return null;
 
@@ -348,7 +379,11 @@ export function perfilQueQuepa(contorno, muestras, { soloMemoria = false } = {})
   const pedido = muestras.length ? muestras[muestras.length - 1][0] : 0;
   if (!(pedido > 0) || contorno.length < 3) return { muestras, cabe: true, pedido, maximo: pedido };
 
-  const maximo = maximoHaciaDentro(contorno, 400, { soloMemoria });
+  /* Con la vara estricta: lo que cuenta es hasta donde el contorno se desplaza
+     LIMPIO, no hasta donde el desplazamiento devuelve algo. */
+  const maximo = soloMemoria
+    ? maximoHaciaDentro(contorno, 400, { soloMemoria })
+    : maximoLimpio(contorno, 400);
   if (!(maximo > 0) || maximo >= pedido) return { muestras, cabe: true, pedido, maximo: pedido };
 
   // Un pelo por debajo del limite: justo en el, el anillo sale degenerado.
