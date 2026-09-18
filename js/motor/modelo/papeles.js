@@ -59,17 +59,25 @@ export const PAPELES = [
     emoji: '🔲',
     it: 'Bugnato — TIPO 1 o 2',
     es: 'Bugna',
-    ayuda: 'Panel realzado con el bisel de doble escalón de 14 mm dando la vuelta. El campo sube 4 mm sobre el canto. Es TIPO 1 o TIPO 2 según la moldura que se le elija abajo: doble escalón o media caña.',
+    ayuda: 'Panel realzado con el bisel de doble escalón de 14 mm dando la vuelta, a arista viva: el escalón se marca con una línea seca. El campo sube 4 mm sobre el canto. Es TIPO 1 o TIPO 2 según la moldura que se le elija abajo: doble escalón o media caña.',
     props: {
       // 16 de lengueta escondida + 14 de bisel = 30.
-      espesor: 21, biselAncho: 30, bisel: 4, biselPerfil: 'recto', rientro: 16,
+      espesor: 21, biselAncho: 30, bisel: 6, biselPerfil: 'recto', rientro: 16,
       /* El relieve no se traza: se genera metiendo el contorno hacia dentro
          siguiendo este perfil. De la ficha classic_double_step_bevel_001 sale
          la FORMA del bisel — 2,5x0,2 / 6,5x2,4 / 2 llanos / 3x1,4 — pero no el
          sentido: ella hunde el campo y aqui va levantado. Los ingletes de las
          esquinas salen solos, el "45_degree_miter", y da la vuelta entera al
          panel ("continuous": true en los cuatro lados). */
-      perfilBugna: 'dobleEscalon', biselSimetrico: true,
+      /* SECO Y NO REDONDEADO, por decision del cliente (puerta de ejemplo de
+         septiembre de 2026, donde lo dejo puesto a mano en el panel).
+         Son los mismos cuatro tramos de la ficha y la misma caja —30 mm de
+         entrada, 4 de resalte— asi que ninguna puerta ya trazada cambia de
+         medida: lo unico que cambia es que los filos no se matan, y el
+         escalon se lee como una linea en vez de como un degradado.
+         El redondeado sigue en el catalogo ('dobleEscalon') para quien lo
+         quiera; lo que cambia es con cual NACE una bugna nueva. */
+      perfilBugna: 'dobleEscalonVivo', biselSimetrico: true,
       z: -1.5, acabado: 'robleClaro',
       /* La moldura que remata el encuentro del armazon con la bugna. Se
          genera sola alrededor del vano: quien dibuja traza el hueco y no tiene

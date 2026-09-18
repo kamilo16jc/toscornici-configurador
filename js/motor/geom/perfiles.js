@@ -222,6 +222,48 @@ function dobleEscalon(rientro, mitad) {
   return redondear(crudo, radios, 2);
 }
 
+/* La seccion que el cliente dibujo en la CARRARA, punto por punto. El campo
+   queda arriba (10,5 = media de los 21 del panel) y el canto abajo, a 2,67.
+   Copia exacta de la de puertas3d/src/geom/perfiles.js. */
+const CARRARA = [
+  [0, 2.67], [6.98, 2.67], [6.98, 4.27], [11.34, 4.27], [11.34, 5.87],
+  [15.7, 5.87], [30, 5.5], [33.9, 5.6], [34.01, 10.5], [37.5, 10.5],
+];
+const CARRARA_CAMPO = 10.5;
+
+function dobleEscalonCarrara(rientro, mitad) {
+  // Anclado al campo: el campo es la cara de fuera y no se mueve.
+  return CARRARA.map(([d, h]) => [d, mitad - (CARRARA_CAMPO - h)]);
+}
+
+/* EL ESCALONADO DEL TIPO 1, en milimetros de taller. Copia exacta de la de
+   puertas3d/src/geom/perfiles.js, donde esta el porque largo: era una forma
+   normalizada que se estiraba con el biselAncho de cada archivo, asi que la
+   misma bugna de catalogo salia de un ancho en una puerta y de otro en la
+   siguiente. El TIPO 2 y 3 ya iban en milimetros absolutos; esta tambien.
+   37,5 de ancho y 7,76 de resalte es lo que daba el TIPO 1 de catalogo. */
+const ESCALONADO = componer([
+  { plano: 10 },          // la lengüeta que entra en la ranura
+  { filete: 2 },          // primer escalón, el que dibuja la línea de fuera
+  { plano: 4 },
+  { ovolo: [22, 4] },     // la curva
+  { plano: 6 },           // el descanso
+  { filete: 2.5 },        // el filete contra el campo
+  { plano: 4 },
+], 3);
+const ESCALONADO_ANCHO = 46;    // lo que suman los tramos de arriba
+const ESCALONADO_CANTO = 3;     // la cota del canto: el alturaCanto de componer
+const ESCALONADO_CAMPO = 11.5;  // la del campo
+const TIPO1_ANCHO = 37.5;
+const TIPO1_RESALTE = 7.76;
+
+function escalonadoTipo1(rientro, mitad) {
+  const kd = TIPO1_ANCHO / ESCALONADO_ANCHO;
+  const kh = TIPO1_RESALTE / (ESCALONADO_CAMPO - ESCALONADO_CANTO);
+  // Anclado al campo, igual que la CARRARA.
+  return ESCALONADO.map(([d, h]) => [d * kd, mitad - (ESCALONADO_CAMPO - h) * kh]);
+}
+
 export const PERFILES = {
   dobleEscalon: {
     nombre: 'Doble escalón clásico (ficha de fábrica)',
@@ -249,30 +291,28 @@ export const PERFILES = {
   /* Escalonados. El filete es lo que marca el borde: sin el, por mucha curva
      que tenga el perfil, el realzado se lee como una rampa. */
   escalonado: {
-    nombre: 'Escalonado',
-    muestras: normalizar(componer([
-      { plano: 10 },          // la lengüeta que entra en la ranura
-      { filete: 2 },          // primer escalón, el que dibuja la línea de fuera
-      { plano: 4 },
-      { ovolo: [22, 4] },     // la curva
-      { plano: 6 },           // el descanso
-      { filete: 2.5 },        // el filete contra el campo
-      { plano: 4 },
-    ], 3)),
+    /* LA BUGNA DEL TIPO 1. En milimetros de taller, con `construir`, igual
+       que la del TIPO 2 y 3: la seccion esta arriba, en escalonadoTipo1. */
+    nombre: 'TIPO 1 · escalonado',
+    construir: escalonadoTipo1,
+    /* VEINTIUNO Y MEDIO: anchoDelPerfil le SUMA el rientro y la seccion mide
+       37,5 con el arranque ya dentro. */
+    anchoTotal: 21.5,
   },
   doble: {
-    nombre: 'Doble escalón',
-    muestras: normalizar(componer([
-      { plano: 8 },
-      { filete: 1.8 },
-      { plano: 5 },
-      { filete: 1.8 },
-      { plano: 5 },
-      { rampa: [16, 3] },
-      { plano: 5 },
-      { filete: 2.2 },
-      { plano: 4 },
-    ], 3)),
+    /* LA BUGNA DE LOS TIPOS 2 Y 3, la de verdad.
+       Aqui habia una forma generica normalizada —la que se estira con el
+       tamano del panel— y por eso la bugna del configurador no se parecia a
+       la de las puertas trazadas: el nombre coincidia, el dibujo no.
+       Estos son los puntos que el cliente ajusto a mano sobre la CARRARA TIPO
+       2 CON BUGNA, tomados del panel de bisel 4, y van en MILIMETROS DE
+       TALLER para que no se deformen de un panel a otro. Son los mismos que
+       lleva puertas3d: los dos motores tienen que decir lo mismo. */
+    nombre: 'TIPO 2 y 3 · doble escalón',
+    construir: dobleEscalonCarrara,
+    /* VEINTIUNO Y MEDIO: anchoDelPerfil le SUMA el rientro, y el perfil mide
+       37,5 con el arranque ya dentro. Poner 37,5 aqui diria 53,5. */
+    anchoTotal: 21.5,
   },
   filete: {
     nombre: 'Filete seco',
@@ -480,16 +520,19 @@ const FORMAS = {
    los ve juntos al principio del selector y el archivo guardado queda
    identificado sin tener que acordarse de que 'cavetto' era el TIPO 2. */
 export const MOLDURAS = {
-  doppioGradinoCurvo: { nombre: 'TIPO 1 · doble escalón', forma: FORMAS.doppioGradinoCurvo },
-  cavetto: { nombre: 'TIPO 2 · media caña', forma: FORMAS.cavetto },
-  vivo: { nombre: 'TIPO 3 · arista viva', forma: FORMAS.vivo },
+  /* Los tres de fabrica, sacados de los trazados (LAGUNA en sus tres tipos,
+     CARRARA TIPO 2). Antes figuraban doppioGradinoCurvo, cavetto y vivo con
+     estos numeros y no es ninguna de las tres. */
+  gola: { nombre: 'TIPO 1 · gola', forma: FORMAS.gola },
+  astragalo: { nombre: 'TIPO 2 · junquillo', forma: FORMAS.astragalo },
+  smusso: { nombre: 'TIPO 3 · chaflán a 45°', forma: FORMAS.smusso },
 
   sagomato: { nombre: 'Filete y caída', forma: FORMAS.sagomato },
-  smusso: { nombre: 'Chaflán a 45°', forma: FORMAS.smusso },
+  cavetto: { nombre: 'Media caña', forma: FORMAS.cavetto },
+  vivo: { nombre: 'Arista viva', forma: FORMAS.vivo },
   tondo: { nombre: 'Bocel', forma: FORMAS.tondo },
-  gola: { nombre: 'Gola (ese)', forma: FORMAS.gola },
+  doppioGradinoCurvo: { nombre: 'Doble escalón curvo', forma: FORMAS.doppioGradinoCurvo },
   talon: { nombre: 'Talón (ese invertida)', forma: FORMAS.talon },
-  astragalo: { nombre: 'Junquillo', forma: FORMAS.astragalo },
   doppioGradino: { nombre: 'Doble escalón recto', forma: FORMAS.doppioGradino },
   unghietta: { nombre: 'Uña', forma: FORMAS.unghietta },
 };

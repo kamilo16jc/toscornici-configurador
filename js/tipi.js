@@ -5,9 +5,11 @@
    porte: e' la stessa porta, con lo stesso disegno e le stesse
    misure, e cambia solo come e' rifinito il campo.
 
-     TIPO 1  bugna rialzata, modanatura a doppio gradino
-     TIPO 2  bugna rialzata, modanatura a mezza canna
-     TIPO 3  pannello LISCIO, modanatura a spigolo vivo
+     TIPO 1  modanatura GOLA,      bugna 'escalonado'
+     TIPO 2  modanatura ASTRAGALO, bugna 'doble'
+     TIPO 3  modanatura SMUSSO,    bugna 'doble'
+
+   Il campo —bugna o liscio— e' una scelta a parte sul 2 e sul 3.
 
    Da dove esce. Dai tre tracciati della ROMA fatti in fabbrica
    (ROMA TIPO 1/2/3). Confrontandoli campo per campo: fra il TIPO 1
@@ -25,23 +27,57 @@
    liscio anche in TIPO 1 e 2. Il tipo cambia la FINITURA, non il
    disegno della porta.
 
-   Le porte con vetro non passano di qui: hanno una regola loro
-   ancora da definire. Si riconoscono con haVetro().
+   LE PORTE CON VETRO PASSANO DI QUI. Prima no: bastava un vetro
+   e la scelta del tipo spariva. I tracciati dicono il contrario —
+   la LAGUNA ha otto vani di vetro su nove ed esiste nei tre tipi,
+   e in ognuno cambia la modanatura di TUTTI i vani, vetro compreso.
+   Quello che non si chiede, se non c'e' nemmeno un campo di legno,
+   e' la bugna: senza pannello non c'e' niente da rialzare.
    ============================================================ */
 
 /** Le tre finiture di listino. La chiave e' il numero che vede il cliente. */
 export const TIPI = {
-  1: { bastone: 'doppioGradinoCurvo', liscio: false },
-  2: { bastone: 'cavetto', liscio: false },
-  3: { bastone: 'vivo', liscio: true },
+  1: { bastone: 'gola',      liscio: false, bugna: 'escalonado', bisel: 4 },
+  2: { bastone: 'astragalo', liscio: false, bugna: 'doble',      bisel: 6 },
+  3: { bastone: 'smusso',    liscio: true,  bugna: 'doble',      bisel: 6 },
 };
+
+/* DA DOVE ESCONO QUESTI SEI VALORI. Dai tracciati di fabbrica, non da una
+   somiglianza di nomi: il LAGUNA TIPO 1 monta gola nei suoi nove vani e il
+   campo in 'escalonado'; il TIPO 2 monta astragalo —lo conferma anche la
+   CARRARA TIPO 2— e il TIPO 3 smusso. Prima qui c'erano doppioGradinoCurvo,
+   cavetto e vivo, e non e' nessuna delle tre. */
+
+/* IL CAMPO NON LO DECIDE PIU' IL NUMERO.
+   Qui sopra ogni tipo portava il suo campo attaccato: il 3 liscio e basta.
+   Ma la fabbrica li fa in tutt'e due i modi — un TIPO 3 con la bugna esiste,
+   ed e' quello a spigolo vivo— e allora la modanatura e il campo sono due
+   scelte, non una.
+   Il TIPO 1 resta fuori: nasce con la bugna e non si tocca.
+   Questi sono solo i valori DI PARTENZA quando si cambia tipo, scelti perche'
+   nessuno si trovi cambiata una porta che aveva gia' configurato: il 2 come
+   era (con bugna) e il 3 come era (liscio). */
+export const BUGNA_DI_PARTENZA = { 1: true, 2: true, 3: false };
+
+/** Vero se questo tipo lascia scegliere il campo. Il TIPO 1 no. */
+export const scegliBugna = (tipo) => Number(tipo) !== 1;
 
 /** Il numero di tipo con cui nasce una porta se non se ne sceglie uno. */
 export const TIPO_DEFAULT = 1;
 
-/* I campi di legno: quelli che il tipo tocca. Il resto della porta
-   —montanti, traversi, sagome, incisioni— non si sfiora. */
+/* I campi di LEGNO: gli unici che possono portare una bugna. */
 const CAMPI = new Set(['bugnato', 'pannello']);
+
+/* I VANI, che sono un'altra cosa. La modanatura gira intorno a ogni vano,
+   sia di legno che di vetro: nel LAGUNA cambiano tutti e nove passando da un
+   tipo all'altro, e otto sono di vetro satinato. Si riconoscono perche'
+   hanno una modanatura da portare; montanti e traversi non ne hanno. */
+const VANI = new Set(['bugnato', 'pannello', 'vetro', 'vetroSatinato', 'bugnatoVetro']);
+
+/** Vero se la porta ha almeno un campo di legno, cioe' se la bugna ha senso. */
+export function haCampoDiLegno(pezzi) {
+  return pezzi.some((p) => CAMPI.has(p.papel));
+}
 
 /* I campi di vetro. Bastano a marcare tutta la porta come "con vetro". */
 const VETRO = new Set(['vetro', 'vetroSatinato', 'bugnatoVetro']);
@@ -60,16 +96,35 @@ export function haVetro(pezzi) {
  * @param {Array<object>} pezzi  i pezzi del progetto, gia' deserializzati
  * @param {number} tipo          1, 2 o 3
  */
-export function applicaTipo(pezzi, tipo) {
+export function applicaTipo(pezzi, tipo, conBugna = null) {
   const t = TIPI[tipo] ?? TIPI[TIPO_DEFAULT];
+  /* Se non si dice niente, vale il campo storico del tipo. Il TIPO 1 la bugna
+     ce l'ha sempre, qualunque cosa arrivi da fuori. */
+  const liscio = Number(tipo) === 1 ? false
+    : conBugna == null ? t.liscio : !conBugna;
 
   return pezzi.map((p) => {
-    if (!CAMPI.has(p.papel)) return p;
+    if (!VANI.has(p.papel)) return p;
 
-    /* La modanatura del vano la porta il campo e gira tutto intorno: e' lei
-       che si vede per prima, ed e' l'unica cosa che separa il TIPO 1 dal 2. */
+    /* La modanatura gira intorno a OGNI vano, vetro compreso: e' lei che si
+       vede per prima ed e' quello che davvero separa un tipo dall'altro. */
     const q = { ...p, bastoneForma: t.bastone };
-    if (!t.liscio) return q;
+
+    // Sul vetro finisce qui: non c'e' campo da rialzare ne' da spianare.
+    if (!CAMPI.has(p.papel)) return q;
+
+    if (!liscio) {
+      /* Con la bugna: il campo torna rialzato e prende il rilievo del tipo.
+         Si toglie la sezione disegnata a mano, se ce n'era una, o resterebbe
+         quella e il tipo non si vedrebbe. */
+      q.papel = 'bugnato';
+      q.perfilBugna = t.bugna;
+      q.perfilPuntos = null;
+      q.bisel = t.bisel;
+      if (!(q.biselAncho > 0)) q.biselAncho = 30;
+      q.biselPerfil = 'recto';
+      return q;
+    }
 
     /* TIPO 3: il campo si spiana. La bugna non si nasconde, si toglie —
        cambia il ruolo del pezzo, non solo il suo aspetto: da rialzato
