@@ -1,6 +1,10 @@
 // GENERATO AUTOMATICAMENTE da tools/generate-catalog.mjs — non modificare a mano.
 // Fonte: porte tracciate (.json) + manual-configurador/modelos (.md). Rigenerare con:
 //   node tools/generate-catalog.mjs
+//
+// ATTENZIONE: i modelli con "linea": "Da prezzare" e "id": null sono entrati da
+// ~/Documents/JSON DOOR SENZA scheda .md, quindi con listino a zero. Rigenerare
+// con generate-catalog.mjs li FA SPARIRE (senza .md vengono saltati).
 export const MODELLI = {
   "alessandria": {
     "label": "Alessandria",
@@ -345,7 +349,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1200",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/catania.json?v=acd048b5",
+    "file": "assets/porte/catania.json?v=04cdf490",
     "pezzi": 9,
     "componenti": [
       {
@@ -447,7 +451,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 400",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/enna.json?v=c13a8169",
+    "file": "assets/porte/enna.json?v=604abebb",
     "pezzi": 19,
     "componenti": [
       {
@@ -549,7 +553,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 600",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/faenza.json?v=9f453f29",
+    "file": "assets/porte/faenza.json?v=34aba641",
     "pezzi": 9,
     "componenti": [
       {
@@ -651,7 +655,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 500",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/firenze.json?v=a0d61bf9",
+    "file": "assets/porte/firenze.json?v=6752f1cc",
     "pezzi": 9,
     "componenti": [
       {
@@ -753,7 +757,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 800",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/latina.json?v=217b33e2",
+    "file": "assets/porte/latina.json?v=c20ac4b4",
     "pezzi": 11,
     "componenti": [
       {
@@ -957,7 +961,7 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 5960",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/porte/materas.json?v=2e58a3d2",
+    "file": "assets/porte/materas.json?v=dfdb189d",
     "pezzi": 9,
     "componenti": [
       {
@@ -1059,7 +1063,7 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 5950",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/porte/matera.json?v=df46be94",
+    "file": "assets/porte/matera.json?v=ba3dd2b0",
     "pezzi": 9,
     "componenti": [
       {
@@ -1161,7 +1165,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 700",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/mantova.json?v=d557ca1b",
+    "file": "assets/porte/mantova.json?v=5853be77",
     "pezzi": 9,
     "componenti": [
       {
@@ -1263,7 +1267,7 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 4500",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/newengland.json?v=38d92fb1",
+    "file": "assets/porte/newengland.json?v=9d61a2e9",
     "pezzi": 5,
     "componenti": [
       {
@@ -1365,8 +1369,8 @@ export const MODELLI = {
     "sub": "Linea Base · ID 1400",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/porte/pausania.json?v=e3b1e0bf",
-    "pezzi": 10,
+    "file": "assets/porte/pausania.json?v=51ed480f",
+    "pezzi": 9,
     "componenti": [
       {
         "id": "pannello",
@@ -1599,7 +1603,7 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 5900",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/potenza.json?v=bf6de47f",
+    "file": "assets/porte/potenza.json?v=14c449fd",
     "pezzi": 9,
     "componenti": [
       {
@@ -1701,7 +1705,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 900",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/piacenza.json?v=e31003e6",
+    "file": "assets/porte/piacenza.json?v=d563002f",
     "pezzi": 9,
     "componenti": [
       {
@@ -1905,7 +1909,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 750",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/pisa.json?v=eb5fc47a",
+    "file": "assets/porte/pisa.json?v=31af0524",
     "pezzi": 9,
     "componenti": [
       {
@@ -2109,7 +2113,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 200",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/roma.json?v=ebc6d353",
+    "file": "assets/porte/roma.json?v=399d034c",
     "pezzi": 15,
     "componenti": [
       {
@@ -2211,7 +2215,7 @@ export const MODELLI = {
     "sub": "Linea Base · ID 100",
     "descIt": "Porta classica con bugne",
     "descEn": "Classic panelled door",
-    "file": "assets/porte/siena.json?v=3c7644a4",
+    "file": "assets/porte/siena.json?v=f24fc1aa",
     "pezzi": 7,
     "componenti": [
       {
@@ -2313,8 +2317,8 @@ export const MODELLI = {
     "sub": "Linea 100-C · ID 5600",
     "descIt": "Porta con vano vetro",
     "descEn": "Glazed panel door",
-    "file": "assets/porte/timesquare.json?v=c91bed5d",
-    "pezzi": 10,
+    "file": "assets/porte/timesquare.json?v=f6fa2491",
+    "pezzi": 11,
     "componenti": [
       {
         "id": "pannello",
@@ -2638,6 +2642,545 @@ export const MODELLI = {
           "montanti": 142,
           "coprifili": 73,
           "serratura": 20
+        }
+      }
+    }
+  },
+  "carrara": {
+    "label": "Carrara",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/carrara.json?v=4b0ee1a4",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "genova": {
+    "label": "Genova",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/genova.json?v=0b7668e0",
+    "pezzi": 15,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "imperia": {
+    "label": "Imperia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/imperia.json?v=3576b4bb",
+    "pezzi": 19,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "laspezia": {
+    "label": "La Spezia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/laspezia.json?v=1d11e937",
+    "pezzi": 17,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "laguna": {
+    "label": "Laguna",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/laguna.json?v=d689f4e4",
+    "pezzi": 17,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "savona": {
+    "label": "Savona",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/savona.json?v=f8c2ed62",
+    "pezzi": 20,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "venezia": {
+    "label": "Venezia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/venezia.json?v=b6741c20",
+    "pezzi": 25,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
         }
       }
     }
