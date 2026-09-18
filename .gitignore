@@ -11,3 +11,7 @@ token
 .env.*
 .replicate/
 capturas/
+
+# caché de Vite (la deja el dev server dentro de puertas3d/)
+.vite/
+puertas3d/.vite/

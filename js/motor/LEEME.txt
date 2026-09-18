@@ -1,3 +1,7 @@
-Copia mecanica del motor de puertas3d. NO editar aqui.
-Se corrige en C:UsersJulicpuertas3d y se vuelve a correr:
-  node tools/sync-motor.mjs
+Copia del motor de puertas3d. Lo normal es NO editar aqui:
+se corrige en puertas3d y se trae con
+  node tools/sync-motor.mjs --aplicar
+
+Excepciones que SI viven aqui y el sync no toca:
+  geom/materiales.js — las rutas de textura y los tintes estan calibrados para la luz de ESTA escena
+  geom/coprifilo.js — aqui tiene opciones.soloCara (capitello), que en puertas3d no existe
