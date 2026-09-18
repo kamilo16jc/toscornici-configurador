@@ -10,14 +10,14 @@ import { deserializar, cajaDe } from './motor/modelo/proyecto.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
-import { veta } from './motor/geom/materiales.js';
+import { veta, pegarVeta } from './motor/geom/materiales.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
-import { TIPO_DEFAULT, applicaTipo, haVetro } from './tipi.js';
+import { TIPO_DEFAULT, applicaTipo, haVetro, haCampoDiLegno, BUGNA_DI_PARTENZA, scegliBugna } from './tipi.js';
 import { conSopraluce, traversoDe, vanoSopraluce, piezaVidrio,
          SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
 import { incideFiori } from './vetro-decoro.js';
@@ -36,8 +36,10 @@ const SOPRALUCE_DECORO = true;
    toulipier → Toulipier.
    ============================================================ */
 
-// Tutte le essenze usano la texture 'universal' (venatura sottile +
-// rilievo) tinta con il colore medio misurato dagli scan raw originali.
+// Ogni essenza ha il SUO PBR fotografico da 600 mm: rovere, castagno,
+// toulipier e pino, gli stessi dello scaparate. Il colore qui sotto non tinge
+// piu' il legno —lo fa la texture col suo tinte calibrato— ma resta perche' e'
+// il colore di listino e serve ai laccati e alle etichette.
 const ESSENZE = {
   /* ae9365 e' il tono con cui il rovere e' stato disegnato al banco. Era
      a86948, molto piu' rosso: con la venatura addosso sembrava legno tinto.
@@ -68,13 +70,13 @@ const ESSENZE = {
    disegnate al banco.
    Adesso le hanno tutte e quattro. */
 const VENATURE = {
-  rovere: 'rovere',
-  castagno: 'castagno',
-  pino: 'pinoCatedral',
-  toulipier: 'toulipier',
+  rovere: 'roverePBR',
+  castagno: 'castagnoPBR',
+  pino: 'pinoPBR',
+  toulipier: 'toulipierPBR',
 };
 
-// laccati: texture 'universal' (albedo neutro) + tinta RAL.
+// laccati: vernice coprente + tinta RAL. Non prendono venatura.
 // Prezzi: colonna Toulipier verniciata, la base tipica dei laccati.
 // Il Bianco Tosco è l'unico laccato compreso nel prezzo; ogni altro
 // colore RAL paga l'aumento del listino (voce n. 50): € 180.
@@ -102,10 +104,15 @@ const FINITURA_LABEL = { grezza: 'grezza', verniciata: 'verniciata' };
 
 /* Come si scrive il tipo sul preventivo. Con la modanatura accanto, perche'
    chi lo legge in fabbrica deve sapere che ferro montare. */
+/* Il numero nomina la MODANATURA e basta. Prima diceva anche il campo
+   —"bugna" nel 2, "pannello liscio" nel 3— e adesso il campo lo sceglie il
+   cliente: sul preventivo sarebbe uscito "Tipo 3 — pannello liscio · con
+   bugna", che si contraddice da solo. Il campo si scrive accanto, dove si
+   decide. */
 const TIPO_LABEL = {
-  1: 'Tipo 1 — bugna, doppio gradino',
-  2: 'Tipo 2 — bugna, mezza canna',
-  3: 'Tipo 3 — pannello liscio',
+  1: 'Tipo 1 — doppio gradino',
+  2: 'Tipo 2 — mezza canna',
+  3: 'Tipo 3 — spigolo vivo',
 };
 
 const state = {
@@ -113,6 +120,9 @@ const state = {
   essenza: 'rovere',
   colore: 'nessuno',   // 'nessuno' = legno a vista; altrimenti chiave di LACCATI
   tipo: TIPO_DEFAULT,  // 1, 2 o 3 — la finitura del campo. Vedi js/tipi.js
+  /* Il campo: rialzato o liscio. Lo sceglie il cliente sul 2 e sul 3; sul
+     TIPO 1 non si chiede nemmeno, perche' la bugna ce l'ha sempre. */
+  bugna: BUGNA_DI_PARTENZA[TIPO_DEFAULT],
   /* GREZZA di partenza. La fabbrica vende la porta grezza e la verniciatura
      e' un di piu': mostrare per primo il prezzo verniciato faceva sembrare
      piu' cara ogni porta del catalogo. Chi la vuole finita lo dice. */
@@ -211,7 +221,14 @@ const COPRI = [
   { id: 'caravaggio',   label: 'Caravaggio CS206 (27×90)',           prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/sezioni/caravaggio.png' },
   { id: 'tiziano',      label: 'Tiziano CS204 (30×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/sezioni/tiziano.png' },
   { id: 'canaletto',    label: 'Canaletto CS3 (34×90)',              prezzi: { frassino: 125,   toulipier: 100, pino: 100 }, img: 'assets/coprifili/sezioni/canaletto.png' },
+  /* NOVECENTO CAP1, fuori catalogo per ora. Non si cancella: manca solo
+     l'informazione per venderlo come si deve, e quando arrivera' bastera'
+     rimettere questa riga dov'era. Il resto e' rimasto al suo posto —le
+     misure in COPRI_MISURE, la casella del preventivo in COPRI_BLOCCO e la
+     sua fotografia— perche' nessuna di quelle cose si vede se il modello non
+     e' in questa lista, e cancellarle vorrebbe dire ritrovarle una per una.
   { id: 'novecento',    label: 'Novecento CAP1 (42×110)',            prezzi: { frassino: 290,   toulipier: 250, pino: 250 }, img: 'assets/coprifili/novecento.png' },
+  */
 ];
 const COPRI_WOOD_LABEL = { frassino: 'Frassino', toulipier: 'Toulipier', pino: 'Pino' };
 
@@ -291,16 +308,23 @@ function extraMisura(cop, mis, wood, metri) {
 }
 
 // Aperture speciali (pagg. 61–62)
+/* Le aperture, con il NUMERO DI VOCE del listino 2025 davanti (pagg. 63-64).
+   Il numero non e' decorazione: in fabbrica si ordina per voce, e chi legge il
+   preventivo lo cerca sul listino cartaceo. I prezzi qui sotto sono stati
+   verificati uno per uno contro quelle pagine.
+   La 31 dice "con guide a filo senza mantovana", e l'inglese del listino la
+   traduce "with invisible guides": le guide NON si vedono. La 32 e' quella
+   "con battuta e kit mantovana". Sono due cose diverse e si vedono diverse. */
 const APERTURE = [
-  { id: 'battente',   label: 'Battente (standard)',                          extra: 0 },
-  { id: 'scomparsa',  label: 'Scorrevole a scomparsa nel muro',              extra: 85 },
-  { id: 'est_muro',   label: 'Scorrevole esterno muro, guide a filo',        extra: 250 },
-  { id: 'est_muro_m', label: 'Scorrevole esterno muro con mantovana',        extra: 250 },
-  { id: 'int_telaio', label: 'Scorrevole interno telaio',                    extra: 165 },
-  { id: 'magic',      label: 'Kit MAGIC (luce muro ≤ 800)',                  extra: 550 },
-  { id: 'justor',     label: 'A ventola JUSTOR',                             extra: 200 },
-  { id: 'ergon',      label: 'Rototraslante ERGON',                          extra: 550 },
-  { id: 'koblenz',    label: 'A libro KOBLENZ',                              extra: 600 },
+  { id: 'battente',   label: 'Battente (standard)',                                 extra: 0 },
+  { id: 'scomparsa',  label: '30 · Scorrevole a scomparsa nel muro',                extra: 85 },
+  { id: 'est_muro',   label: '31 · Scorrevole esterno muro, guide a filo',          extra: 250 },
+  { id: 'est_muro_m', label: '32 · Scorrevole esterno muro con battuta e mantovana', extra: 250 },
+  { id: 'int_telaio', label: '33 · Scorrevole interno telaio',                      extra: 165 },
+  { id: 'magic',      label: '34 · Kit MAGIC (luce muro ≤ 800)',                    extra: 550 },
+  { id: 'justor',     label: '19 · A ventola JUSTOR',                               extra: 200 },
+  { id: 'ergon',      label: '20 · Rototraslante ERGON',                            extra: 550 },
+  { id: 'koblenz',    label: '21 · A libro KOBLENZ',                                extra: 600 },
 ];
 
 // Porte ad arco e curve (pag. 62) — solo fino a 90×210
@@ -630,6 +654,31 @@ const fill = new THREE.DirectionalLight(0xffffff, 0.3);
 fill.position.set(3, 2, 2.5);
 scene.add(fill);
 
+/* E LE STESSE DUE DALL'ALTRA PARTE.
+   Le luci stavano tutte davanti —z positivo, dov'e' la stanza di chi guarda—
+   e il dietro della porta restava al buio: con una battente si vedeva appena,
+   ma una rototraslante aperta mette meta' anta di la' dal muro, e quella
+   meta' non si leggeva piu'. Anche il dorso ha le sue bugne e le sue
+   modanature, e sono le stesse che il cliente paga.
+   Sono la coppia di prima SPECCHIATA sulla z: stessa intensita', stessa
+   altezza, stesso taglio radente da sinistra. La chiave di dietro fa ombra
+   come quella davanti, se no il rilievo di la' resterebbe piatto — ed e' il
+   rilievo il motivo per cui la si accende. */
+const keyDietro = new THREE.DirectionalLight(0xffffff, 2.1);
+keyDietro.position.set(-3.2, 3.6, -1.6);
+keyDietro.castShadow = true;
+keyDietro.shadow.mapSize.set(profilo().ombra, profilo().ombra);
+keyDietro.shadow.bias = -0.0003;
+keyDietro.shadow.normalBias = 0.008;
+keyDietro.shadow.radius = 3;
+keyDietro.shadow.camera.left = keyDietro.shadow.camera.bottom = -4.5;
+keyDietro.shadow.camera.right = keyDietro.shadow.camera.top = 4.5;
+scene.add(keyDietro);
+
+const fillDietro = new THREE.DirectionalLight(0xffffff, 0.3);
+fillDietro.position.set(3, 2, -2.5);
+scene.add(fillDietro);
+
 /* ============================================================
    OCCLUSIONE AMBIENTALE
    ------------------------------------------------------------
@@ -720,30 +769,10 @@ montaOcclusione();
    ============================================================ */
 
 const texLoader = new THREE.TextureLoader();
-const texCache = {};
-// ripetizione di default: vena in scala con la porta reale (~2 m)
-const REPEAT = 6;
 
-function loadSet(essenza) {
-  if (texCache[essenza]) return texCache[essenza];
-  const base = `assets/textures/${essenza}/`;
-  const rep = (ESSENZE[essenza] && ESSENZE[essenza].repeat) || REPEAT;
-  const load = (file, srgb) => {
-    const t = texLoader.load(base + file);
-    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(rep, rep);
-    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    return t;
-  };
-  texCache[essenza] = {
-    map: load('albedo.jpg', true),
-    normalMap: load('normal.jpg'),
-    roughnessMap: load('roughness.jpg'),
-    aoMap: load('ao.jpg'),
-  };
-  return texCache[essenza];
-}
+/* Aqui vivia loadSet(), que cargaba a mano las cuatro jpg de cada esencia.
+   No lo llamaba nadie desde que la veta la pone el motor, y sus carpetas ya no
+   estan: las cuatro esencias usan ahora los PBR a medida de 600 mm. */
 
 // materiale legno condiviso da pannello + marco (tutti i modelli)
 /* Fisico e non standard: il legno del motore ha il CLEARCOAT, che e' lo strato
@@ -762,6 +791,16 @@ const hexLum = (hex) =>
 // materiale della maniglia/cerniere
 const handleMat = new THREE.MeshStandardMaterial();
 
+/* LA FERRAMENTA dello scorrevole: binario, carrelli, staffe, fermi e guida.
+   Spenta, non lucida. Con metalness 0,85 e roughness 0,38 sembrava cromata e
+   rubava l'occhio alla porta, che e' la merce; un binario vero e' alluminio
+   anodizzato o verniciato, satinato. Ruvidezza alta, metallo a meta' e poco
+   ambiente riflesso: si legge metallo, ma non specchia.
+   Uno solo per tutta la scena, cosi' si cambia da qui e non in sei posti. */
+const ferramentaMat = new THREE.MeshStandardMaterial({
+  color: 0x7e8186, metalness: 0.55, roughness: 0.72, envMapIntensity: 0.45,
+});
+
 function setManiglia(k) {
   state.maniglia = k;
   const f = MANIGLIE[k];
@@ -778,9 +817,32 @@ function setManiglia(k) {
 // verniciata: satinato con colore pieno.
 // laccato: tinta piena + lucentezza da laccatura.
 // L'ambiente riflesso resta basso per non lavare i rilievi 3D.
+/* La veta que esta puesta ahora mismo, o null si es un laccato. La guarda
+   applyEssenza y la lee applyMaterialLook: con un PBR fotografiado el color y
+   la ruvidezza los manda LA TEXTURA, no el catalogo. */
+let vetaActiva = null;
+
 function applyMaterialLook() {
   const lacc = isLaccato();
   const raw = !lacc && state.finitura === 'grezza';
+  const receta = lacc ? null : vetaActiva?.receta;
+
+  /* CON PBR FOTOGRAFIADO el color ya viene dentro del mapa, y encima lleva su
+     tinte calibrado. Multiplicarlo ademas por el color de listino —ae9365 y
+     compania— lo tenia dos veces y daba una madera que no existe; y poner
+     0,85 de ruvidezza aplastaba su mapa, que es justo lo que distingue los
+     poros del roble de la fibra lisa del toulipier.
+     Asi que si hay textura manda ella. El color de listino sigue vivo donde
+     tiene sentido: en las muestras del menu y en los laccati. */
+  if (receta) {
+    woodMat.color.set(receta.tinte ?? 0xffffff);
+    // 1 = manda su mapa. Barnizada se cierra un poco y coge vernice.
+    woodMat.roughness = raw ? (receta.rugosidad ?? 1) : (receta.rugosidad ?? 1) * 0.75;
+    woodMat.clearcoat = raw ? (receta.barniz ?? 0) : 0.08;
+    woodMat.envMapIntensity = raw ? 0.35 : 0.7;
+    return;
+  }
+
   const base = new THREE.Color(lacc ? LACCATI[state.colore].color : ESSENZE[state.essenza].color);
   if (raw) base.multiplyScalar(0.88);
   woodMat.color.copy(base);
@@ -803,9 +865,10 @@ function pintaTelon() {
 
 function applyEssenza() {
   /* La venatura la DISEGNA il motore, non e' piu' una foto.
-     Erano quattro mappe PBR fotografiche (albedo, normale, ruvidezza, AO) di
-     un set 'universal' tinto col colore dell'essenza. Adesso e' la stessa
-     venatura dello scaparate: rovere al quarto, generata con codice.
+     Prima erano quattro mappe di un set 'universal' tinto col colore
+     dell'essenza; poi la venatura disegnata dal motore. Adesso ogni essenza ha
+     il SUO PBR fotografico da 600 mm, lo stesso dello scaparate: rovere con le
+     specchiature, castagno coi pori in solco, toulipier liscio, pino.
 
      Il colore dell'essenza RESTA. Sono quattro colonne di listino diverse e
      devono continuare a distinguersi: cambia il materiale, non il catalogo.
@@ -823,6 +886,7 @@ function applyEssenza() {
      nessuna ci sta sotto.
      Un laccato non la prende mai: e' vernice coprente. */
   const v = isLaccato() ? null : veta(VENATURE[state.essenza] ?? null);
+  vetaActiva = v;
   woodMat.map = v?.mapa ?? null;
   woodMat.roughnessMap = v?.rugosidad ?? null;
   woodMat.normalMap = v?.normal ?? null;
@@ -854,13 +918,120 @@ let doorOpenAngle = 0;
 let leafParts = [];
 const doorBtn = document.getElementById('doorBtn');
 
+/**
+ * COME SI MUOVE OGNI APERTURA.
+ *
+ * Il listino ha nove aperture e il 3D ne conosceva UNA: montava sempre una
+ * battente, qualunque cosa avesse scelto il cliente. Questa tabella e' lo
+ * scambio: dal tipo di listino al modo di muoversi.
+ *
+ * Le aperture che non hanno ancora il loro movimento restano 'battente'
+ * APPOSTA e non per dimenticanza: si fanno una alla volta, e finche' non
+ * tocca a loro devono continuare a vedersi come si vedevano ieri. Niente
+ * regressioni mentre si avanza.
+ *
+ * Lo schema animato in 2D (js/aperture.js) le sa gia' tutte e nove: quando
+ * arrivera' il turno di ognuna, il movimento si porta da li' invece di
+ * inventarlo un'altra volta.
+ */
+const MOVIMENTO = {
+  battente: 'battente',
+  justor: 'ventola',
+  scomparsa: 'scorrevole',
+  est_muro: 'esterno',
+  /* Con mantovana e' LO STESSO scorrevole: stesso binario, stessi carrelli,
+     stessa corsa. Cambia solo che davanti ci va un cassonetto che nasconde la
+     ferramenta — infatti il listino le prezza uguali, 250 tutt'e due. */
+  est_muro_m: 'esterno',
+  /* Il kit MAGIC e' della stessa famiglia —anta davanti al muro, appesa a un
+     binario— ma con le sue proporzioni: corsa piu' corta e binario piu' corto.
+     Vedi CORSA_MAGIC piu' sotto. */
+  magic: 'esterno',
+  ergon: 'rototraslante',
+  // Ancora da fare: a libro.
+  int_telaio: 'battente', koblenz: 'battente',
+};
+const movimento = () => MOVIMENTO[state.apertura] ?? 'battente';
+/* Chi CORRE invece di girare. La differenza fra le due non e' il movimento —
+   e' identico— ma dove sta l'anta: la scomparsa dentro il muro, l'esterno muro
+   davanti. La legge della corsa e' la stessa, quindi una sola domanda. */
+const scorre = () => movimento() === 'scorrevole' || movimento() === 'esterno';
+
+/* ROTOTRASLANTE: gira E si sposta, nello stesso momento.
+   E' tutto qui il sistema ERGON di Celegon: l'anta ruota mentre il suo asse
+   rientra, e per questo ingombra la meta' di una battente — la porta non
+   descrive piu' l'arco intero, se lo mangia rientrando.
+   Non serve meccanica nuova: il ciclo interpola gia' il giro e la traslazione
+   per conto loro. Basta muovere i due bersagli insieme. */
+const rototrasla = () => movimento() === 'rototraslante';
+
+/* A VENTOLA: di la', torna, di qua, torna.
+   La porta a vento non ha un verso: le cerniere Justor sono a doppia azione e
+   la spingi da tutt'e due i lati. E torna DA SOLA, che e' l'altra meta' del
+   prodotto — la molla — e senza il ritorno sembrerebbe una battente qualunque.
+   Il verso si alterna a ogni apertura, come fa lo schema in 2D. */
+let versoVentola = 1;
+let ritornoVentola = null;
+/* Il ritorno della molla aspetta che la porta sia arrivata: con l'apertura
+   piu' lenta, 1600 ms la richiamavano indietro a meta' strada. */
+const RITORNO_MS = 2400;
+
+/* QUANTO SI MUOVE A OGNI FOTOGRAMMA, in frazione di quello che le manca.
+   Era 0,07: la porta arrivava in poco piu' di un secondo e si leggeva come uno
+   scatto. A 0,045 ci mette circa la meta' in piu' e si vede aprire.
+   Vale per il giro E per la corsa, cosi' le aperture hanno tutte la stessa
+   mano: se un giorno sembra lenta o svelta, si cambia questo e basta. */
+const MORBIDEZZA = 0.045;
+
+/* SCORREVOLE: l'anta non gira, CORRE.
+   doorHomeX e' dove sta chiusa e doorCorsaX quanto se ne va — con il segno
+   gia' dentro, verso il lato del perno: la maniglia sta sul canto opposto e
+   la porta se ne va dalla sua parte.
+   Non si tocca la rotazione: resta a zero e il ciclo muove la posizione. */
+let doorHomeX = 0;
+let doorCorsaX = 0;
+let doorTargetX = 0;
+
+/* ROTOTRASLANTE: oltre a girare e correre di lato, ARRETRA.
+   E' il terzo asse del movimento, e serve a una sola apertura — l'ERGON —
+   ma senza di lui quel sistema non e' quel sistema: e' una battente. */
+let doorHomeZ = 0;
+let doorCorsaZ = 0;
+let doorTargetZ = 0;
+
+function segnaBottone(aperta) {
+  doorBtn.classList.toggle('is-open', aperta);
+  doorBtn.title = aperta ? 'Chiudi la porta / Close the door' : 'Apri la porta / Open the door';
+  doorBtn.setAttribute('aria-label', aperta ? 'Chiudi la porta' : 'Apri la porta');
+}
+
+function chiudiVentola() {
+  ritornoVentola = null;
+  doorTargetAngle = 0;
+  segnaBottone(false);
+  chiediFotogramma(2);
+}
+
 function toggleDoor() {
-  const opening = doorTargetAngle === 0;
-  doorTargetAngle = opening ? doorOpenAngle : 0;
-  // il pulsante è un'icona SVG: si cambia solo lo stato (l'icona ruota via CSS)
-  doorBtn.classList.toggle('is-open', opening);
-  doorBtn.title = opening ? 'Chiudi la porta / Close the door' : 'Apri la porta / Open the door';
-  doorBtn.setAttribute('aria-label', opening ? 'Chiudi la porta' : 'Apri la porta');
+  /* "Aperta" non e' sempre un angolo: per una scorrevole e' una distanza. */
+  const opening = scorre()
+    ? doorTargetX === doorHomeX
+    : doorTargetAngle === 0;
+  if (ritornoVentola) { clearTimeout(ritornoVentola); ritornoVentola = null; }
+  if (rototrasla()) {
+    doorTargetAngle = opening ? doorOpenAngle : 0;
+    doorTargetX = opening ? doorHomeX + doorCorsaX : doorHomeX;
+    doorTargetZ = opening ? doorHomeZ + doorCorsaZ : doorHomeZ;
+  } else if (scorre()) {
+    doorTargetX = opening ? doorHomeX + doorCorsaX : doorHomeX;
+  } else if (opening && movimento() === 'ventola') {
+    doorTargetAngle = doorOpenAngle * versoVentola;
+    versoVentola = -versoVentola;                 // la prossima volta, di la'
+    ritornoVentola = setTimeout(chiudiVentola, RITORNO_MS);
+  } else {
+    doorTargetAngle = opening ? doorOpenAngle : 0;
+  }
+  segnaBottone(opening);
 }
 
 const gltfLoader = new GLTFLoader();
@@ -869,7 +1040,7 @@ const gltfLoader = new GLTFLoader();
 // I materiali condivisi (woodMat, handleMat) e le loro texture in cache
 // NON si toccano — vengono riusati dal modello successivo.
 function disposeMaterial(m) {
-  if (!m || m === woodMat || m === handleMat) return;
+  if (!m || m === woodMat || m === handleMat || m === ferramentaMat) return;
   for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'])
     if (m[k]) m[k].dispose();
   m.dispose();
@@ -888,6 +1059,10 @@ function clearModel() {
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   leafParts = [];
   doorTargetAngle = 0;
+  if (ritornoVentola) { clearTimeout(ritornoVentola); ritornoVentola = null; }
+  versoVentola = 1;
+  doorHomeX = 0; doorCorsaX = 0; doorTargetX = 0;
+  doorHomeZ = 0; doorCorsaZ = 0; doorTargetZ = 0;
   doorBtn.hidden = true;
   doorBtn.classList.remove('is-open');
   doorBtn.title = 'Apri la porta / Open the door';
@@ -921,6 +1096,8 @@ let numeroCarico = 0;
    catalogo: chi disegna la porta mette un campo di vetro e la porta smette da
    sola di avere i tre tipi. */
 let modelloConVetro = false;
+/* Se la porta ha almeno un campo di legno. Senza, la bugna non si chiede. */
+let modelloConPannello = false;
 
 /**
  * Veste di essenza quello che esce dal motore.
@@ -974,8 +1151,12 @@ function loadModel(key) {
          modanatura — e il TIPO 3 si deriva spianando i campi. Cosi' i tre
          tipi non sono tre file per porta: sono uno, letto in tre modi.
          Le porte con vetro passano intatte: hanno una regola loro. */
+      /* IL TIPO SI APPLICA SEMPRE, anche col vetro: prima bastava un vetro
+         perche' la porta uscisse col tracciato tale e quale, e una LAGUNA non
+         avrebbe potuto essere di TIPO 2 nemmeno esistendo in fabbrica. */
       modelloConVetro = haVetro(tracciato);
-      const pezzi = modelloConVetro ? tracciato : applicaTipo(tracciato, state.tipo);
+      modelloConPannello = haCampoDiLegno(tracciato);
+      const pezzi = applicaTipo(tracciato, state.tipo, state.bugna);
       refreshUI();
 
       const spessore = Math.max(...pezzi.map((p) => p.espesor ?? 45));
@@ -1064,12 +1245,31 @@ function loadModel(key) {
       );
 
       await montaCoprifilo(mio, conjunto, marco, datiMarco);
+      /* E il capitello, che va DOPO: se c'e' lui, il coprifilo e' andato solo
+         sullo spallone e il fronte lo chiude questo. */
+      await montaCapitello(mio, marco, datiMarco);
       if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
 
       // La parete con il suo vano, tagliata sulle misure di QUESTA porta
-      const conMoldura = new THREE.Box3();
-      conjunto.traverse((o) => { if (o.isMesh && o.name === 'Coprifilo') conMoldura.expandByObject(o); });
-      const libre = conMoldura.isEmpty() ? vano.dx - vano.sx : conMoldura.max.x - conMoldura.min.x;
+      /* IL BATTISCOPA MUORE CONTRO QUELLO CHE C'E' DAVANTI, e davanti soltanto.
+         Prima si misurava la scatola di TUTTI i coprifili, quello dietro
+         compreso: con lo scorrevole esterno muro —dove davanti il coprifilo non
+         c'e'— il battiscopa restava lo stesso largo 994 e lasciava due buchi di
+         intonaco ai lati della porta, che e' proprio cio' che si vedeva.
+         Si guarda solo la faccia davanti: il capitello se c'e', se no il
+         coprifilo di quella faccia, e se non c'e' niente si passa null, cosi'
+         il motore lo porta fin sotto la mazzetta. */
+      const davanti = new THREE.Box3();
+      conjunto.traverse((o) => {
+        if (!o.isMesh) return;
+        let dentroCapitello = false;
+        for (let q = o; q; q = q.parent) if (q.name === 'Capitello') { dentroCapitello = true; break; }
+        if (!dentroCapitello && o.name !== 'Coprifilo') return;
+        const c = new THREE.Box3().setFromObject(o);
+        if ((c.min.z + c.max.z) / 2 <= 0) return;        // quello dietro non conta
+        davanti.expandByObject(o);
+      });
+      const libre = davanti.isEmpty() ? null : davanti.max.x - davanti.min.x;
       const muro = construirAmbiente(
         state.ambiente === 'galleria' ? 'salon' : state.ambiente,
         {
@@ -1119,7 +1319,30 @@ function loadModel(key) {
       telon.name = 'Fondale';
       telon.position.set((vano.sx + vano.dx) / 2, vano.su * 0.55, fondoMuro - arretra);
       pintaTelon();
-      marco.add(telon);
+      /* IL FONDALE, SPENTO.
+         Il cliente lo vede come una parete bianca piantata dietro la porta, e
+         ha ragione: e' un piano di materiale BASIC —nessuna luce lo tocca, non
+         ha tonemapping— percio' resta chiaro e piatto mentre tutto il resto ha
+         volume, e da dietro riempie il fondo.
+         MISURATO, luce non ne toglie: la faccia di dietro dell'anta rende
+         115,9 con lui e 115,9 senza, differenza zero. Non fa ombra (castShadow
+         non e' mai stato acceso) e non puo' farne.
+         Resta pero' quello per cui era nato, e va detto: senza di lui la
+         passata di TRASMISSIONE del vetro campiona il buffer nero e i
+         sopraluce tornano a riempirsi di scuro, e dal vano aperto si vede la
+         pagina dietro il canvas. Se ricompaiono quelle due cose, e' questo.
+         E infatti, spegnendolo, la prova l'ha trovato subito: col sopraluce
+         montato, DENTRO IL VETRO si vedevano le iconine delle maniglie della
+         pagina. Non e' un'ipotesi del commento, e' quello che rende lo
+         schermo.
+         Percio' non si sceglie fra le due cose: il fondale serve SOLO quando
+         c'e' del vetro da attraversare. Senza sopraluce non si monta —e
+         dietro la porta non c'e' piu' nessuna parete bianca— e col sopraluce
+         torna, perche' li' senza di lui il cristallo mostra la pagina.
+         Guardando dal vano aperto, invece, senza fondale non si vede niente
+         di strano: resta la sfumatura chiara del CSS. */
+      const FONDALE_VISIBILE = conSopra;
+      if (FONDALE_VISIBILE) marco.add(telon);
 
       model = conjunto;
       conjunto.scale.setScalar(1 / 1000);        // il motore va in millimetri
@@ -1221,12 +1444,46 @@ function loadModel(key) {
       });
       if (!cajaTelaio.isEmpty()) {
         cajaTelaio.applyMatrix4(invConjunto);
-        const ritiro = cajaHoja.min.z - cajaTelaio.min.z;
         /* Si sposta il PERNO, non l'anta: cosi' l'asse di rotazione arretra
            insieme a lei e resta sul suo canto. Spostando l'anta soltanto,
            girerebbe attorno a un asse rimasto avanti. */
-        if (ritiro > 0) doorPivot.position.z -= ritiro;
+        if (movimento() === 'ventola' || movimento() === 'scorrevole') {
+          /* A VENTOLA L'ANTA VA IN MEZZO AL TELAIO, non in fondo.
+             In fondo ci va perche' apre in dentro e il telaio le fa da
+             battuta. Ma una porta a vento apre dai due lati: una battuta la
+             fermerebbe da una parte, e infatti quelle porte il telaio ce
+             l'hanno senza. Centrandola, i due giri sono uguali e nessuno dei
+             due entra nel legno. */
+          const centroTelaio = (cajaTelaio.min.z + cajaTelaio.max.z) / 2;
+          const centroAnta = (cajaHoja.min.z + cajaHoja.max.z) / 2;
+          doorPivot.position.z += centroTelaio - centroAnta;
+          /* Alla scorrevole serve per un'altra ragione: centrata sta DENTRO lo
+             spessore del muro —misurato, il muro va da -61 a 56 e l'anta finisce
+             fra -30 e 15— e allora scorrendo sparisce dietro la parete da sola,
+             senza doverle costruire la tasca. E' quello che fa un controtelaio
+             vero: la porta se ne va nel muro e non si vede piu'. */
+        } else if (movimento() === 'esterno') {
+          /* ESTERNO MURO: l'anta non entra nel vano, ci passa DAVANTI.
+             E' appesa a un binario sulla parete e scorre sopra l'intonaco, con
+             il suo bel gioco fra legno e muro. Per questo non sparisce quando
+             si apre: resta li' da vedere, appoggiata al muro accanto. Dodici
+             millimetri sono il gioco che lascia il carrello. */
+          /* TRENTACINQUE e non dodici. Con dodici l'anta passava DENTRO il
+             battiscopa: misurato, il battiscopa sporge fino a z 82 e l'anta
+             stava fra 69 e 113 — tredici millimetri di compenetrazione, e
+             scorrendo lo attraversava. Il battiscopa sporge 25 dal muro, per
+             cui l'anta deve stargli davanti: 35 la lasciano a dieci millimetri
+             buoni dal suo filo. */
+          const GIOCO_MURO = 35;
+          const mediaAnta = (cajaHoja.max.z - cajaHoja.min.z) / 2;
+          const centroAnta = (cajaHoja.min.z + cajaHoja.max.z) / 2;
+          doorPivot.position.z += cajaTelaio.max.z + GIOCO_MURO + mediaAnta - centroAnta;
+        } else {
+          const ritiro = cajaHoja.min.z - cajaTelaio.min.z;
+          if (ritiro > 0) doorPivot.position.z -= ritiro;
+        }
       }
+
       /* La porta apre VERSO L'INTERNO: l'anta se ne va dietro il muro, non
          addosso a chi guarda.
 
@@ -1256,7 +1513,317 @@ function loadModel(key) {
          davanti. Trentacinque e' dove si legge meglio la merce — la faccia
          quasi intera, e la mazzetta che racconta la profondita'. */
       doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(35);
+
+      /* QUANTO CORRE una scorrevole: la sua stessa larghezza meno il ricoprimento
+         che resta sul montante, se no il vano si aprirebbe piu' di quanto e'
+         largo. Venti millimetri sono quelli che tengono la porta agganciata al
+         telaio anche tutta aperta.
+         Il VERSO e' quello del perno: la maniglia sta sul canto opposto, quindi
+         la porta se ne va dalla parte delle cerniere. */
+      const larghezzaAnta = cajaHoja.max.x - cajaHoja.min.x;
+      /* QUANTO CORRE: la sua larghezza meno i venti millimetri di ricoprimento
+         che la tengono agganciata al telaio. Vale per tutte, MAGIC compreso.
+         Il MAGIC aveva una corsa piu' corta, 0,66, presa dallo schema 2D. Era
+         un comodo del disegno, non una misura: il sistema vero (Magic2 di
+         Terno) e' una scorrevole esterno muro come le altre, ante da 680 a
+         1800 mm, e l'anta libera il vano per intero. Con lo 0,66 restava un
+         terzo di porta chiusa. */
+      doorCorsaX = (manoDx ? -1 : 1) * Math.max(0, larghezzaAnta - 20);
+      doorHomeX = doorPivot.position.x;
+      doorTargetX = doorHomeX;
+
+      /* IL ROTOTRASLANTE, cioe' l'ERGON LIVING di CELEGON (non Koblenz: quello
+         e' la voce 21, e il suo rototraslante si chiama SwingLife).
+         Il primo tentativo l'aveva letto male. Prendeva dallo schema 2D
+         "l'asse rientra di 0,42 della larghezza" e faceva rientrare il perno
+         VERSO IL CENTRO del vano. Misurato, veniva fuori il contrario del
+         prodotto: l'anta aperta si piantava in mezzo al passaggio —x da -96 a
+         -22 su un vano di 856— e l'area spazzata non calava di un millimetro,
+         881 mm contro gli 869 di una battente. Un sistema salvaspazio che
+         toglieva mezzo passaggio.
+         Il manuale tecnico Celegon (Ergon Living S40) dice un'altra cosa: il
+         movimento "fa INDIETREGGIARE l'anta in apertura". L'anta non scappa di
+         lato — resta accostata al suo stipite — e ARRETRA, finendo
+         perpendicolare al muro e A CAVALLO di esso: una meta' di qua, una
+         meta' di la'. E' cosi' che dimezza l'ingombro, dividendolo fra le due
+         stanze invece di scaricarlo tutto in quella di chi guarda.
+         QUANTO sporge lo dice il piano quotato: QF, la quota fissa d'ingombro,
+         e' COSTANTE per braccetto — non cresce con l'anta — e il resto della
+         larghezza sta dall'altra parte. Nel piano ufficiale QF 392 + QV 377 fa
+         769, che e' esattamente la larghezza dell'anta. */
+      if (movimento() === 'rototraslante') {
+        doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(90);
+        /* QF per braccetto, tabella Celegon: la misura del foro muro sceglie
+           il braccetto (SMALL 610-800, BASE 800-1100, LARGE 1100-1450) e con
+           lui la sporgenza. */
+        const foro = vano.dx - vano.sx;
+        const QF = foro <= 800 ? 295 : foro <= 1100 ? 392 : 620;
+        /* DA CHE PARTE STA LA STANZA. Il primo arretramento andava dalla parte
+           sbagliata e l'anta spariva dietro il muro: aperta, non si vedeva
+           piu'. La stanza e' il lato +z —lo dicono due cose misurate, il
+           battiscopa che sta fra z 57 e 82 e la telecamera che guarda da z
+           +4181— e quindi il filo verso chi guarda e' il DIETRO del telaio,
+           cajaTelaio.max.z, non il davanti.
+           Aperta, l'anta sporge QF oltre quel filo. Il perno pero' non e' il
+           capo dell'anta: girata di novanta gradi, il legno gli sta ancora
+           davanti di mezzo spessore, e senza togliere quel mezzo spessore la
+           sporgenza veniva QF piu' 22. */
+        const filoStanza = cajaTelaio.max.z;
+        doorCorsaZ = (filoStanza + QF - spessore / 2) - doorPivot.position.z;
+        /* E QUINDICI MILLIMETRI DI LATO, che non sono un capriccio.
+           Arretrando, l'anta attraversa il pannello della parete, e quel
+           pannello ha il buco 15 mm piu' stretto del vano (7,5 per lato, li
+           fa ambiente.js apposta perche' il coprifilo pesti la parete). Con
+           l'anta appoggiata allo stipite il suo canto cadeva a x -420 e il
+           bordo del buco a -420,5: mezzo millimetro. Passandoci dentro si
+           sarebbero contesi i pixel, lo stesso sfarfallio della mantovana.
+           Quindici la fanno passare pulita, e restano comunque dentro il
+           vano: non sporge dallo stipite, che e' quello che il sistema
+           promette. */
+        doorCorsaX = (manoDx ? 1 : -1) * 15;
+      }
+      doorHomeZ = doorPivot.position.z;
+      doorTargetZ = doorHomeZ;
       doorBtn.hidden = false;
+
+      /* IL BINARIO, che nell'esterno muro SI VEDE: e' mezzo prodotto.
+         Va sopra il vano e lungo quanto serve perche' l'anta ci resti appesa
+         anche tutta aperta — la sua larghezza piu' la corsa, piu' un margine
+         per i fermi — e spostato verso il lato dove la porta se ne va, che e'
+         dove il binario deve esserci davvero.
+
+         STA QUI e non piu' su, accanto all'anta, per una ragione che il primo
+         tentativo ha insegnato: la corsa si calcola due righe fa. Montandolo
+         prima, doorCorsaX valeva ancora zero e il binario usciva lungo 960
+         invece di 1779, per giunta centrato sul vano.
+         E la z si misura sull'ANTA VERA, ma solo dopo aver aggiornato le
+         matrici a mano. Le due strade sbagliate le ho fatte tutt'e due:
+         misurarla senza aggiornare dava la posizione di prima dello
+         spostamento, e ricavarla col conto —faccia del telaio piu' gioco piu'
+         mezza anta— la lasciava 22 mm indietro, cioe' un'altra mezza anta,
+         perche' il perno parte gia' arretrato di mezzo spessore e lo
+         spostamento si somma a quello. Aggiornare e misurare non ha di questi
+         dubbi: dice dove l'anta STA. */
+      if (movimento() === 'esterno' && !cajaTelaio.isEmpty()) {
+        /* LA FERRAMENTA, non una tavola appesa in aria.
+           Un esterno muro si vende per questo: il binario in vista, i carrelli
+           che ci corrono dentro e le staffe che scendono a mordere il canto
+           alto dell'anta. Prima c'era solo il binario e la porta non toccava
+           niente: fra il suo canto e il binario restavano 49 mm di vuoto, e si
+           vedeva benissimo che non era appesa a nulla.
+           Il pezzo fisso —binario e fermi— sta nell'insieme; i carrelli e le
+           staffe pendono dal PERNO, cosi' corrono con l'anta invece di
+           restare indietro. */
+        conjunto.updateMatrixWorld(true);
+        const invC = new THREE.Matrix4().copy(conjunto.matrixWorld).invert();
+        const cajaAntaReal = new THREE.Box3().setFromObject(anta).applyMatrix4(invC);
+        const zAnta = (cajaAntaReal.min.z + cajaAntaReal.max.z) / 2;
+        const cimaAnta = cajaAntaReal.max.y;
+
+        /* CHI FA VEDERE LA FERRAMENTA, e chi no. Lo decide il listino:
+             31 guide a filo SENZA mantovana -> "invisible guides": non si vede
+                niente, l'anta sembra scorrere da sola sul muro;
+             32 con battuta e kit mantovana -> il binario c'e' e lo copre il
+                cassonetto, piu' la battuta contro cui l'anta chiude;
+             34 MAGIC -> "tutto il sistema scorrevole e' nascosto", parole del
+                costruttore.
+           Quindi il binario, i carrelli, le staffe e i fermi si montano solo
+           con la mantovana: sono gli unici che poi qualcosa nasconde. La guida
+           a pavimento invece va sempre, che quella si vede in tutte. */
+        /* UNA PORTA APPESA DEVE APPENDERSI A QUALCOSA.
+           Avevo tolto tutta la ferramenta alla 31 e alla 34 leggendo "guide a
+           filo / invisible guides" come "non c'e' niente": sbagliato, e si
+           vedeva — l'anta restava per aria, attaccata al nulla. Quei sistemi
+           hanno un carrello superiore fissato alla parete e una guida a
+           pavimento con perno; quello che sparisce e' il PROFILO, non il
+           sostegno.
+           Percio' il binario c'e' sempre. Con la mantovana e' quello grosso,
+           tanto lo copre il cassonetto; senza, e' un profilo sottile, che e'
+           come si vendono le guide a filo. */
+        const conMantovana = state.apertura === 'est_muro_m';
+        const ALTO_BINARIO = conMantovana ? 40 : 18;
+        const FONDO_BINARIO = conMantovana ? 26 : 16;
+        const yBinario = vano.su + 40 + ALTO_BINARIO / 2;     // centro del binario
+        const bajoBinario = yBinario - ALTO_BINARIO / 2;
+        /* Il binario copre la corsa piu' un margine per i fermi. Non ha piu'
+           il caso MAGIC: quel sistema il binario non lo mostra, e dove non si
+           mostra non si monta. */
+        const largoBinario = larghezzaAnta + Math.abs(doorCorsaX) + 120;
+        const xBinario = (vano.sx + vano.dx) / 2 + doorCorsaX / 2;
+
+        const pieza = (largo, alto, fondo, x, y, z, nombre, padre) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(largo, alto, fondo), ferramentaMat);
+          m.name = nombre;
+          m.castShadow = true;
+          m.receiveShadow = true;
+          m.position.set(x, y, z);
+          padre.add(m);
+          return m;
+        };
+
+        // il binario: sempre, che l'anta ci si appende davvero
+        pieza(largoBinario, ALTO_BINARIO, FONDO_BINARIO, xBinario, yBinario, zAnta,
+              'BinarioEsternoMuro', conjunto);
+        // i fermi a vista solo dove il cassonetto li nasconde
+        if (conMantovana) {
+        /* I FERMI SPORGONO di tre millimetri dal binario invece di finire a
+           filo. A filo, la loro faccia esterna cadeva nello STESSO piano del
+           capo del binario e le due si contendevano la profondita': lo stesso
+           z-fighting della mantovana, in miniatura, sui due capi. Sporgendo,
+           il piano non lo condivide piu' nessuno — ed e' anche come sono i
+           fermi veri, che fanno da tappo e si vedono. */
+        for (const lado of [-1, 1]) {
+          pieza(16, ALTO_BINARIO + 10, FONDO_BINARIO + 8,
+                xBinario + lado * (largoBinario / 2 - 5), yBinario, zAnta,
+                'FermoBinario', conjunto);
+        }
+        }   // fine dei fermi
+
+        /* Carrelli e staffe: appesi al perno. Le loro coordinate sono relative
+           a lui, quindi si toglie la sua posizione a quelle dell'insieme. */
+        const aPerno = (x, y, z) => [x - doorPivot.position.x, y - doorPivot.position.y, z - doorPivot.position.z];
+        const bordes = [cajaAntaReal.min.x + 110, cajaAntaReal.max.x - 110];
+        for (let i = 0; i < bordes.length; i++) {
+          const [cx, cy, cz] = aPerno(bordes[i], yBinario, zAnta);
+          pieza(conMantovana ? 96 : 64, ALTO_BINARIO - 6, FONDO_BINARIO + 8, cx, cy, cz, `Carrello${i + 1}`, doorPivot);
+          /* La staffa colma il vuoto: dal carrello fino DENTRO l'anta, che
+             cosi' si legge avvitata e non appoggiata. */
+          const altoStaffa = (yBinario - ALTO_BINARIO / 2) - cimaAnta + 26;
+          const [sx2, sy2, sz2] = aPerno(bordes[i], bajoBinario - altoStaffa / 2 + 26, zAnta);
+          pieza(conMantovana ? 26 : 18, altoStaffa, 12, sx2, sy2, sz2, `Staffa${i + 1}`, doorPivot);
+        }
+
+        /* E la guida a pavimento: un esterno muro appeso balla, e in opera se
+           ne mette sempre una che tiene il canto basso contro il muro.
+           AFFONDATA di due millimetri. Appoggiata esatta, la sua faccia di
+           sotto finiva nello STESSO piano del pavimento —tutt'e due a quota
+           zero— e due superfici alla stessa profondita' sfarfallano: e' lo
+           stesso z-fighting della mantovana, in piccolo. Due millimetri sotto
+           non si vedono e il piano non lo condivide piu' con nessuno. */
+        const [gx, gy, gz] = [ (vano.sx + vano.dx) / 2 + (doorCorsaX > 0 ? -1 : 1) * (larghezzaAnta / 2 + 40), 10, zAnta ];
+        pieza(70, 24, FONDO_BINARIO + 16, gx, gy, gz, 'GuidaPavimento', conjunto);
+
+        /* LA MANTOVANA, che e' tutta la differenza fra le due scorrevoli del
+           listino. Il movimento non cambia di un millimetro: cambia che questo
+           cassonetto passa davanti al binario e ai carrelli e li nasconde, e
+           dalla stanza si vede una fascia di legno e la porta appesa al nulla.
+           Va nell'ESSENZA della porta, come il capitello, ed e' fissa: non
+           corre con l'anta. Due pezzi, perche' un cassonetto non e' una tavola:
+           il frontale e il cielo che lo chiude contro il muro. */
+        if (state.apertura === 'est_muro_m') {
+          const GRUESO = 20;
+          const yTapa = yBinario + ALTO_BINARIO / 2 + 24;     // sopra il binario
+          const yFondo = cimaAnta - 24;                       // sotto il canto alto dell'anta
+          const zFrente = cajaAntaReal.max.z + 10 + GRUESO / 2;
+          const zTrasFrontal = zFrente - GRUESO / 2;          // faccia interna del frontale
+          const largoM = largoBinario + 40;
+
+          /* I DUE PEZZI SI TOCCANO, NON SI COMPENETRANO.
+             La prima versione sfarfallava, e non era il legno ne' la luce: il
+             frontale e il cielo condividevano un pezzo di volume e avevano due
+             facce nello STESSO piano —quella di sopra e quella davanti— piu'
+             il cielo che partiva esattamente sulla faccia del muro. Due
+             superfici alla stessa profondita' la scheda non sa ordinarle e le
+             alterna a ogni fotogramma: e' lo z-fighting, e si vede come un
+             tremolio continuo.
+             Adesso il frontale prende tutta l'altezza e il cielo riempie solo
+             DIETRO di lui, staccato un millimetro dal muro: si toccano lungo un
+             piano, ma non si sovrappongono da nessuna parte. */
+          const frontal = new THREE.Mesh(new THREE.BoxGeometry(largoM, yTapa - yFondo, GRUESO), woodMat);
+          pegarVeta(frontal.geometry, true);
+          frontal.name = 'Mantovana';
+          frontal.castShadow = true;
+          frontal.receiveShadow = true;
+          frontal.position.set(xBinario, (yTapa + yFondo) / 2, zFrente);
+          conjunto.add(frontal);
+
+          const zDietro = cajaTelaio.max.z + 1;               // un millimetro staccato dal muro
+          const fondoTapa = zTrasFrontal - zDietro;
+          if (fondoTapa > 2) {
+            const cielo = new THREE.Mesh(new THREE.BoxGeometry(largoM, GRUESO, fondoTapa), woodMat);
+            pegarVeta(cielo.geometry, true);
+            cielo.name = 'MantovanaCielo';
+            cielo.castShadow = true;
+            cielo.receiveShadow = true;
+            cielo.position.set(xBinario, yTapa - GRUESO / 2, zDietro + fondoTapa / 2);
+            conjunto.add(cielo);
+          }
+
+          /* LA BATTUTA, che la voce 32 nomina e la 31 no: un listello verticale
+             sul montante dove l'anta arriva chiudendo. Senza, una scorrevole
+             esterno muro sbatte contro il nulla e resta il filo di luce.
+             Va dalla parte OPPOSTA alla corsa, che e' dove l'anta chiude. */
+          const ladoCierre = doorCorsaX < 0 ? 1 : -1;
+          const xBattuta = (ladoCierre > 0 ? vano.dx : vano.sx) + ladoCierre * 12;
+          /* Un filo PIU' SOTTILE e un filo piu' indietro della mantovana: se le
+             due hanno lo stesso spessore e lo stesso piano, le loro facce
+             davanti e dietro cadono alla stessa profondita' dove si
+             incrociano, e li' sfarfallano. E' il terzo caso della stessa
+             famiglia: due superfici complanari non si possono ordinare. */
+          /* INTEGRATA NELLA MAZZETTA, non un palo piantato davanti. La battuta
+             e' il montante contro cui l'anta chiude —quello che regge anche la
+             serratura— quindi parte dalla faccia del muro e arriva a coprire lo
+             spessore dell'anta, invece di starle davanti. */
+          /* Ne' fino al muro ne' fino al cassonetto: la battuta copre lo
+             SPESSORE DELL'ANTA e basta, che e' il suo mestiere. Arrivando fino
+             in fondo condivideva il piano di dietro col battiscopa (56) e
+             quello davanti con la mantovana (166): due superfici complanari
+             per parte, cioe' due sfarfallii. Due millimetri avanti al muro e
+             sei oltre l'anta la tengono fuori da tutti e due i piani. */
+          const zBattuta0 = cajaTelaio.max.z + 2;
+          const fondoBattuta = (cajaAntaReal.max.z + 6) - zBattuta0;
+          const battuta = new THREE.Mesh(
+            new THREE.BoxGeometry(24, vano.su + 20, fondoBattuta), woodMat);
+          pegarVeta(battuta.geometry, false);      // in piedi: fibra per il lungo
+          battuta.name = 'BattutaScorrevole';
+          battuta.castShadow = true;
+          battuta.receiveShadow = true;
+          battuta.position.set(xBattuta, (vano.su + 20) / 2, zBattuta0 + fondoBattuta / 2);
+          conjunto.add(battuta);
+        }
+      }
+
+      /* IL FERRO DELL'ERGON, ridotto a quello che si vede davvero.
+         Il primo tentativo montava il meccanismo intero —binario, carrello,
+         due aste e uno snodo— e misurato funzionava: le aste non si
+         allungavano di un millimetro lungo tutta la corsa. Ma non era quello
+         che serviva. Una porta di questo tipo, guardata, e' pulita: due perni,
+         uno sopra e uno sotto, con le loro piastrine a vista sull'anta. Il
+         meccanismo vero sta DENTRO il legno e dentro l'architrave, ed e'
+         proprio per questo che si vende — non si vede.
+         Restano fuori, come prima: niente guida a pavimento e niente cerniere
+         sul montante, che una rototraslante non le ha. */
+      if (movimento() === 'rototraslante' && !cajaTelaio.isEmpty()) {
+        conjunto.updateMatrixWorld(true);
+        const invE = new THREE.Matrix4().copy(conjunto.matrixWorld).invert();
+        const cajaAnta = new THREE.Box3().setFromObject(anta).applyMatrix4(invE);
+        const cima = cajaAnta.max.y - doorPivot.position.y;
+        const fondo = cajaAnta.min.y - doorPivot.position.y;
+        const dentroAnta = manoDx ? 1 : -1;
+        const tondo = (raggio, alto, x, y, z, coricato, nome) => {
+          const m = new THREE.Mesh(
+            new THREE.CylinderGeometry(raggio, raggio, alto, 24), ferramentaMat);
+          m.name = nome; m.castShadow = true; m.receiveShadow = true;
+          if (coricato) m.rotation.x = Math.PI / 2;   // disteso sulla faccia
+          m.position.set(x, y, z);
+          doorPivot.add(m);
+          return m;
+        };
+        /* I PERNI, sull'asse del giro. BASSI: fra il canto alto dell'anta e
+           l'architrave ci ballano nove millimetri, e un perno piu' alto
+           entrerebbe nel legno di sopra.
+           SOTTO NON C'E' QUEL GIOCO: l'anta finisce a quota -1048 e il
+           pavimento sta li' pure. Messo sotto il canto, il perno spariva
+           OTTO MILLIMETRI DENTRO IL PAVIMENTO. Va incassato nel canto, che
+           e' anche dove sta quello vero — sotto la porta non pende niente. */
+        tondo(14, 8, 0, cima + 4, spessore / 2, false, 'PernoAlto');
+        tondo(14, 8, 0, fondo + 4, spessore / 2, false, 'PernoBasso');
+        /* Le piastrine a vista. UN MILLIMETRO fuori dal legno: a filo esatto
+           la loro faccia e quella dell'anta sarebbero lo stesso piano, ed e'
+           lo sfarfallio di sempre. */
+        tondo(15, 4, dentroAnta * 55, cima - 150, spessore - 1, true, 'PiastrinaAlta');
+        tondo(15, 4, dentroAnta * 55, fondo + 150, spessore - 1, true, 'PiastrinaBassa');
+      }
 
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
          nello spazio del perno — che e' quello dell'insieme meno l'offset del
@@ -1276,7 +1843,16 @@ function loadModel(key) {
       loaderEl.classList.add('is-hidden');
       refreshUI();
       window.__dbg = { scene, camera, model, size, center, renderer, doorPivot, toggleDoor, setModello,
-        get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; } };
+        get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; },
+        /* La corsa della scorrevole. Il bersaglio si posa SUBITO, il movimento
+           no: serve per misurare la legge senza dipendere dai fotogrammi. */
+        get corsa() {
+          return { bersaglio: Math.round(doorTargetX), casa: Math.round(doorHomeX),
+                   corsa: Math.round(doorCorsaX), adesso: Math.round(doorPivot ? doorPivot.position.x : 0),
+                   bersaglioZ: Math.round(doorTargetZ), casaZ: Math.round(doorHomeZ),
+                   corsaZ: Math.round(doorCorsaZ), adessoZ: Math.round(doorPivot ? doorPivot.position.z : 0) };
+        },
+        get movimento() { return movimento(); } };
     })
     .catch((err) => {
       if (mio !== numeroCarico) return;
@@ -1307,12 +1883,128 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
   const perfil = COPRI_3D[state.copri];
   if (!perfil) return;
   try {
+    /* CON CAPITELLO, el coprifilo va SOLO AL ESPALDAR.
+       El capitello remata el frente el solo —cornisa, parales y jambas— y
+       debajo de el no cabe otra moldura: montar las dos daria dos remates
+       superpuestos, que en una pared no existe. Por detras si hace falta,
+       porque esa cara se queda sin nada. Lo pide el cliente al elegirlo. */
+    /* Anche l'ESTERNO MURO vuole il coprifilo solo dietro: da questa parte
+       l'anta scorre sulla parete e gli passerebbe sopra. In fabbrica infatti
+       quella faccia si lascia liscia. */
+    const conCapitello = state.capitello !== 'no' || movimento() === 'esterno';
     const g = await montarCoprifilo(perfil, undefined, vanoDe(datiTelaio),
-      datiTelaio.muro, woodMat, 'assets/catalogo/coprifili');
+      datiTelaio.muro, woodMat, 'assets/catalogo/coprifili',
+      conCapitello ? { soloCara: 'espaldar' } : {});
     if (mio !== numeroCarico) return;
     if (g) marco.add(g);
   } catch (err) {
     console.warn(`coprifilo ${perfil} non montato`, err);
+  }
+}
+
+/**
+ * Il capitello, in 3D.
+ *
+ * Il 'Capitello 900 completo (colonne)' non e' una modanatura tirata lungo il
+ * perimetro come il coprifilo: e' un PEZZO, con cornice, fregio, due colonne e
+ * i loro plinti scanalati. Per questo arriva come GLB e non come sezione.
+ *
+ * Il modello nasce dallo script parametrico di Blender (capitello_con_parales)
+ * e si e' rigenerato su misura: la sua LUCE e' 847 x 2021 e fuori misura
+ * 1161 x 2198 x 119 mm.
+ *
+ * QUEL 2021 E' MISURATO, non copiato. La prima versione portava 2127, che e' il
+ * vano delle porte dello scaparate; ma il vano della Siena qui misura 2027 dal
+ * pavimento —lo dicono il muro e il coprifilo, che finiscono tutti e due li'— e
+ * l'architrave restava cento millimetri piu' in alto del telaio: fra i due si
+ * vedeva una striscia di parete. Adesso la luce nasce a 2021, sei millimetri
+ * sotto il vano, cosi' il capitello MONTA sul telaio invece di sfiorarlo, che e'
+ * quello che fa anche il coprifilo. Di lato fa lo stesso: luce 847 contro un
+ * vano di 856, cioe' 4,5 mm per banda.
+ *
+ * UNITA': il GLB e' in metri e l'insieme del motore in millimetri, quindi va
+ * moltiplicato per mille. Gli assi coincidono: X larghezza, Y altezza da terra,
+ * Z profondita' verso chi guarda.
+ *
+ * Gli altri capitelli del listino restano solo prezzo, come stavano.
+ */
+const CAP_3D = { c900c: 'assets/capitelli/c900c.glb' };
+const LUZ_CAPITELLO = { ancho: 847, alto: 2021 };
+/* Quanto il capitello monta sul telaio, come il coprifilo. */
+const SOLAPE_CAPITELLO = 6;
+const cacheCapitello = new Map();
+
+/**
+ * Le geometrie del capitello, gia' in MILLIMETRI e con le coordinate di
+ * texture attaccate. Si preparano una volta sola per file.
+ *
+ * Il GLB porta solo posizione e normale: senza UV il legno uscirebbe liscio,
+ * una tinta piatta, perche' la texture si leggerebbe tutta nello stesso punto.
+ * Gliele mette pegarVeta, LO STESSO del motore, e per una ragione: cosi' la
+ * vena del capitello ha lo stesso passo di quella dell'anta. Due scale di vena
+ * accanto si vedono subito, anche se il legno e' lo stesso.
+ */
+async function geometriasDelCapitello(url) {
+  if (!cacheCapitello.has(url)) {
+    cacheCapitello.set(url, gltfLoader.loadAsync(url).then((gltf) => {
+      gltf.scene.updateMatrixWorld(true);
+      const piezas = [];
+      gltf.scene.traverse((o) => {
+        if (!o.isMesh) return;
+        const geo = o.geometry.clone();
+        geo.applyMatrix4(o.matrixWorld);
+        geo.scale(1000, 1000, 1000);          // il GLB va in metri, il motore in mm
+        geo.computeBoundingBox();
+        const t = geo.boundingBox.getSize(new THREE.Vector3());
+        /* Come in tejer.js: la fibra corre per il LUNGO del pezzo. Le colonne
+           la prendono in piedi; la cornice, il fregio e i plinti di traverso. */
+        pegarVeta(geo, t.x > t.y);
+        piezas.push(geo);
+      });
+      return piezas;
+    }));
+  }
+  return cacheCapitello.get(url);
+}
+
+async function montaCapitello(mio, marco, datiTelaio) {
+  const url = CAP_3D[state.capitello];
+  if (!url) return;
+  try {
+    const piezas = await geometriasDelCapitello(url);
+    if (mio !== numeroCarico) return;
+    const vano = vanoDe(datiTelaio);
+    const ancho = vano.dx - vano.sx;
+    /* IL VANO SI MISURA, non si suppone: ogni modello ha il suo. L'architrave
+       deve cadere sul telaio, quindi l'altezza si corregge di quel tanto che
+       manca. Col vano di serie il fattore e' 1 e non si tocca niente; se una
+       porta obbligasse a storcerlo piu' dell'otto per cento, si dice, perche'
+       allora e' il capitello sbagliato e non un aggiustamento. */
+    const k = (vano.su - SOLAPE_CAPITELLO) / LUZ_CAPITELLO.alto;
+    if (Math.abs(k - 1) > 0.08) {
+      console.warn(`capitello: il vano alto ${Math.round(vano.su)} obbliga a correggere l'altezza del ${Math.round((k - 1) * 100)} per cento`);
+    }
+    if (ancho > LUZ_CAPITELLO.ancho + 1) {
+      console.warn(`capitello: il vano e' largo ${Math.round(ancho)} mm e la luce ne misura ${LUZ_CAPITELLO.ancho}`);
+    }
+    /* IL LEGNO E' QUELLO DELL'ANTA, non piu' l'avorio del modello.
+       Si usa woodMat, lo stesso oggetto materiale della porta: cosi' il
+       capitello segue l'essenza da solo —e anche il laccato— senza rimontare
+       niente, perche' applyEssenza cambia quel materiale sul posto. */
+    const g = new THREE.Group();
+    for (const geo of piezas) {
+      const m = new THREE.Mesh(geo, woodMat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      g.add(m);
+    }
+    // Le geometrie sono gia' in millimetri: qui resta solo la correzione d'altezza.
+    g.scale.set(1, k, 1);
+    g.position.set((vano.sx + vano.dx) / 2, 0, datiTelaio.muro.z1);
+    g.name = 'Capitello';
+    marco.add(g);
+  } catch (err) {
+    console.warn(`capitello ${state.capitello} non montato`, err);
   }
 }
 
@@ -1352,6 +2044,15 @@ const ALTO_MANIGLIA = 950;
    da' gia' per buona — e presa dal canto dell'anta lascia la rosetta ben
    dentro il suo montante, lontana dalla battuta. */
 const RITIRO_MANIGLIA = 89;      // dal canto dell'anta al canto della rosetta
+/* E un filo piu' dentro. Il centro del montante e' il posto giusto —li' c'e'
+   legno da mordere— ma guardata in faccia la maniglia restava un paio di
+   millimetri troppo vicina al canto. Due millimetri: sembra niente e si vede,
+   perche' l'occhio misura la maniglia contro il bordo dell'anta e non contro
+   il montante.
+   Va VERSO LE CERNIERE, non verso sinistra: su una porta destra la sposta a
+   sinistra e su una sinistra a destra, che e' come deve essere quando la
+   quota si prende dal canto che chiude. */
+const AJUSTE_MANIGLIA = 2;
 /* Quanto misurano tutte le maniglie della serie, dalle schede Mariva. I GLB del
    catalogo non rispettano l'unita' di glTF, quindi si normalizza su questo.
 
@@ -1383,9 +2084,11 @@ function puntoDellaManiglia(pezzi, manoDx, cajaHoja, montante) {
      qualunque modello invece che per quello su cui e' stato tarato il
      numero. Il ritiro dal canto resta solo come rete se il montante non si
      trovasse. */
-  const x = montante
+  const centro = montante
     ? (montante.min.x + montante.max.x) / 2
     : (manoDx ? cajaHoja.max.x - RITIRO_MANIGLIA : cajaHoja.min.x + RITIRO_MANIGLIA);
+  // La bocchetta della serratura pende dallo stesso punto, quindi segue da sola.
+  const x = centro + (manoDx ? -AJUSTE_MANIGLIA : AJUSTE_MANIGLIA);
 
   const cajas = pezzi.map((p) => ({ p, c: cajaDe(p) }));
   const hoja = cajas.reduce(
@@ -1690,7 +2393,7 @@ function makeZoccolino(group, color) {
 let floorTex = null;
 function woodFloorMat(tint) {
   if (!floorTex) {
-    floorTex = texLoader.load('assets/textures/pino/albedo.jpg');
+    floorTex = texLoader.load('assets/textures/pino-pbr/basecolor.jpg');
     floorTex.colorSpace = THREE.SRGBColorSpace;
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
     floorTex.repeat.set(3, 2.6);
@@ -1858,10 +2561,55 @@ renderer.setAnimationLoop(() => {
   if (doorPivot) {
     const resta = doorTargetAngle - doorPivot.rotation.y;
     if (Math.abs(resta) > 1e-4) {
-      doorPivot.rotation.y += resta * 0.07;
+      doorPivot.rotation.y += resta * MORBIDEZZA;
       chiediFotogramma(2);
     } else {
       doorPivot.rotation.y = doorTargetAngle;   // si posa esatto, non a un capello
+    }
+    /* E la corsa, per le scorrevoli. Stessa morbidezza del giro, cosi' le due
+       aperture si muovono con la stessa mano.
+       La SOGLIA pero' non puo' essere la stessa: il giro va in radianti e 1e-4
+       e' mezzo centesimo di grado, ma la corsa va in MILLIMETRI e 1e-4 sarebbe
+       un decimillesimo di millimetro. Con quella soglia l'anta passava
+       centinaia di fotogrammi a strisciare sull'ultimo decimo, chiedendo di
+       ridisegnare per un movimento che nessuno vede. Mezzo millimetro e' sotto
+       il pixel a qualunque zoom: li' si posa e si ferma. */
+    const restaX = doorTargetX - doorPivot.position.x;
+    if (Math.abs(restaX) > 0.5) {
+      doorPivot.position.x += restaX * MORBIDEZZA;
+      chiediFotogramma(2);
+    } else {
+      doorPivot.position.x = doorTargetX;
+    }
+    /* E L'ARRETRAMENTO del rototraslante: stessa legge della corsa e stessa
+       soglia di mezzo millimetro. Girando e arretrando INSIEME, l'anta
+       descrive l'arco ribassato del sistema vero invece del cerchio pieno di
+       una battente — ed e' li' che sta la meta' di ingombro risparmiata. */
+    const restaZ = doorTargetZ - doorPivot.position.z;
+    if (Math.abs(restaZ) > 0.5) {
+      doorPivot.position.z += restaZ * MORBIDEZZA;
+      chiediFotogramma(2);
+    } else {
+      doorPivot.position.z = doorTargetZ;
+    }
+    /* LA LEGGE DEL MECCANISMO, che non e' una retta.
+       Le due corse qui sopra sono lineari: a meta' giro, meta' corsa. Il
+       manuale Celegon dice un'altra cosa, e si vede nel piano quotato del
+       braccetto BASE (S40): a 45 gradi il canto e' gia' uscito di 277 mm sui
+       392 finali, non di 196. La ragione e' che l'anta non e' appesa a un
+       perno: la tengono un braccetto che gira in arco e un carrello che corre
+       dritto nel binario, e da quei due vincoli esce un seno, non una retta.
+         canto(psi) = QF · sen(psi)
+       Confronto con le quote del manuale: 15 gradi 101,5 · 30 gradi 196,0 ·
+       45 gradi 277,2 · 60 gradi 339,5 · 75 gradi 378,6 · 90 gradi 392.
+       Il giro resta quello morbido di prima; la posizione la si LEGGE
+       dall'angolo, cosi' le due non possono sfasarsi mai. Agli estremi le due
+       leggi coincidono —sen(0)=0 e sen(90)=1— quindi i bersagli restano buoni
+       e l'anta si posa dove si posava. */
+    if (rototrasla()) {
+      const s = Math.sin(Math.abs(doorPivot.rotation.y));
+      doorPivot.position.x = doorHomeX + doorCorsaX * s;
+      doorPivot.position.z = doorHomeZ + doorCorsaZ * s;
     }
   }
 
@@ -1886,6 +2634,10 @@ function applicaQualita(nome) {
   // L'ombra si rifa' da sola al primo giro: basta buttare la mappa vecchia.
   key.shadow.mapSize.set(p.ombra, p.ombra);
   if (key.shadow.map) { key.shadow.map.dispose(); key.shadow.map = null; }
+  /* Anche quella di dietro, che e' una chiave come l'altra: dimenticarla qui
+     la lascerebbe con la mappa della qualita' precedente. */
+  keyDietro.shadow.mapSize.set(p.ombra, p.ombra);
+  if (keyDietro.shadow.map) { keyDietro.shadow.map.dispose(); keyDietro.shadow.map = null; }
 
   /* Il composer si rimonta da zero. Il multisampling sta nel render target e
      il target non si cambia a caldo: si getta e se ne fa un altro. */
@@ -2000,7 +2752,18 @@ function computePreventivo() {
   });
 
   const ape = APERTURE.find((a) => a.id === state.apertura);
-  if (ape.extra) righe.push({ k: `Apertura ${ape.label}`, sub: '', v: ape.extra });
+  /* IL KIT MAGIC NON SI PUO' VENDERE SOPRA GLI 800 di luce muro: lo dice la
+     voce 34 del listino. Prima il configuratore avvisava e lo addebitava lo
+     stesso, cioe' metteva in preventivo un pezzo che la fabbrica non puo'
+     fornire. Si segna a zero e si scrive perche'. */
+  const magicFuoriMisura = state.apertura === 'magic' && state.w > 800;
+  if (ape.extra) {
+    righe.push({
+      k: `Apertura ${ape.label}`,
+      sub: magicFuoriMisura ? `non applicabile: luce ${state.w} mm, il kit arriva a 800` : '',
+      v: magicFuoriMisura ? 0 : ape.extra,
+    });
+  }
 
   const forma = FORME.find((f) => f.id === state.forma);
   const telForma = TELAIO_FORMA[forma.id];
@@ -2192,14 +2955,14 @@ function renderVisoreManiglia() {
     }));
 }
 
-// menu essenze: legni raw + laccati su base universal
+// menu essenze: ogni pastiglia mostra la sua madera vera, ritagliata dal PBR
 const swatchesEl = document.getElementById('swatches');
 const laccatiEl = document.getElementById('laccati');
 
 function renderEssenze() {
   swatchesEl.innerHTML = Object.entries(ESSENZE).map(([k, e]) => `
     <button class="swatch" data-essenza="${k}">
-      <span class="swatch-chip" style="background-image:url('assets/textures/universal/albedo.jpg');background-color:#${e.color.toString(16).padStart(6, '0')};background-blend-mode:multiply"></span>
+      <span class="swatch-chip" style="background-image:url('assets/essenze/${k}.webp');background-size:cover"></span>
       <span class="swatch-label">${e.label}</span>
       <span class="swatch-en">${e.en}</span>
     </button>`).join('');
@@ -2245,7 +3008,13 @@ function renderExtras() {
     .addEventListener('change', (e) => { state.telaio = e.target.value; refreshUI(); });
   refreshCopriSelect();
   fillSelect('aperturaSelect', APERTURE, state.apertura)
-    .addEventListener('change', (e) => { state.apertura = e.target.value; refreshUI(); });
+    .addEventListener('change', (e) => {
+      state.apertura = e.target.value;
+      refreshUI();
+      /* E si rimonta: da adesso l'apertura non e' solo una voce di prezzo,
+         cambia come si muove l'anta e dove siede nel telaio. */
+      loadModel(currentModelKey);
+    });
   fillSelect('formaSelect', FORME, state.forma)
     .addEventListener('change', (e) => { state.forma = e.target.value; refreshUI(); });
   /* Il sopraluce cambia il TELAIO, non solo il prezzo: si rimonta.
@@ -2265,7 +3034,13 @@ function renderExtras() {
     if (state.sopraluce !== 'no') loadModel(currentModelKey);
   });
   fillSelect('capitelloSelect', CAPITELLI, state.capitello)
-    .addEventListener('change', (e) => { state.capitello = e.target.value; refreshUI(); });
+    .addEventListener('change', (e) => {
+      state.capitello = e.target.value;
+      refreshUI();
+      /* Si rimonta: il capitello si vede, e per giunta cambia il coprifilo
+         —con capitello va solo dietro— cosi' la scena non resta vecchia. */
+      loadModel(currentModelKey);
+    });
   fillSelect('serraturaSelect', SERRATURE, state.serratura)
     .addEventListener('change', (e) => { state.serratura = e.target.value; refreshUI(); });
   renderManiglieGrid();
@@ -2513,6 +3288,11 @@ function refreshUI() {
 
   const apNote = [];
   if (state.apertura === 'magic' && state.w > 800) apNote.push('⚠ Il kit MAGIC è disponibile solo per luce muro fino a 800 mm.');
+  /* La voce 20 elenca le altezze in cui il sistema ERGON esiste: HN 1900,
+     1950, 2000, 2050, 2100, 2150, 2200. Fuori di li' non e' una porta piu'
+     cara, e' una porta che non si puo' ordinare. */
+  if (state.apertura === 'ergon' && (state.h < 1900 || state.h > 2200))
+    apNote.push(`⚠ La voce 20 copre le altezze 1900–2200 mm: ${state.h} mm è fuori listino.`);
   if (state.forma !== 'diritta' && (state.w > 900 || state.h > 2100)) apNote.push('⚠ Archi e curve solo fino a 90×210.');
   document.getElementById('aperturaNote').textContent = apNote.join(' ');
 
@@ -2588,11 +3368,33 @@ function refreshUI() {
      disattivata: una scelta che non si puo' fare non deve nemmeno vedersi. */
   const secTipo = document.getElementById('secTipo');
   if (secTipo) {
-    secTipo.hidden = modelloConVetro;
+    secTipo.hidden = false;
     document.querySelectorAll('#tipoPills .pill').forEach((b) =>
       b.classList.toggle('is-active', Number(b.dataset.tipo) === state.tipo));
     const tipoNote = document.getElementById('tipoNote');
-    if (tipoNote && window.T) tipoNote.textContent = window.T(`tipo_n${state.tipo}`);
+    if (tipoNote && window.T) {
+      /* La nota del 2 e del 3 finisce con "il campo si sceglie qui sotto", e
+         su una porta tutta di vetro quella frase indica il vuoto: li' sotto
+         non c'e' niente da scegliere, perche' non c'e' un pannello. Si taglia
+         la coda e resta il nome della modanatura, che e' l'unica cosa che
+         quella porta riceve dal tipo. */
+      const completa = window.T(`tipo_n${state.tipo}`);
+      tipoNote.textContent = (scegliBugna(state.tipo) && !modelloConPannello)
+        ? completa.split('.')[0] + '.'
+        : completa;
+    }
+
+    /* La scelta del campo: si vede solo dove c'e' da scegliere. Sul TIPO 1
+       sparisce invece di restare disattivata, come la sezione intera fa con
+       le porte a vetro. */
+    const bugnaBox = document.getElementById('bugnaBox');
+    if (bugnaBox) {
+      /* Niente scelta del campo se non c'e' un pannello: una porta tutta di
+         vetro non ha dove mettere la bugna, e chiederlo confonderebbe. */
+      bugnaBox.hidden = !scegliBugna(state.tipo) || !modelloConPannello;
+      document.querySelectorAll('#bugnaPills .pill').forEach((b) =>
+        b.classList.toggle('is-active', (b.dataset.bugna === 'si') === state.bugna));
+    }
 
     /* I numeri delle sezioni si riscrivono ogni volta. Sono nel documento
        perche' li' si leggono, ma se una sezione sparisce restano quelli di
@@ -2633,11 +3435,36 @@ function setModello(key) {
 // modello: menu a tendina raggruppato per linea
 const modelloSelect = document.getElementById('modelloSelect');
 
+/* MODELLI FUORI VETRINA, per ora.
+   Il render va ritoccato e finche' non lo e' il cliente non deve poterli
+   scegliere. NON si tolgono dal catalogo: la loro scheda resta intera in
+   js/catalogo.js —listino compreso, che li' dentro il prezzo e' un campo
+   della scheda e non un file a parte— cosi' i preventivi gia' fatti
+   continuano a calcolare e il giorno che il disegno e' pronto basta togliere
+   il nome da questa lista.
+   I .json dei tracciati stanno in ~/Documents/JSON DOOR.
+
+   QUINDICI SONO TORNATE: siena, roma, enna, firenze, faenza, mantova, pisa,
+   latina, piacenza, catania, pausania, newengland, timesquare, potenza e
+   matera hanno il tracciato ritoccato e sono di nuovo in vetrina. Resta solo
+   la barletta, che non e' un ritocco: va ridisegnata da capo. */
+const MODELLI_NASCOSTI = new Set([
+  'barletta',
+]);
+
+/** I modelli che il cliente puo' davvero scegliere. */
+const modelliVisibili = () =>
+  Object.entries(MODELLI).filter(([k]) => !MODELLI_NASCOSTI.has(k));
+
 function renderModelli() {
   const groups = { Base: [], 100: [] };
-  for (const [k, m] of Object.entries(MODELLI)) (groups[m.linea] || (groups[m.linea] = [])).push([k, m]);
-  const byId = (a, b) => a[1].id - b[1].id;
-  const opt = ([k, m]) => `<option value="${k}">${m.label} · ID ${m.id}</option>`;
+  for (const [k, m] of modelliVisibili()) (groups[m.linea] || (groups[m.linea] = [])).push([k, m]);
+  /* Chi non ha scheda di listino non ha ID, e non se ne inventa uno: va in
+     fondo al suo gruppo e nell'etichetta non compare nessun numero. Con
+     `a.id - b.id` secco sarebbe uscito NaN e l'ordine del selettore dipendeva
+     dal caso. */
+  const byId = (a, b) => (a[1].id ?? 1e9) - (b[1].id ?? 1e9);
+  const opt = ([k, m]) => `<option value="${k}">${m.label}${m.id ? ` · ID ${m.id}` : ''}</option>`;
   modelloSelect.innerHTML = Object.entries(groups)
     .filter(([, arr]) => arr.length)
     .map(([linea, arr]) => `<optgroup label="Linea ${linea}">${arr.sort(byId).map(opt).join('')}</optgroup>`)
@@ -2668,8 +3495,24 @@ document.querySelectorAll('#pills .pill').forEach((btn) => {
 document.querySelectorAll('#tipoPills .pill').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tipo = Number(btn.dataset.tipo);
-    if (tipo === state.tipo || modelloConVetro) return;
+    if (tipo === state.tipo) return;
     state.tipo = tipo;
+    /* Cambiando tipo il campo torna al suo valore di partenza: il 2 con la
+       bugna, il 3 liscio, che e' come li conosce chi gia' usava il pannello.
+       Da li' il cliente lo cambia se vuole. */
+    state.bugna = BUGNA_DI_PARTENZA[tipo];
+    refreshUI();
+    loadModel(state.modello);
+  });
+});
+
+/* il CAMPO: bugna si o no. Come il tipo, cambia la geometria e la porta si
+   ritesse; non basta ridipingerla. */
+document.querySelectorAll('#bugnaPills .pill').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const con = btn.dataset.bugna === 'si';
+    if (con === state.bugna || !scegliBugna(state.tipo) || !modelloConPannello) return;
+    state.bugna = con;
     refreshUI();
     loadModel(state.modello);
   });
@@ -2727,7 +3570,9 @@ function datiPreventivo(cliente, rif) {
   const config = [
     ['Essenza', essenzaLabel()],
     // il tipo va scritto: e' la porta che si costruisce, non un dettaglio
-    ...(modelloConVetro ? [] : [['Tipo', TIPO_LABEL[state.tipo]]]),
+    ['Tipo', TIPO_LABEL[state.tipo]
+      + (scegliBugna(state.tipo) && modelloConPannello
+        ? (state.bugna ? ' · con bugna' : ' · campo liscio') : '')],
     ['Finitura', FINITURA_LABEL[state.finitura]],
     ['Misure luce', `${state.w} × ${state.h} mm`,
       `${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`],
@@ -3021,7 +3866,13 @@ document.addEventListener('linguacambiata', () => {
    e' uscito dal catalogo, e la pagina moriva alla prima riga che ne leggeva il
    listino. Meglio non fidarsi nemmeno del valore scritto qui sopra: se non c'e'
    si prende la prima porta del catalogo, qualunque sia. */
-if (!MODELLI[state.modello]) state.modello = Object.keys(MODELLI)[0];
+/* ...e deve essere anche VISIBILE. 'siena' e' il valore scritto in cima, ed
+   e' fra quelli ritirati: senza questo controllo la pagina partiva su una
+   porta che non compare nel menu, e il selettore restava vuoto. */
+if (!MODELLI[state.modello] || MODELLI_NASCOSTI.has(state.modello)) {
+  const primo = modelliVisibili()[0];
+  if (primo) state.modello = primo[0];
+}
 
 renderModelli();
 renderEssenze();
@@ -3029,3 +3880,27 @@ renderExtras();
 setManiglia(state.maniglia);
 refreshUI();
 loadModel(state.modello);
+
+
+/* ============================================================
+   ASA DE DEPURACION
+   Un solo objeto en window para poder MEDIR desde la consola —el color que
+   sale en pantalla, la repeticion de una textura, la rugosidad real— en vez
+   de mirar la puerta y opinar. No lo usa la aplicacion: si se borra, no se
+   rompe nada. El escaparate tiene el suyo igual.
+   ============================================================ */
+window.__tosco = {
+  /* Por GETTER y no por valor. `model` y `scene` se reasignan cuando entra el
+     GLB, asi que copiarlos aqui guardaba el null del arranque: el asa decia
+     que no habia puerta cuando la habia. */
+  get scene() { return scene; },
+  get renderer() { return renderer; },
+  get camera() { return camera; },
+  get woodMat() { return woodMat; },
+  get handleMat() { return handleMat; },
+  get state() { return state; },
+  get model() { return model; },
+  veta,
+  VENATURE,
+  ESSENZE,
+};

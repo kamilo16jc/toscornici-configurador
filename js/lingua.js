@@ -141,17 +141,20 @@
     tipo_1: { it: 'Tipo 1', en: 'Type 1' },
     tipo_2: { it: 'Tipo 2', en: 'Type 2' },
     tipo_3: { it: 'Tipo 3', en: 'Type 3' },
+    sez_bugna: { it: 'Campo', en: 'Panel field' },
+    bugna_si: { it: 'Con bugna', en: 'Raised panel' },
+    bugna_no: { it: 'Campo liscio', en: 'Flat panel' },
     tipo_n1: {
-      it: 'Bugna rialzata con modanatura a doppio gradino.',
-      en: 'Raised panel with a double-step moulding.',
+      it: 'Modanatura a gola, con bugna rialzata.',
+      en: 'Ogee moulding, with a raised panel.',
     },
     tipo_n2: {
-      it: 'Bugna rialzata con modanatura a mezza canna.',
-      en: 'Raised panel with a cove moulding.',
+      it: 'Modanatura ad astragalo (tondino). Il campo si sceglie qui sotto.',
+      en: 'Astragal (bead) moulding. Choose the panel field below.',
     },
     tipo_n3: {
-      it: 'Pannello liscio, a filo, con modanatura a spigolo vivo.',
-      en: 'Flat flush panel with a square-edge moulding.',
+      it: 'Modanatura a smusso, 45 gradi. Il campo si sceglie qui sotto.',
+      en: 'Chamfered moulding, 45 degrees. Choose the panel field below.',
     },
     tipo_vetro: {
       it: 'I modelli con vetro hanno una finitura propria: il tipo non si applica.',

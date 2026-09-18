@@ -181,7 +181,7 @@ export function dibujosDe(perfil, medida) {
  * En un paquete de listado 90/70, el 90 va en la cara de la puerta y el 70 en
  * la otra: es como se monta de verdad.
  */
-export async function montarCoprifilo(perfil, medida, vano, muro, material, base) {
+export async function montarCoprifilo(perfil, medida, vano, muro, material, base, opciones = {}) {
   const slugs = dibujosDe(perfil, medida);
   if (!slugs.length) return null;
 
@@ -191,10 +191,19 @@ export async function montarCoprifilo(perfil, medida, vano, muro, material, base
   /* El coprifilo apoya en la CARA DEL MURO, no en el filo interior del ala.
      Son dos planos distintos, separados justo lo que mide el pie: el pie entra
      en el vano y salta por encima del forro, y el dorso se queda fuera. */
-  const caras = [
-    { z: muro.z1, sentido: 1 },
-    { z: muro.z0, sentido: -1 },
+  /* Las dos caras del muro, salvo que se pida una sola.
+     Con CAPITELLO puesto, el frente ya lo remata el capitello: el coprifilo
+     iria debajo y se verian dos molduras montadas una sobre otra, que en la
+     pared no pasa. Se monta entonces solo el ESPALDAR. Lo decide quien llama,
+     no este modulo: aqui solo se sabe montar. */
+  const todas = [
+    { z: muro.z1, sentido: 1, cara: 'frente' },
+    { z: muro.z0, sentido: -1, cara: 'espaldar' },
   ];
+  const caras = opciones.soloCara
+    ? todas.filter((c) => c.cara === opciones.soloCara)
+    : todas;
+  if (!caras.length) return null;
 
   caras.forEach((c, i) => {
     const sec = secciones[Math.min(i, secciones.length - 1)];
