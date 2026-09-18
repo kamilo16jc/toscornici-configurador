@@ -1,0 +1,35 @@
+MATERIAL PBR — ROBLE EUROPEO CRUDO PARA THREE.JS
+
+Especie: roble europeo (Quercus robur / Quercus petraea, European oak/rovere).
+Superficie: recién lijada, cruda y mate; corte RIFT, fibra vertical de arriba abajo.
+Escala real: cada baldosa cubre exactamente 600 × 600 mm. Resolución 2048 × 2048 px; 1 px = 0.292969 mm, 1 mm = 3.4133 px.
+Una tira de montante de 95 mm ocupa 95/600 = 0.15833 de baldosa, equivalente a 324 px. Una puerta de 840 × 2120 mm ocupa 1.40 × 3.5333 baldosas con UV continuo; cada pieza de carpintería debe mapearse por separado para orientar la fibra.
+
+Anillos medidos en cinco zonas de fibra recta: media 2.199 mm, desviación estándar 0.718 mm; 1643 intervalos detectados en el rango 4–12 px especificado.
+Specchiature: 3.671 % de superficie de la máscara; 2013 figuras medidas, tamaño medio 8.638 × 0.988 mm (longitud × anchura). Se conservaron posiciones de los radios claros de la fuente, se reconstruyó la madera subyacente y se redibujaron esos radios por código; la máscara está incluida como archivo auxiliar.
+Inspección visual de la fuente: sin nudos, grietas, manchas de tanino, albura, arcos de catedral ni zonas en espejo.
+
+PASO 1: color base creado con la herramienta integrada de imágenes de Codex. Resolución nativa REAL del generador: 1254 × 1254 px. Reescalado: SÍ, Lanczos a 2048 × 2048 px. Solo el color base procede del generador; color, poros, specchiature, cierre periódico, mapas y vistas se corrigieron o derivaron con Python.
+
+Espacios de color:
+- BaseColor_sRGB_2048.png: RGB 8 bits, sRGB con perfil ICC. En three.js usar texture.colorSpace = THREE.SRGBColorSpace.
+- Normal_OpenGL_2048.png: RGB 8 bits, datos lineales, tangente OpenGL +Y (verde hacia arriba), dominante RGB(128,128,255). Normal calculada del height; la pendiente se comprime suavemente con tanh y límite asintótico 11.5 grados para mantener visibles los poros sin laderas extremas.
+- Roughness_2048.png: gris 8 bits, lineal. Zona tardía ≈0.68; banda porosa ≈0.74; surcos ≈0.78; specchiature ≈0.575 (más brillantes).
+- Height_16bit_2048.png: gris 16 bits, lineal. Valor 0.5 = nivel físico medio. Cada unidad completa de mapa equivale a 0.5 mm; los poros llegan hasta ~0.20 mm por debajo del nivel, banda ~0.04 mm por debajo de la zona tardía. El relieve final medido va de -0.2000 a 0.0346 mm; amplitud real medida 0.2346 mm.
+- SpecchiatureMask_2048.png: máscara auxiliar gris 8 bits, lineal. Se usa para roughness y para excluir los radios del height: las specchiature NO producen bultos ni surcos propios en height.
+- No se generó AO ni metallic. Metallic = 0 para la madera.
+
+Métricas medidas sobre BaseColor_sRGB_2048.png final y cuantizado:
+- Color medio RGB (195.00, 168.00, 127.02), hex #C3A87F.
+- Saturación HSV del color medio 0.3486; tono HSV 36.17 grados.
+- Desviación estándar de luminancia Y' Rec.709: 13.901 / 255.
+- Separación de anillos 2.199 ± 0.718 mm.
+- Cobertura de specchiature 3.671 %.
+- COSTURA X: diferencia borde 5.972, diferencia vecino interior 6.204, COCIENTE 0.9627 (aceptación 0.90–1.10).
+- COSTURA Y: diferencia borde 1.831, diferencia vecino interior 1.836, COCIENTE 0.9971 (aceptación 0.90–1.10).
+- Normal: inclinación media 4.990 grados; percentil 95 11.425 grados.
+- Comprobación del signo OpenGL: correlación rojo-centro con pendiente del height por COLUMNAS = -0.8507 (NEGATIVA); correlación verde-centro con pendiente del height por FILAS = 0.8376 (POSITIVA). Los signos son OPUESTOS.
+
+Los bordes se tratan como vecinos periódicos con derivadas y diferencias medidas, sin copiar ni duplicar la última fila o columna. Todos los mapas mantienen exactamente las mismas coordenadas del color base final. En three.js usar RepeatWrapping en ambos ejes. Para displacement geométrico con metros, un mapa unitario equivale a displacementScale = 0.0005 y displacementBias = -0.00025; ajustar según la malla de la puerta.
+
+Prompt de color base: escaneo ortográfico plano de Quercus robur/petraea crudo, corte rift, fibra vertical recta, anillos estrechos irregulares, poros en bandas, specchiature dispersas de color claro pero sin brillo horneado, sin nudos, grietas, tanino, albura, arcos ni reflejos de foco.

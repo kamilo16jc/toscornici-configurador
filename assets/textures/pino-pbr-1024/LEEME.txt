@@ -1,0 +1,100 @@
+PINO CRUDO — MATERIAL PBR 600 × 600 mm / 2048 × 2048 px
+
+ESPECIE Y ESCALA
+Pino crudo (raw pine), lijado, mate, sin barniz ni tinte. Material sintético generado con image_gen: no es un escaneo ni una medición de madera real.
+Cobertura de UNA baldosa: 600 × 600 mm. Dirección de veta: vertical.
+Resolución de los cuatro mapas: 2048 × 2048. Escala nominal: 3.413333 px/mm.
+La escala física se debe asignar mediante UV/repetición en el render; los PNG no la imponen por sí solos.
+Separación media estimada entre anillos: 3.45 mm; mediana 3.22 mm. Medida por detección de líneas en cuatro franjas de veta recta. Ancho mediano de línea oscura a media prominencia: aproximadamente 3.4 px, equivalente a 1.0 mm. Estas medidas varían localmente, especialmente alrededor de los ojos.
+
+OJOS Y NUDOS
+11 grupos de ojos/arcos identificados visualmente, incluyendo los que envuelven los dos nudos medianos.
+8 nudos: 6 pequeños y 2 medianos. Los diámetros siguientes corresponden al núcleo, no a la totalidad de anillos que lo rodean.
+Las medidas anatómicas son estimaciones por inspección de límites visibles; la transición exterior de los arcos es gradual. Coordenadas desde la esquina superior izquierda.
+NUDOS:
+  N1: centro (128.6, 98.0) mm; núcleo aprox. 5.9 × 6.0 mm; diámetro máximo 6.0 mm.
+  N2: centro (390.3, 76.1) mm; núcleo aprox. 6.9 × 7.0 mm; diámetro máximo 7.0 mm.
+  N3: centro (256.3, 213.9) mm; núcleo aprox. 18.7 × 14.9 mm; diámetro máximo 18.7 mm.
+  N4: centro (461.5, 251.7) mm; núcleo aprox. 6.4 × 6.5 mm; diámetro máximo 6.5 mm.
+  N5: centro (111.0, 401.5) mm; núcleo aprox. 6.4 × 6.5 mm; diámetro máximo 6.5 mm.
+  N6: centro (380.5, 414.9) mm; núcleo aprox. 17.2 × 20.9 mm; diámetro máximo 20.9 mm.
+  N7: centro (226.4, 529.9) mm; núcleo aprox. 6.4 × 6.5 mm; diámetro máximo 6.5 mm.
+  N8: centro (509.7, 502.0) mm; núcleo aprox. 7.9 × 8.0 mm; diámetro máximo 8.0 mm.
+Separación mínima entre centros: 155.7 mm. Distancia mínima estimada desde un núcleo hasta un borde: 66.9 mm.
+OJOS (ancho y largo; no se usa diámetro circular para estas figuras alargadas):
+  O1: ancho aprox. 20.1 mm; largo vertical 97.5 mm.
+  O2: ancho aprox. 24.1 mm; largo vertical 99.5 mm.
+  O3: ancho aprox. 25.0 mm; largo vertical 94.0 mm.
+  O4: ancho aprox. 31.9 mm; largo vertical 74.6 mm.
+  O5: ancho aprox. 26.0 mm; largo vertical 126.9 mm.
+  O6: ancho aprox. 21.1 mm; largo vertical 106.5 mm.
+  O7: ancho aprox. 27.0 mm; largo vertical 80.1 mm.
+  O8: ancho aprox. 23.6 mm; largo vertical 119.4 mm.
+  O9: ancho aprox. 22.1 mm; largo vertical 85.6 mm.
+  O10: ancho aprox. 33.9 mm; largo vertical 95.5 mm.
+  O11: ancho aprox. 19.6 mm; largo vertical 76.6 mm.
+
+GENERACIÓN Y CORRECCIÓN
+Resolución NATIVA real del generador: 1254 × 1254 px. Sí hubo REESCALADO hasta 2048 × 2048.
+Se usó la herramienta de imágenes únicamente para el color base; Python realizó la corrección y los mapas derivados.
+Corrección de color sin desplazar elementos: normalización de variaciones amplias, ajuste HSV y contraste con protección de sombras.
+Repetición: solapamiento suave de franjas de borde sin nudos, remuestreo periódico y duplicación de la fila/columna de cierre para igualdad exacta de extremos. Se conserva una única baldosa corregida como origen de todos los mapas.
+No se rotó, regeneró ni recortó el dibujo entre mapas. La única extracción es la vista del montante.
+El reescalado no agrega detalle nativo. Los ojos y nudos se repiten cada 600 mm: la continuidad de bordes no elimina la repetición del motivo.
+
+MAPAS Y ESPACIOS DE COLOR
+BaseColor_sRGB_2048.png: PNG RGB 8 bits, sRGB, color base.
+Normal_OpenGL_2048.png: PNG RGB 8 bits, datos lineales, sin transformación sRGB. Normal tangente OpenGL +Y: verde positivo hacia arriba en UV.
+Roughness_2048.png: PNG gris 8 bits, datos lineales. Madera ordinaria aprox. 0.70–0.75; bandas de verano aproximadamente 0.03 menos rugosas. Centros de nudos aproximadamente 0.625–0.65. Rango global exportado: 159–192 / 255.
+Height_16bit_2048.png: PNG gris 16 bits, datos lineales. Gris 0.5 = plano de referencia. Altura derivada mediante paso alto de la luminancia final; líneas oscuras de verano ligeramente altas, núcleos casi a ras. Amplitud completa de negro a blanco: 0.3 mm; altura física = (valor - 0.5) × 0.3 mm.
+Los mapas son estimaciones artísticas físicamente calibradas en escala, no medidas del material fotografiado.
+No se incluyen mapas AO ni metallic.
+
+MÉTRICAS MEDIDAS SOBRE LOS PNG FINALES
+Color medio sRGB: #E2B67A.
+Saturación media HSV: 0.459996.
+Tono medio HSV: 34.503 grados.
+Desviación de luminancia: 15.0012 sobre 255.
+Definición de luminancia para esta métrica: Y'=0.2126 R'+0.7152 G'+0.0722 B' sobre valores sRGB codificados, sin conversión a luz lineal.
+Diferencia media absoluta izquierda/derecha: 0.0000 / 255.
+Diferencia media absoluta arriba/abajo: 0.0000 / 255.
+Las cuatro texturas tienen bordes opuestos idénticos, incluyendo esquinas.
+Normal calculada antes de codificar: inclinación media 4.448°; percentil 95 11.299°.
+Normal exportada, decodificada y renormalizada: media 4.453°; percentil 95 11.102°.
+Las inclinaciones se calculan respecto de la normal plana (0,0,1).
+Se verificaron dimensiones, profundidad de bits, continuidad, rangos, integridad del ZIP y las vistas. No se ha probado este paquete en tu escena de three.js.
+
+VISTAS
+Vista_mosaico_2x2.jpg: 4096 × 4096 px, cuatro copias del color base; representa 1200 × 1200 mm.
+Vista_montante_95mm.jpg: recorte de 324 × 2048 px desde x=740, sin escalar ni estirar. Ancho físico exacto por redondeo de píxeles: 94.921875 mm, aproximadamente 95 mm. Alto: 600 mm. Muestra un segmento del montante, no toda su longitud de 2120 mm.
+
+AJUSTES PARA THREE.JS
+BaseColor: texture.colorSpace = THREE.SRGBColorSpace.
+Normal, Roughness y Height: texture.colorSpace = THREE.NoColorSpace; son datos, no colores.
+Material blanco; metalness=0; roughness=1 cuando se usa roughnessMap, porque el valor escalar multiplica al mapa. Normal tangente, normalScale=(1,1).
+Aplicar RepeatWrapping y la misma escala, orientación y desplazamiento UV a los cuatro mapas.
+Si cada cara tiene UV 0–1, un montante de 95 × 2120 mm requiere repeat=(95/600,2120/600)=(0.158333,3.533333). Una cara de 840 × 2120 mm requiere repeat=(1.4,3.533333). Ajustar según las UV reales de la geometría.
+Desplazamiento opcional en una escena expresada en metros: displacementScale=0.0003; displacementBias=-0.00015. En milímetros: 0.3 y -0.15. El desplazamiento necesita subdivisiones suficientes.
+El height se conserva en PNG de 16 bits. Verifica que el flujo de decodificación y subida a GPU de tu aplicación conserve los 16 bits si necesitas esa precisión.
+Referencia oficial: https://threejs.org/docs/pages/MeshStandardMaterial.html
+
+PROMPTS UTILIZADOS CON LA HERRAMIENTA INTEGRADA
+Generador integrado image_gen. No se usó otro generador.
+
+PROMPT INICIAL
+Create one photorealistic PBR BASE COLOR / ALBEDO surface scan of RAW NATURAL PINE for interior door stiles, at the highest available NATIVE square resolution, preferably 2048x2048. The square covers 600mm x 600mm physical wood, full frame, grain strictly VERTICAL. This is a wide 60cm material sample, not a closeup. Sanded raw softwood, matte, no varnish or stain.
+ANATOMY: pine has NO oak pores and NO visible medullary rays. Dense fine growth rings: wide pale springwood bands separated by thin darker latewood lines, slightly irregular natural spacing 2-4mm = 7-14 pixels at 2048; approx 200 growth ring lines across full width. Dark line width 0.5-1mm = 2-3 pixels, crisp one side and feathered on other.
+Include EXACTLY TEN small NARROW elongated vertical eyes/cathedrals of different sizes, closed elliptical loops and nested U/V arcs made from the same fine curving growth rings, each 60-150mm tall and only 10-35mm wide (205-510px tall and 34-120px wide at 2048). Distribute irregularly throughout the surface with straight fine-grained areas between. No huge flames or broad arches.
+Include EXACTLY EIGHT distinct knots: SIX tiny pin knots 3-8mm diameter (10-27px at 2048), and TWO medium knots 15-22mm diameter (51-75px at 2048). Count dark CORE size separately from surrounding grain. Each dark oval knot has 3-8 fine concentric rings and flowing grain diverted around it. One medium knot has one hairline core crack. Knots irregularly spaced, NOT in rows/columns, centers at least 60mm apart, and ALL knots and all eyes at least 40mm inside outer edges. No large knots. Suggested irregular knot centers in fractional UV/image positions: (.20,.17),(.64,.13),(.41,.37),(.79,.44),(.17,.65),(.62,.69),(.35,.86),(.82,.84); two medium cores only at (.41,.37) and (.62,.69), all others tiny. Eye positions should vary, not all attached to a knot.
+COLOR: pale springwood approx #E5BB7E, thin latewood #BA8148, small knot cores #8B5A2B, knot rings #A8703C. Warm pale honey BEIGE, not orange. Mean HSV saturation 0.40-0.50, hue 32-38 degrees, gentle luminance contrast standard deviation 12-18/255. No broad light/dark patches, color uniform across full surface.
+CAPTURE: perfect flat frontal ORTHOGRAPHIC scan, diffuse uniform light. Pure intrinsic base color ONLY. NO shadows, highlights, reflections, baked AO, vignette, perspective, raised relief, decorative carving, pores, stains, plank seams.
+TILEABILITY: periodic SEAMLESS on both axes, continuous ring paths and color at left/right and top/bottom edges. Edges have only fine nearly straight vertical grain, NO knots or eyes near boundaries.
+Output ONLY one square texture. No text, logos, watermark, borders, collage or rendered object.
+
+PROMPT DE CORRECCIÓN DE OJOS
+Edit this pine albedo surface while retaining its fine VERTICAL growth rings, honey beige raw-pine palette and all EIGHT existing knot cores at the same positions. Keep the two medium knots and six pin knots, their surrounding fine rings and slight core hairlines.
+CORRECT THE EYES/CATHEDRAL SCALE: the current eyes are much too long. Replace the elongated figures with exactly TEN compact NARROW eyes of varied size, each only 10-23% of image height and 2-5% of image width, with most 12-17% tall and 2-3% wide. Treat each entire nested group of arcs, from outermost beginning to outermost end, as one eye. They must be discrete, short, narrow islands of gently curving nested growth rings with long stretches of nearly straight grain between them. Several eyes can surround knots, other eyes have no knot. They must NOT merge into continuous towering figures.
+Keep ALL eyes entirely inside the central safe area: at least 8% of image height from TOP and BOTTOM, and 8% of width from LEFT and RIGHT. The topmost 8% and bottommost 8% must contain ONLY straight fine vertical grain, no curved arches entering/leaving the image. This safe border is critical for tiling.
+Keep eight knot core centers at the existing locations, irregular and separated, tiny pin knots 0.5-1.3% image width, two medium knots only 2-3.5% image width. Dark cores surrounded by 3-8 thin concentric growth rings; local flows vertically elongated. No holes, heavy relief or oak pores.
+Maintain approximately 200 thin irregular vertical growth rings across width. Pale earlywood and narrow tan latewood with one sharper side. Flat color scan, no shaded relief, no highlights, no shadows or reflections. Very even light honey-beige color. One square base-color texture only at highest native resolution, preferably 2048x2048. Seamless both axes, no text or border.
+

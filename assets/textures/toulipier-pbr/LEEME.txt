@@ -1,0 +1,87 @@
+TOULIPIER CRUDO — PBR 600 × 600 mm / 2048 × 2048 px
+
+ESPECIE Y CARÁCTER
+Toulipier o tulipero americano: Liriodendron tulipifera, American tulipwood / yellow poplar. No corresponde al Brazilian tulipwood, Dalbergia decipularis.
+Representación sintética de madera cruda lijada, mate, con fibra fina vertical y tono crema tostado. No es un escaneo físico de una pieza real ni un material medido en laboratorio.
+Inspección visual del color base y las vistas: sin nudos, sin vetas minerales grises/verdes/azules/moradas y sin arcos, ojos ni catedrales. Sin juntas de tablas ni poros abiertos representados. La microtextura es fibrosa y tenue.
+
+ESCALA REAL
+UNA baldosa cubre 600 × 600 mm. Todos los mapas: 2048 × 2048 px. Escala nominal: 3.413333 px/mm.
+Dirección de la fibra: vertical, arriba-abajo.
+Se debe asignar esta cobertura mediante UV en el render: un PNG por sí solo no fija la escala física.
+Separación media medida entre bandas: 3.293 mm. Es una estimación de señal, porque las bandas del toulipier tienen límites difusos, no anillos oscuros nítidos.
+Método: promediar franjas de 17 filas del Y' sRGB, suavizar horizontalmente con sigma 0.7 px y detectar máximos de bandas claras con prominencia mínima de 2/255 y separación de detección de 7 px. El espaciado informado se obtiene de las distancias detectadas, sin imponer 2.5–3.5 mm a cada intervalo.
+  Fila 128: 188 máximos de banda; separación media 3.158 mm; mediana 2.930 mm.
+  Fila 512: 181 máximos de banda; separación media 3.306 mm; mediana 2.930 mm.
+  Fila 1024: 179 máximos de banda; separación media 3.346 mm; mediana 2.930 mm.
+  Fila 1536: 178 máximos de banda; separación media 3.375 mm; mediana 3.223 mm.
+  Fila 1900: 182 máximos de banda; separación media 3.281 mm; mediana 2.930 mm.
+Las distancias individuales varían; el valor medio resume cinco franjas distribuidas por la superficie.
+
+ORIGEN Y PROCESO
+Generador del color base: herramienta integrada image_gen.
+Resolución NATIVA real: 1254 × 1254 px. Sí hubo REESCALADO a 2048 × 2048 px.
+Python ajustó color, contraste, densidad espacial de la fibra y repetición, y calculó todos los mapas derivados. Se reutilizó y remuestreó la fibra existente para calibrar su escala; no se dibujaron fibras nuevas con código.
+Corrección de color: normalización de variaciones amplias y ajuste HSV/luminancia, sin mover el dibujo durante este ajuste.
+Periodicidad: solapamiento suave de las franjas exteriores, extensión del patrón y remuestreo con vecinos periódicos. Se eligió un corte cíclico ordinario por sus diferencias de vecinos y curvatura. El color base final contiene 2048 muestras distintas por período.
+NO se duplicó la última columna ni la última fila. La columna 2047 es vecina periódica de la 0; la fila 2047 es vecina periódica de la 0. No hay una fila o columna de cierre añadida.
+Todos los mapas derivados parten del MISMO color base final cuantizado en 8 bits. Desde ese punto no hay rotaciones, desplazamientos, recortes ni regeneraciones entre mapas. Los filtros y las derivadas envuelven los bordes periódicamente.
+El reescalado no añade resolución nativa. Este paquete no se ha probado dentro de tu escena de three.js.
+
+MAPAS Y ESPACIOS DE COLOR
+BaseColor_sRGB_2048.png: RGB 8 bits, sRGB. Usar como color base.
+Normal_OpenGL_2048.png: RGB 8 bits, datos lineales / sin transformación de color. Normal tangente OpenGL +Y, verde hacia arriba en UV. Color plano de referencia: RGB(128,128,255).
+Roughness_2048.png: gris 8 bits, datos lineales. Rango exportado 178–184 / 255, equivalente a 0.6980–0.7216. Variación muy pequeña siguiendo la fibra, aproximadamente 0.71 ± 0.012.
+Height_16bit_2048.png: gris 16 bits, datos lineales. Paso alto de luminancia para quitar manchas amplias; gris 0.5 = nivel medio. Amplitud total de negro a blanco: 0.15 mm. Altura física = (valor - 0.5) × 0.15 mm.
+Normal derivada del height exportado de 16 bits, con separación física de píxeles de 600/2048 mm. Inclinación media del PNG decodificado y renormalizado: 2.237°. Percentil 95: 5.648°. Medidas respecto de la normal plana (0,0,1).
+Los valores de altura y rugosidad son estimaciones artísticas; no representan una medición de una muestra real.
+No se incluyen AO ni metallic.
+
+MÉTRICAS DEL COLOR BASE FINAL
+Color medio sRGB: #CFB384.
+Saturación media HSV: 0.362298.
+Tono medio HSV: 37.600 grados.
+Desviación de luminancia: 8.0029 sobre 255.
+Se usa Y'=0.2126 R'+0.7152 G'+0.0722 B' sobre valores sRGB codificados, sin conversión a luz lineal, para expresar el contraste en unidades de 8 bits.
+Máxima desviación amplia de tono: 0.618% respecto de la media, medida con filtro gaussiano de sigma 65 px vertical y 45 px horizontal.
+
+COMPARACIÓN DE COSTURAS CON VECINOS INTERIORES
+Diferencia media absoluta por canal RGB en escala 0–255:
+  Izquierda/derecha: 4.693848; vecinos interiores horizontales: 4.627499; cociente: 1.014338.
+  Arriba/abajo: 0.789876; vecinos interiores verticales: 0.786934; cociente: 1.003739.
+Un cociente cercano a 1 indica que el salto en la unión tiene magnitud parecida al de los vecinos interiores. No se pretende que la diferencia sea cero: son muestras vecinas distintas, no copias.
+Cocientes correspondientes en los cuatro mapas:
+  BaseColor_sRGB_2048.png: unión X/interior X = 1.0143; unión Y/interior Y = 1.0037.
+  Normal_OpenGL_2048.png: unión X/interior X = 1.1025; unión Y/interior Y = 0.9859.
+  Height_16bit_2048.png: unión X/interior X = 1.0123; unión Y/interior Y = 0.9966.
+  Roughness_2048.png: unión X/interior X = 1.0113; unión Y/interior Y = 1.0350.
+Se verificó explícitamente que ningún mapa tiene columnas extremas idénticas ni filas extremas idénticas. La continuidad periódica se construye con filtros envolventes y se comprueba además en la vista 2×2.
+
+VISTAS
+Vista_mosaico_2x2.jpg: 4096 × 4096 px, cuatro copias del color base, cobertura de 1200 × 1200 mm. La compresión JPG puede introducir diferencias mínimas de visualización; las métricas se calculan en los PNG.
+Vista_montante_95mm.jpg: 324 × 2048 px, recorte desde x=850 sin deformar. Por redondeo de píxeles mide 94.921875 × 600 mm, aproximadamente 95 × 600 mm; muestra un segmento del montante, no los 2120 mm completos de altura.
+
+USO EN THREE.JS
+BaseColor: THREE.SRGBColorSpace. Normal, Roughness y Height: THREE.NoColorSpace.
+Material blanco, metalness=0, roughness=1 al usar roughnessMap, normalScale=(1,1), normal tangente.
+Usar RepeatWrapping y las mismas transformaciones UV en todos los mapas.
+Si cada cara tiene UV 0–1, un montante de 95 × 2120 mm requiere repeat=(0.158333,3.533333). Una cara de 840 × 2120 mm requiere repeat=(1.4,3.533333). Ajustar según las UV reales de tu geometría.
+Desplazamiento opcional en escena en metros: displacementScale=0.00015 y displacementBias=-0.000075. En milímetros: 0.15 y -0.075. Requiere suficientes subdivisiones. Comprobar que la carga del height conserva los 16 bits si se necesita esa precisión.
+Referencia oficial de materiales: https://threejs.org/docs/pages/MeshStandardMaterial.html
+
+PROMPTS DEL COLOR BASE
+Herramienta: image_gen integrada.
+
+PROMPT INICIAL
+Use case: photorealistic-natural. Generate ONE PBR base color / albedo texture of unfinished AMERICAN TULIPWOOD / YELLOW POPLAR, scientific species Liriodendron tulipifera, called toulipier. This is NOT Brazilian tulipwood. Native resolution: highest square resolution available, preferably 2048x2048. The single square represents exactly 600mm x 600mm of real sanded wood.
+APPEARANCE: extremely calm, straight uniform VERTICAL fibers top to bottom. Sanded matte raw wood, slightly fuzzy homogeneous very fine fibers. Diffuse-porous wood, microscopic pores 40-120 microns DO NOT appear as visible holes, dots or grooves. No oak pores. No pine-style dark latewood lines.
+FIBER SCALE: roughly 200 extremely soft narrow fiber band cycles across full width (one cycle every 2.5-3.5mm, 8-12 pixels at final 2048). Very many fine bands, but very LOW contrast, broad blurred band transitions. NOT crisp stripes, not a barcode, not corduroy, not grooves. Growth-ring boundaries are tiny almost imperceptible SLIGHTLY LIGHTER one-pixel hairlines, never dark lines. Nearly straight vertical grain with minute natural waviness only 1-2mm deviation over lengths of at least 100mm. All grain stays parallel to vertical axis. This is a 60cm-wide scan, not a magnified macro image with thick grain.
+COLOR: cream light toasted beige around #D8BE8E, slightly darker subdued fibers around #C4A676, mean color #CFB384. Mean HSV saturation .32-.40, hue 36-42 degrees, luminance standard deviation 6-10 of 255. NO orange, pink, red, gray, blue, purple, or visibly green hues. Pale neutral warm beige, no varnished appearance. At most very soft broad vertical tonal drift within +/-3% luminance; otherwise spatially homogeneous, no large patches.
+EXCLUSIONS: ZERO knots, zero mineral streaks, no rainbow/calico poplar, no cathedrals, flames, eyes, dramatic figuring, dark veins, cracks, resin pockets, plank seams, stains or marks.
+CAPTURE: completely frontal orthographic flat scan. Pure intrinsic surface albedo under uniform diffuse light. NO shadows, directional light, specular reflections, highlights, baked occlusion, vignette, perspective or relief shading.
+TILING: genuinely seamless periodic on BOTH axes. Top and bottom fibers align naturally, left and right grain density and color match. No distinctive repeated features. Edges are adjacent natural samples, not decorative borders.
+Deliver ONLY the square color texture, no text, labels, watermark, frame, collage or rendered object.
+
+PROMPT DE AJUSTE DE DENSIDAD
+Edit ONLY this American tulipwood (Liriodendron tulipifera) albedo's fiber density. Preserve its calm raw sanded diffuse-pore appearance, cream toasted beige color, soft blurry band boundaries, and strictly VERTICAL fibers. Increase the number of fiber bands across the image by approximately 20 percent: aim for 230-240 fine low-contrast vertical band cycles across the full width. Each entire image covers 600mm, so bands should measure about 2.5-3mm across, NOT coarse bands. Do not make them darker or sharper. The tiny ring boundaries are subtly lighter hairlines, never dark pine lines. Keep local fine fuzz, no visible pore dots, grooves or corduroy effect. Zero knots, zero eyes/cathedrals/flames, zero mineral coloration/streaks, cracks or stains. Extremely mild waviness only, parallel to vertical axis. Flat orthographic albedo with no shading, highlights, shadows, reflections or color patches. True seamless repeating edges on both axes. Deliver only a single square texture at the greatest available native resolution, preferably 2048x2048, without text or borders.
+

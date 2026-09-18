@@ -1,0 +1,36 @@
+MATERIAL PBR — CASTAÑO CRUDO PARA THREE.JS
+
+Especie: castaño europeo (Castanea sativa, sweet chestnut/castagno).
+Superficie: madera recién lijada, cruda y mate.
+Escala real de cada baldosa: 600 × 600 mm.
+Resolución de todos los mapas: 2048 × 2048 px; 1 px = 0.292969 mm.
+Dirección de la fibra: vertical; las puntas de las llamas apuntan arriba.
+
+Anillos de crecimiento medidos: media 3.193 mm, desviación estándar 0.689 mm, a partir de 954 intervalos detectados en cuatro zonas de fibra recta. La medida excluye intervalos fuera del rango 7–19 px de la especificación.
+Arcos de catedral: tres figuras visibles en el color base, estrechas y alargadas. Dimensiones aproximadas de las llamas interiores: 65 × 310 mm, 55 × 340 mm y 58 × 275 mm; son estimaciones visuales de sus límites difusos, no una medición anatómica exacta.
+Inspección visual de la fuente: sin nudos, grietas, reflejos de radios, manchas de tanino, albura ni zonas reflejadas en espejo.
+
+Generador del color base: herramienta integrada de imágenes de Codex.
+Resolución nativa real del color generado: 1254 × 1254 px.
+Reescalado: SÍ, Lanczos a 2048 × 2048 px antes de la corrección de color, de los poros y de la periodicidad. Los detalles añadidos por código no son detalle óptico nativo del generador.
+
+Espacios de color y mapas:
+- BaseColor_sRGB_2048.png: RGB 8 bits, sRGB con perfil ICC; en three.js usar texture.colorSpace = THREE.SRGBColorSpace.
+- Normal_OpenGL_2048.png: RGB 8 bits, datos lineales; tangent-space OpenGL, +Y (verde hacia arriba), codificación dominante RGB(128,128,255). Se deriva del height con escala de pendiente 1.45; en three.js usar normalMapType por defecto y normalScale positivo.
+- Roughness_2048.png: L 8 bits, datos lineales; madera mate: claro ≈0.66, banda ≈0.72 y poros ≈0.76.
+- Height_16bit_2048.png: L 16 bits, datos lineales; 0.5 es el plano medio, intervalo normalizado equivalente a ±0.15 mm. Poros en surco hasta unos 0.15 mm bajo el plano medio; banda ≈0.03 mm más baja que la zona clara.
+- No hay AO ni metallic. Metallic para la madera: 0 en el material.
+
+Métricas del COLOR BASE FINAL (PNG cuantizado):
+- Color medio RGB: (190.00, 156.00, 112.00); hex #BE9C70.
+- Saturación HSV media del color promedio: 0.4105.
+- Tono HSV del color promedio: 33.84 grados.
+- Desviación estándar de luminancia Y' (Rec.709, valores 0–255): 14.058.
+- Diferencia media absoluta RGB entre píxeles opuestos en X: 6.101; entre vecinos interiores en X: 6.386; cociente 0.955.
+- Diferencia media absoluta RGB entre píxeles opuestos en Y: 1.724; entre vecinos interiores en Y: 1.306; cociente 1.320.
+- Inclinación normal: media 3.33 grados; percentil 95 9.11 grados.
+- Height físico: mínimo -0.1500 mm, máximo 0.0246 mm.
+
+Los bordes se trataron como vecinos periódicos con derivadas compatibles. No se duplicó la última fila ni la última columna. Todos los mapas derivan de las mismas coordenadas del color base final; se repiten con RepeatWrapping en ambos ejes.
+
+Three.js (MeshStandardMaterial): cargar baseColor como map sRGB; normalMap, roughnessMap y displacementMap como datos lineales. Usar RepeatWrapping en S y T y repetir según las dimensiones físicas del objeto, con fibras de montantes en vertical. Un montante de 95 mm ocupa 95/600 = 0.15833 de ancho de baldosa, equivalente a 324 px; una puerta completa de 840 × 2120 mm ocupa 1.40 × 3.5333 baldosas si se aplica UV continuo. Para carpintería real, mapear cada pieza por separado para que cada fibra conserve su orientación. Ajustar displacementScale = 0.0003 si la escena está en metros y el mapa se usa para desplazamiento real; displacementBias = -0.00015. Para puertas planas, es preferible bump/normal sin desplazamiento geométrico visible.

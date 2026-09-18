@@ -512,11 +512,97 @@ export const PRESETS_VETA = {
       },
 };
 
+/**
+ * Las vetas que son FOTOGRAFIA y no receta: los cuatro PBR encargados a medida
+ * de nuestras puertas, los mismos que monta el escaparate.
+ *
+ * Cada baldosa cubre 600 mm reales a 2048 px y trae tres mapas: color, rugosidad
+ * y normal OpenGL. La fibra viene vertical de origen, asi que no se gira: el
+ * tejido ya cruza las UV pieza por pieza, y el travesano coge la veta a lo ancho
+ * el solo.
+ *
+ * El tinte NO es decoracion. Con tinte blanco la luz de esta escena saca la
+ * madera mucho mas clara: el roble daba #D6BF97 cuando su mapa dice #C3A87F.
+ * Cada tinte se calibro AQUI, leyendo los pixeles del render y corrigiendo en
+ * lineal hasta que la hoja daba el color medio de su propio mapa. Son distintos
+ * de los del escaparate —alli el roble lleva d4c7b4 y aqui b1a693— porque la
+ * luz es otra: el mismo tinte en dos escenas da dos colores.
+ */
+/* LA RESOLUCION DE LOS PBR, en un solo sitio.
+
+   Los cuatro mapas se encargaron a 2048x2048 y pesaban 11,3 MB los doce. A
+   1024 pesan 2,6 MB —un 78 % menos de descarga— y, lo que mas importa, ocupan
+   la CUARTA PARTE de memoria de video: la VRAM va con los pixeles, no con lo
+   que abulta el jpg, asi que una textura de 2048 son unos 21 MB en la tarjeta
+   pase lo que pase con la compresion.
+
+   El detalle que se pierde es poco: cada baldosa cubre 600 mm, asi que a 1024
+   quedan 1,7 px por milimetro, y el relieve que describen estos mapas tiene
+   0,23 mm de amplitud (esta medido en el LEEME.txt de cada carpeta).
+
+   PARA VOLVER A LOS ORIGINALES basta poner '-pbr' aqui debajo: las dos
+   carpetas conviven en assets/textures y no se ha borrado ninguna. */
+const PBR = '-pbr-1024';
+
+export const VETAS_IMAGEN = {
+  roverePBR: {
+    carpeta: `assets/textures/rovere${PBR}`,
+    tam: 600, tinte: 0xb1a693,   // medido aqui: sale a #C3A87F, el medio de su mapa
+  },
+  castagnoPBR: {
+    carpeta: `assets/textures/castagno${PBR}`,
+    tam: 600, tinte: 0xa99c88,   // medido aqui: sale a #BE9C70
+  },
+  toulipierPBR: {
+    carpeta: `assets/textures/toulipier${PBR}`,
+    tam: 600, tinte: 0xb7a690,   // medido aqui: sale a #CFB384
+  },
+  pinoPBR: {
+    carpeta: `assets/textures/pino${PBR}`,
+    tam: 600, tinte: 0xc7a481,   // medido aqui: sale a #E2B67A
+  },
+};
+
+const cargador = new THREE.TextureLoader();
+
+/* La repeticion NO se pone aqui: la pone veta() a partir de receta.tam, que es
+   el mismo camino que siguen las recetas dibujadas. Un sitio solo donde se
+   decide cuantos milimetros cubre una vuelta. */
+function vetaDeImagen(def) {
+  const cargar = (archivo, esColor) => {
+    const t = cargador.load(`${def.carpeta}/${archivo}`);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    /* El color en sRGB y los datos en crudo. Leer la rugosidad o la normal como
+       sRGB las curva, y la madera sale mas brillante o mas plana de lo que es
+       sin que se note de donde viene el fallo. */
+    t.colorSpace = esColor ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.anisotropy = 16;
+    return t;
+  };
+  return {
+    mapa: cargar('basecolor.jpg', true),
+    rugosidad: cargar('roughness.jpg', false),
+    normal: cargar('normal-opengl.jpg', false),
+    /* Rugosidad a 1 para que mande su mapa, sin barniz porque es madera cruda,
+       y el color ya viene en la foto: solo se corrige con el tinte calibrado. */
+    receta: { tam: def.tam, tinte: def.tinte, rugosidad: 1, barniz: 0 },
+  };
+}
+
 /** Los mapas cuestan medio megapixel de generar; se hacen una vez. */
 const vetaGuardada = new Map();
 export function veta(nivel) {
   if (!nivel || nivel === 'lisa') return null;
   if (!vetaGuardada.has(nivel)) {
+    /* Si es una de las fotografiadas, se carga y se sale: no tiene receta que
+       generar. La repeticion se la pone el mismo codigo de abajo. */
+    if (VETAS_IMAGEN[nivel]) {
+      const v = vetaDeImagen(VETAS_IMAGEN[nivel]);
+      const r = TAM_VETA / v.receta.tam;
+      for (const t of [v.mapa, v.rugosidad, v.normal]) t?.repeat.set(r, r);
+      vetaGuardada.set(nivel, v);
+      return v;
+    }
     /* Presets. Cada uno es una desviacion de VETA_POR_DEFECTO, no una lista
        completa: asi al mejorar el generador mejoran todos a la vez. Los numeros
        finos salen del banco de texturas, que es donde se ven. */
