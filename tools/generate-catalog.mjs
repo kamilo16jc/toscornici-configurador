@@ -219,8 +219,17 @@ for (const file of porte.sort()) {
   const piezas = (doc.piezas ?? []).filter((p) => p.visible !== false);
   if (!piezas.length) { skipped.push(`${file} (nessun pezzo tracciato)`); continue; }
 
-  // Le schede si chiamano 2500-alessandria.md: basta il suffisso, senza regex.
-  const md = mds.find((f) => f.toLowerCase().endsWith('-' + slug + '.md'));
+  /* Le schede si chiamano 2500-alessandria.md: si toglie il numero davanti e si
+     confronta il NOME INTERO.
+
+     Prima bastava il suffisso —endsWith('-' + slug + '.md')— e sembrava
+     innocuo finche' non sono arrivate le porte a due ante: "5500-king-tamigi.md"
+     finisce anche lui per "-tamigi.md", per cui alla Tamigi semplice poteva
+     toccare la scheda della King Tamigi, cioe' il prezzo RADDOPPIATO. Lo stesso
+     fra London e Sweet London, e fra Piccadilly e Big Piccadilly: quale delle
+     due vincesse dipendeva solo dall'ordine in cui il disco elenca i file.
+     Col nome intero non c'e' piu' niente da indovinare. */
+  const md = mds.find((f) => f.toLowerCase().replace(/^\d+-/, '') === `${slug}.md`);
   if (!md) { skipped.push(`${file} (nessuna scheda .md per "${slug}")`); continue; }
 
   const info = parseMd(path.join(MD_DIR, md));

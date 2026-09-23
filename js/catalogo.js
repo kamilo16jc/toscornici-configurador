@@ -113,9 +113,9 @@ export const MODELLI = {
     "id": 1100,
     "linea": "Base",
     "sub": "Linea Base · ID 1100",
-    "descIt": "Porta con vano vetro",
-    "descEn": "Glazed panel door",
-    "file": "assets/porte/barletta.json?v=5f3d2ded",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/barletta.json?v=7eab6f54",
     "pezzi": 25,
     "componenti": [
       {
@@ -3117,6 +3117,4009 @@ export const MODELLI = {
     "descEn": "Glazed door with English grille",
     "file": "assets/porte/venezia.json?v=b6741c20",
     "pezzi": 25,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "america": {
+    "label": "America",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/america.json?v=e0cdd78a",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "arizona": {
+    "label": "Arizona",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/arizona.json?v=8610237f",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "campania": {
+    "label": "Campania",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/campania.json?v=2392ac85",
+    "pezzi": 5,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "cortina": {
+    "label": "Cortina",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/cortina.json?v=e680dc2d",
+    "pezzi": 11,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "emilia": {
+    "label": "Emilia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/emilia.json?v=8c359557",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "indiana": {
+    "label": "Indiana",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/indiana.json?v=dd69c1f0",
+    "pezzi": 11,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "nebraska": {
+    "label": "Nebraska",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/nebraska.json?v=9aca8f07",
+    "pezzi": 13,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "pluglia": {
+    "label": "Pluglia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/pluglia.json?v=92bf54af",
+    "pezzi": 5,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "sicilia": {
+    "label": "Sicilia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/sicilia.json?v=13077686",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "taormina": {
+    "label": "Taormina",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/taormina.json?v=94850765",
+    "pezzi": 13,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "toscana": {
+    "label": "Toscana",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/toscana.json?v=af385ef8",
+    "pezzi": 5,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "virginia": {
+    "label": "Virginia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/virginia.json?v=ca51313c",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "alaska": {
+    "label": "Alaska",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/alaska.json?v=f434c1a5",
+    "pezzi": 5,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "california": {
+    "label": "California",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/california.json?v=627649de",
+    "pezzi": 33,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "cambridge": {
+    "label": "Cambridge",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/cambridge.json?v=f063711c",
+    "pezzi": 19,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "dublino": {
+    "label": "Dublino",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/dublino.json?v=5aa9f5e7",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "florida": {
+    "label": "Florida",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/florida.json?v=772798bc",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "georgia": {
+    "label": "Georgia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/georgia.json?v=ba48fc4d",
+    "pezzi": 25,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "liverpool": {
+    "label": "Liverpool",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/liverpool.json?v=116df17f",
+    "pezzi": 31,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "london": {
+    "label": "London",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/london.json?v=9cf8cac7",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "luisiana": {
+    "label": "Luisiana",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/luisiana.json?v=2236eb7b",
+    "pezzi": 11,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "montana": {
+    "label": "Montana",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/montana.json?v=fef15fde",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "nevada": {
+    "label": "Nevada",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/nevada.json?v=90e161dd",
+    "pezzi": 5,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "newjersey": {
+    "label": "New Jersey",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/newjersey.json?v=30beedfa",
+    "pezzi": 23,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "newyork": {
+    "label": "New York",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/newyork.json?v=ac637de1",
+    "pezzi": 17,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "oldcity": {
+    "label": "Old City",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/oldcity.json?v=d81bc2a3",
+    "pezzi": 27,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "oxford": {
+    "label": "Oxford",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/oxford.json?v=0304a3d4",
+    "pezzi": 25,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "philadelphia": {
+    "label": "Philadelphia",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/philadelphia.json?v=42e8087c",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "queen": {
+    "label": "Queen",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/queen.json?v=a38ec2ff",
+    "pezzi": 25,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "tamigi": {
+    "label": "Tamigi",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/tamigi.json?v=7b9af2aa",
+    "pezzi": 13,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "alessandriadue": {
+    "label": "ALESSANDRIA DUE",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/alessandriadue.json?v=56b331ae",
+    "pezzi": 11,
+    "ante": 2,
+    "larghezze": [
+      379,
+      836
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "alessandrialux": {
+    "label": "ALESSANDRIA LUX",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/alessandrialux.json?v=bb97a6bd",
+    "pezzi": 12,
+    "ante": 2,
+    "larghezze": [
+      833,
+      835
+    ],
+    "apre": [
+      true,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "americadue": {
+    "label": "AMERICA DUE",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/americadue.json?v=037bc09b",
+    "pezzi": 14,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "bigpiccadilly": {
+    "label": "BIG PICCADILLY",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/bigpiccadilly.json?v=5c0c5dba",
+    "pezzi": 14,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "cambridgetwo": {
+    "label": "CAMBRIDGE TWO",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/cambridgetwo.json?v=0f2076b6",
+    "pezzi": 30,
+    "ante": 2,
+    "larghezze": [
+      371,
+      837
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "cosenza": {
+    "label": "COSENZA",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/cosenza.json?v=67c6ae52",
+    "pezzi": 9,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "kingtamigi": {
+    "label": "KING TAMIGI",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/kingtamigi.json?v=6550c111",
+    "pezzi": 26,
+    "ante": 2,
+    "larghezze": [
+      425,
+      858
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "lagunalux": {
+    "label": "LAGUNA LUX",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/lagunalux.json?v=c0420fce",
+    "pezzi": 30,
+    "ante": 2,
+    "larghezze": [
+      774,
+      777
+    ],
+    "apre": [
+      true,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "liverpooltwo": {
+    "label": "LIVERPOOL TWO",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/liverpooltwo.json?v=9bc130d8",
+    "pezzi": 44,
+    "ante": 2,
+    "larghezze": [
+      379,
+      837
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "nevadadue": {
+    "label": "NEVADA DUE",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/nevadadue.json?v=4c8fa83e",
+    "pezzi": 10,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "nevadalux": {
+    "label": "NEVADA LUX",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/nevadalux.json?v=22b7a1fe",
+    "pezzi": 10,
+    "ante": 2,
+    "larghezze": [
+      780,
+      778
+    ],
+    "apre": [
+      true,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "oldenglandlux": {
+    "label": "OLD ENGLAND LUX",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/oldenglandlux.json?v=e7317f05",
+    "pezzi": 10,
+    "ante": 2,
+    "larghezze": [
+      780,
+      778
+    ],
+    "apre": [
+      true,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "oldengland": {
+    "label": "OLD ENGLAND",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/oldengland.json?v=4dea84d1",
+    "pezzi": 10,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "oxfordtwo": {
+    "label": "OXFORD TWO",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/oxfordtwo.json?v=ebd057ea",
+    "pezzi": 36,
+    "ante": 2,
+    "larghezze": [
+      377,
+      837
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "piacenzadue": {
+    "label": "PIACENZA DUE",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/piacenzadue.json?v=a31220ef",
+    "pezzi": 18,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "praga": {
+    "label": "PRAGA",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta con vano vetro",
+    "descEn": "Glazed panel door",
+    "file": "assets/porte/praga.json?v=75caf730",
+    "pezzi": 7,
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "queentwo": {
+    "label": "QUEEN TWO",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/queentwo.json?v=c8a18133",
+    "pezzi": 38,
+    "ante": 2,
+    "larghezze": [
+      384,
+      837
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "sweetlondon": {
+    "label": "SWEET LONDON",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/sweetlondon.json?v=9164b786",
+    "pezzi": 16,
+    "ante": 2,
+    "larghezze": [
+      380,
+      833
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "timesquaretwo": {
+    "label": "TIME SQUARE TWO",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta vetrata con grigliato all’inglese",
+    "descEn": "Glazed door with English grille",
+    "file": "assets/porte/timesquaretwo.json?v=f9c94e88",
+    "pezzi": 22,
+    "ante": 2,
+    "larghezze": [
+      379,
+      836
+    ],
+    "apre": [
+      false,
+      true
+    ],
+    "componenti": [],
+    "listino": {
+      "rovere": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "castagno": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "toulipier": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "pino": {
+        "grezza": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        },
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      },
+      "laccato": {
+        "verniciata": {
+          "pannello": 0,
+          "montanti": 0,
+          "coprifili": 0,
+          "serratura": 0
+        }
+      }
+    }
+  },
+  "vienna": {
+    "label": "VIENNA",
+    "id": null,
+    "linea": "Da prezzare",
+    "sub": "Senza scheda di listino",
+    "descIt": "Porta classica con bugne",
+    "descEn": "Classic panelled door",
+    "file": "assets/porte/vienna.json?v=aad49ab8",
+    "pezzi": 7,
     "componenti": [],
     "listino": {
       "rovere": {
