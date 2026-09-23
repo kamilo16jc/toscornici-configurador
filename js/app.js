@@ -6,7 +6,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* Il motore delle porte. Copia meccanica di puertas3d: non si edita qui, si
    corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
 import { tejerHoja } from './motor/viewer/tejer.js';
-import { deserializar, cajaDe } from './motor/modelo/proyecto.js';
+import { deserializar, cajaDe, arcoDelCantoAlto } from './motor/modelo/proyecto.js';
+import { hojasDibujadas, repartirDibujadas } from './motor/modelo/redimensionar.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
@@ -913,6 +914,10 @@ let catalogoTelaio = null;   // si carica una volta sola
 
 // apertura della porta: perno sulle cerniere
 let doorPivot = null;
+/* IL SECONDO PERNO, per le porte a due ante che aprono tutt'e due.
+   Le altre non ne hanno bisogno: nella porta a pannello e mezzo il pannello
+   stretto e' FISSO, e sta appeso all'insieme dove non gira mai. */
+let doorPivot2 = null;
 let doorTargetAngle = 0;
 let doorOpenAngle = 0;
 let leafParts = [];
@@ -1056,6 +1061,7 @@ function disposeSubtree(root) {
 
 function clearModel() {
   if (doorPivot) { disposeSubtree(doorPivot); scene.remove(doorPivot); doorPivot = null; }
+  if (doorPivot2) { disposeSubtree(doorPivot2); scene.remove(doorPivot2); doorPivot2 = null; }
   if (model) { disposeSubtree(model); scene.remove(model); model = null; }
   leafParts = [];
   doorTargetAngle = 0;
@@ -1098,6 +1104,10 @@ let numeroCarico = 0;
 let modelloConVetro = false;
 /* Se la porta ha almeno un campo di legno. Senza, la bugna non si chiede. */
 let modelloConPannello = false;
+/* Se la testa della porta e' IN ARCO — la Vienna e la Praga, le uniche due del
+   catalogo. Con l'arco il capotelaio non e' piu' una traversa dritta su cui
+   posare un sopraluce: e' una volta, e sopra non ci sta niente. */
+let modelloConArco = false;
 
 /**
  * Veste di essenza quello che esce dal motore.
@@ -1157,23 +1167,62 @@ function loadModel(key) {
       modelloConVetro = haVetro(tracciato);
       modelloConPannello = haCampoDiLegno(tracciato);
       const pezzi = applicaTipo(tracciato, state.tipo, state.bugna);
+
+      /* La testa in arco si misura UNA volta sola: la vogliono sapere il
+         telaio, piu' sotto, e l'interfaccia, qui. */
+      const arcoHoja = arcoDelCantoAlto(pezzi);
+      modelloConArco = !!arcoHoja;
+      /* E SE C'E' L'ARCO, NIENTE SOPRALUCE. Non e' una preferenza: sopra la
+         volta non c'e' nessuna traversa dritta su cui posare il vano, e
+         montarcelo lo stesso vorrebbe dire inventare un telaio che in officina
+         non si fa.
+         Si toglie QUI, prima di costruire il telaio e prima di rifare
+         l'interfaccia, cosi' non lo vedono ne' il 3D ne' il prezzo. Se il
+         cliente ne aveva scelto uno e poi passa alla Vienna, se ne va da solo
+         e la nota dell'apertura gli dice perche'. */
+      if (modelloConArco) state.sopraluce = 'no';
       refreshUI();
 
       const spessore = Math.max(...pezzi.map((p) => p.espesor ?? 45));
+
+      /* LE ANTE, quando la porta ne porta gia' DUE nel disegno.
+         ------------------------------------------------------------
+         Certe porte non sono un'anta da ripetere: sono calcate intere, con le
+         due ante e i quattro montanti. Si riconoscono perche' nel punto
+         d'incontro non passa niente e muore un montante per parte, e li' si
+         dividono — senza rifare nulla, che il disegno e' gia' com'e'.
+
+         Chi apre lo dice la porta: se nomina la modanatura della maniglia
+         manda quella, se no manda la PROPORZIONE. Due ante che aprono si
+         spartiscono il vano a meta'; quando una e' molto piu' stretta e' un
+         pannello fisso. Misurato sulle diciassette porte doppie: chi apre
+         tutt'e due sta fra 0,996 e 0,998, chi ha il pannello fisso fra 0,44 e
+         0,50. In mezzo non c'e' nessuno. */
+      const tagli = hojasDibujadas(pezzi);
+      const bande = tagli ? repartirDibujadas(pezzi, tagli) : null;
 
       /* uv: true e veta: null.
          Le venature del motore qui non servono — il configuratore ha le sue
          essenze con le foto vere — ma le coordinate di texture SI, o woodMat
          resta liscio. */
-      const anta = tejerHoja(pezzi, { veta: null, uv: true, espesorHoja: spessore });
-      if (mio !== numeroCarico) { disposeSubtree(anta); return; }
+      /* `hoja` e' LA PORTA INTERA e tiene dentro un gruppo per anta. Serve
+         distinta dalla singola anta perche' il telaio, il centraggio nel vano
+         e l'inquadratura vogliono tutta la porta, mentre il perno, la maniglia
+         e il giro vogliono soltanto quella che apre. */
+      const hoja = new THREE.Group();
+      const ante = (bande ? bande.map((b) => b.piezas) : [pezzi]).map((g) => {
+        const m = tejerHoja(g, { veta: null, uv: true, espesorHoja: spessore });
+        hoja.add(m);
+        return m;
+      });
+      if (mio !== numeroCarico) { disposeSubtree(hoja); return; }
 
       /* I materiali del motore si buttano e si mettono quelli del
          configuratore: l'essenza e la finitura sono il cuore commerciale di
          questa pagina e devono comandare loro. Il vetro invece resta com'e':
          il motore lo fa con la trasmissione, che e' come si riconosce un
          cristallo, e il configuratore non ne ha uno suo. */
-      vestiConEssenza(anta);
+      vestiConEssenza(hoja);
 
       /* TUTTO IN UN SOLO INSIEME, e in millimetri.
          L'anta, il telaio, il muro e il coprifilo devono stare nello stesso
@@ -1183,7 +1232,10 @@ function loadModel(key) {
       const conjunto = new THREE.Group();
       doorPivot = new THREE.Group();
       conjunto.add(doorPivot);
-      doorPivot.add(anta);
+      /* La porta entra nell'insieme FERMA. L'anta che apre passera' nel perno
+         piu' sotto, quando si sapra' quale e' e dove cade la sua cerniera;
+         quella fissa resta appesa qui e non gira mai. */
+      conjunto.add(hoja);
 
       /* Il muro e il telaio.
          La parete non e' scenografia: e' quello che da' la misura di cosa si
@@ -1192,15 +1244,41 @@ function loadModel(key) {
          non ha contro cosa montarsi, ed e' un articolo di listino con tredici
          profili e il suo prezzo. */
       if (!catalogoTelaio) catalogoTelaio = await (await fetch('assets/catalogo/telaio-standard.json')).json();
-      if (mio !== numeroCarico) { disposeSubtree(anta); return; }
+      if (mio !== numeroCarico) { disposeSubtree(hoja); return; }
 
-      const cajaAnta = new THREE.Box3().setFromObject(anta);
+      /* La caja della PORTA INTERA, non di una sola anta: il telaio si fa
+         attorno a tutte e due. Con l'anta sola la Alessandria Lux avrebbe
+         avuto un cerco di 835 mm su una porta di 1668. */
+      const cajaAnta = new THREE.Box3().setFromObject(hoja);
       const datiTelaio = {
         ...catalogoTelaio,
         anchoHoja: cajaAnta.max.x - cajaAnta.min.x,
         espesorHoja: spessore,
         cantoAltoHoja: cajaAnta.max.y,
       };
+
+      /* LA TESTA IN ARCO. La Praga e la Vienna non finiscono dritte: fra le due
+         spalle il canto sale di 47,6 mm su una corda di 470. Con il cabecero
+         dritto il telaio le toccherebbe solo in cima e lascerebbe quel dito
+         d'aria sulle spalle — si vede subito, ed e' l'unico posto dove il
+         telaio e la porta non si toccano.
+
+         Qui l'anta NON si scala al vano: il telaio si fa sulla sua misura. Per
+         cui basta portare le x dell'arco dove l'anta finisce dentro il vano, ed
+         e' lo stesso spostamento che si da' piu' sotto a `hoja`. La freccia e'
+         una differenza e non si tocca.
+
+         Il vano si chiede PRIMA di avere l'arco apposta: sx, dx e su non
+         dipendono da lui, quindi non c'e' nessun giro a vuoto. */
+      if (arcoHoja) {
+        const v = vanoDe(datiTelaio);
+        const off = v.sx + (v.dx - v.sx - datiTelaio.anchoHoja) / 2 - cajaAnta.min.x;
+        datiTelaio.arcoAlto = {
+          sx: arcoHoja.xIzq + off,
+          dx: arcoHoja.xDer + off,
+          flecha: arcoHoja.flecha,
+        };
+      }
       /* IL SOPRALUCE, per ora solo il vano. Il telaio sale, l'anta no: resta
          appoggiata a terra e la sua testa diventa il traverso. Muro e
          coprifilo inseguono da soli, che leggono lo stesso vanoDe(). */
@@ -1238,7 +1316,7 @@ function loadModel(key) {
       // L'anta si incastra nel vano del telaio. Il vano largo e' lo stesso —
       // il sopraluce alza, non allarga — quindi sx e dx valgono per entrambi.
       const vano = vanoDe(datiMarco);
-      anta.position.set(
+      hoja.position.set(
         vano.sx + (vano.dx - vano.sx - (cajaAnta.max.x - cajaAnta.min.x)) / 2 - cajaAnta.min.x,
         -cajaAnta.min.y,
         0,
@@ -1357,7 +1435,7 @@ function loadModel(key) {
       conjunto.traverse((o) => {
         if (o.isMesh && ['Telaio', 'Coprifilo'].includes(o.name)) box.expandByObject(o);
       });
-      box.expandByObject(anta);
+      box.expandByObject(hoja);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
       conjunto.position.sub(center);
@@ -1395,6 +1473,27 @@ function loadModel(key) {
          puo' non essere passato nessun fotogramma a rifarle. Le due letture
          devono venire dallo stesso istante, o l'una corregge uno spazio che
          l'altra non ha ancora. */
+      /* QUALE ANTA APRE, e quale resta ferma.
+         Lo dice la modanatura della maniglia se il disegno la nomina; se no lo
+         dice la proporzione. Da qui in giu' `anta` e' SOLTANTO quella che
+         apre: il perno, l'angolo di apertura, la maniglia, la serratura e la
+         ferramenta del rototraslante sono tutti roba sua. */
+      const apre = bande
+        ? (() => {
+          const conChapa = bande.map((b) => b.piezas.some((p) => /chapa/i.test(String(p.nombre ?? ''))));
+          const maggiore = Math.max(...bande.map((b) => b.ancho));
+          return conChapa.some(Boolean) ? conChapa : bande.map((b) => b.ancho >= maggiore * 0.85);
+        })()
+        : [true];
+      // Se non ne aprisse nessuna apre la piu' larga: una porta che non si apre non e' una porta.
+      if (!apre.some(Boolean)) apre[bande.reduce((m, b, i, a) => (b.ancho > a[m].ancho ? i : m), 0)] = true;
+      const iApre = apre.indexOf(true);
+      const anta = ante[iApre];
+      const pezziApre = bande ? bande[iApre].piezas : pezzi;
+      // La seconda che apre, se c'e': sono le quattro LUX e nessun'altra.
+      const jAltra = apre.findIndex((v, i) => v && i !== iApre);
+      const altraApre = jAltra >= 0 ? ante[jAltra] : null;
+
       conjunto.updateMatrixWorld(true);
       const cajaHoja = new THREE.Box3()
         .setFromObject(anta)
@@ -1417,8 +1516,16 @@ function loadModel(key) {
       });
 
       doorPivot.position.set(manoDx ? cajaHoja.min.x : cajaHoja.max.x, 0, -spessore / 2);
-      anta.position.sub(doorPivot.position);
-      leafParts = [anta];
+      /* L'anta che apre passa dal gruppo fermo al perno CONSERVANDO dov'e'.
+         `hoja` e `doorPivot` sono fratelli dentro l'insieme, quindi la sua
+         posizione nuova e' quella di prima piu' l'offset del gruppo, meno il
+         perno. Senza sommare l'offset, la porta doppia saltava di mezzo metro
+         appena si sceglieva il modello. */
+      anta.position.add(hoja.position).sub(doorPivot.position);
+      doorPivot.add(anta);
+      /* Si clicca su QUALUNQUE anta per aprire, anche sul pannello fisso: chi
+         guarda vede una porta sola e non deve indovinare dove premere. */
+      leafParts = [...ante];
 
       /* L'ANTA VA IN FONDO AL TELAIO, non sul suo filo davanti.
          ------------------------------------------------------------
@@ -1513,6 +1620,47 @@ function loadModel(key) {
          davanti. Trentacinque e' dove si legge meglio la merce — la faccia
          quasi intera, e la mazzetta che racconta la profondita'. */
       doorOpenAngle = (pendeVersoPiuX ? 1 : -1) * THREE.MathUtils.degToRad(35);
+
+      /* TUTTE LE ANTE SULLO STESSO PIANO.
+         ------------------------------------------------------------
+         Qui sopra sono successe due cose all'anta che apre: e' stata
+         compensata di mezzo spessore quando e' passata nel perno, e poi il
+         perno e' ARRETRATO dentro la battuta del telaio (il `ritiro`). Chi non
+         e' passato per il perno —il pannello fisso, e la seconda anta— non ha
+         fatto quel viaggio: restava a z = 0 mentre l'altra stava a -ritiro.
+
+         Cioe' le due meta' della stessa porta montate su due piani diversi,
+         una davanti e una dietro. Si vedeva benissimo, ed era in TUTTE le
+         porte doppie: nelle LUX fra le due ante, e nel pannello e mezzo fra
+         l'anta e il pannello fisso.
+
+         Il piano buono e' quello dell'anta che apre, perche' e' lui che il
+         telaio ha misurato. Si porta tutto il resto li'. */
+      const zAnte = doorPivot.position.z + spessore / 2;
+      hoja.position.z = zAnte;
+
+      /* IL SECONDO PERNO, per le porte che aprono tutt'e due le ante — le
+         quattro LUX, dove le due misurano praticamente uguale. Nelle altre
+         tredici il pannello stretto e' fisso: resta appeso a `hoja`, che non
+         gira mai, e cosi' non serve nessun caso particolare per lui.
+
+         Ogni anta pende dalla propria jamba esterna, per cui la seconda gira
+         al CONTRARIO della prima: e' questo che fa aprire la porta dal mezzo
+         invece che tutta da una parte. */
+      if (altraApre) {
+        doorPivot2 = new THREE.Group();
+        conjunto.add(doorPivot2);
+        conjunto.updateMatrixWorld(true);
+        const cajaAltra = new THREE.Box3()
+          .setFromObject(altraApre)
+          .applyMatrix4(new THREE.Matrix4().copy(conjunto.matrixWorld).invert());
+        /* La sua cerniera sul canto ESTERNO, quello lontano dall'incontro: se
+           l'anta che apre sta a sinistra, questa pende a destra e viceversa. */
+        const aDestra = (cajaAltra.min.x + cajaAltra.max.x) > (cajaHoja.min.x + cajaHoja.max.x);
+        doorPivot2.position.set(aDestra ? cajaAltra.max.x : cajaAltra.min.x, 0, doorPivot.position.z);
+        altraApre.position.add(hoja.position).sub(doorPivot2.position);
+        doorPivot2.add(altraApre);
+      }
 
       /* QUANTO CORRE una scorrevole: la sua stessa larghezza meno il ricoprimento
          che resta sul montante, se no il vano si aprirebbe piu' di quanto e'
@@ -1828,7 +1976,10 @@ function loadModel(key) {
       /* Il punto e' riferito al VANO, come nello scaparate, e poi si porta
          nello spazio del perno — che e' quello dell'insieme meno l'offset del
          perno stesso. */
-      const punto = puntoDellaManiglia(pezzi, manoDx, cajaHoja, montanteChiusura);
+      /* I pezzi dell'anta CHE APRE, non quelli di tutta la porta: la maniglia
+         va sul suo montante di chiusura, e con l'elenco intero il controllo
+         "cade sul montante" avrebbe guardato anche il legno dell'altra. */
+      const punto = puntoDellaManiglia(pezziApre, manoDx, cajaHoja, montanteChiusura);
       if (!punto.sobreMontante) console.warn(`${key}: la maniglia non cade sul montante`);
       sitioManiglia = {
         x: punto.x - doorPivot.position.x,
@@ -2566,6 +2717,21 @@ renderer.setAnimationLoop(() => {
     } else {
       doorPivot.rotation.y = doorTargetAngle;   // si posa esatto, non a un capello
     }
+    /* L'ALTRA ANTA, che gira al contrario.
+       Solo a battente: scorrevole, esterno muro, rototraslante e ventola sono
+       meccanismi da un'anta sola —un binario, un braccetto, una molla— e
+       applicarli a una coppia non vorrebbe dire niente. Li' la seconda resta
+       chiusa invece di fare un movimento che in fabbrica non esiste. */
+    if (doorPivot2) {
+      const obiettivo2 = movimento() === 'battente' ? -doorTargetAngle : 0;
+      const resta2 = obiettivo2 - doorPivot2.rotation.y;
+      if (Math.abs(resta2) > 1e-4) {
+        doorPivot2.rotation.y += resta2 * MORBIDEZZA;
+        chiediFotogramma(2);
+      } else {
+        doorPivot2.rotation.y = obiettivo2;
+      }
+    }
     /* E la corsa, per le scorrevoli. Stessa morbidezza del giro, cosi' le due
        aperture si muovono con la stessa mano.
        La SOGLIA pero' non puo' essere la stessa: il giro va in radianti e 1e-4
@@ -3288,6 +3454,9 @@ function refreshUI() {
 
   const apNote = [];
   if (state.apertura === 'magic' && state.w > 800) apNote.push('⚠ Il kit MAGIC è disponibile solo per luce muro fino a 800 mm.');
+  /* Perche' il sopraluce non c'e' piu'. Senza dirlo, chi lo aveva scelto lo
+     vedrebbe sparire e penserebbe che si e' rotto qualcosa. */
+  if (modelloConArco) apNote.push('Questo modello ha la testa in arco: il sopraluce non è disponibile.');
   /* La voce 20 elenca le altezze in cui il sistema ERGON esiste: HN 1900,
      1950, 2000, 2050, 2100, 2150, 2200. Fuori di li' non e' una porta piu'
      cara, e' una porta che non si puo' ordinare. */
@@ -3360,9 +3529,24 @@ function refreshUI() {
           : 'La laccatura è una verniciatura. Bianco Tosco: compreso nel prezzo. ')
         + 'Scegliendo "Grezza" si torna al legno a vista.';
 
+  /* IL SOPRALUCE SPARISCE sulle porte a testa in arco, invece di restare li'
+     disattivato. E' la stessa regola del TIPO qui sotto, ed e' la regola giusta:
+     una scelta che non si puo' fare non deve nemmeno vedersi. */
+  const sopSel = document.getElementById('sopraluceSelect');
+  if (sopSel) {
+    sopSel.hidden = modelloConArco;
+    /* E si rimette d'accordo con lo stato. Il menu si riempie UNA volta sola,
+       all'avvio, e da li' in poi nessuno gli riscrive il valore — in tutto il
+       file solo `modelloSelect` si risincronizza. Forzando il sopraluce a 'no'
+       sulla Vienna, il menu restava a dire "fisso": tornando su una porta
+       dritta si sarebbe letto un sopraluce che la porta non aveva e che il
+       prezzo non contava. */
+    sopSel.value = state.sopraluce;
+  }
+
   // l'altezza del sopraluce si chiede solo se il sopraluce c'e'
   const sopBox = document.getElementById('sopraluceHBox');
-  if (sopBox) sopBox.hidden = state.sopraluce === 'no';
+  if (sopBox) sopBox.hidden = modelloConArco || state.sopraluce === 'no';
 
   /* il TIPO. La sezione sparisce sulle porte con vetro invece di restare
      disattivata: una scelta che non si puo' fare non deve nemmeno vedersi. */
