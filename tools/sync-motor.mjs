@@ -77,6 +77,10 @@ const PIEZAS = [
   // el muro, el telaio y los coprifili: sin pared no hay donde montarlos
   'geom/telaio.js', 'geom/coprifilo.js', 'geom/ambiente.js',
   'modelo/proyecto.js', 'modelo/papeles.js',
+  /* El reparto en hojas. Vive aqui porque el configurador tiene que saber
+     cuantas hojas trae dibujada una puerta y cual de ellas abre: en la
+     Alessandria Due el panel estrecho es fijo, y sin esto se abrian las dos. */
+  'modelo/redimensionar.js',
 ];
 
 const huella = (f) => crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex');
