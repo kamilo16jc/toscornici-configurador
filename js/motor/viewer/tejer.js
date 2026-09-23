@@ -99,6 +99,39 @@ function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45) {
 }
 
 /**
+ * El VIDRIO trazado DENTRO del panel.
+ *
+ * No es una pieza aparte: es una zona de la misma pieza que, en vez de madera,
+ * lleva cristal. La madera se agujerea por ese contorno —la zona entra en
+ * `agujeros`— y aqui se teje lo que tapa el agujero.
+ *
+ * Crece por el rientro, igual que crece el panel. Si no creciera, el canto del
+ * cristal moriria justo en la linea trazada y por esa linea se veria el fondo;
+ * creciendo, queda ENTERRADO bajo la madera que lo rodea, que es el galce de
+ * verdad: la madera lo solapa y lo sujeta.
+ *
+ * Y no lleva moldura en la junta, por construccion y no por omision: el bastone
+ * se teje solo del contorno EXTERIOR de la pieza, asi que un contorno interior
+ * no puede moldurarse. Madera y cristal se topan a hueso.
+ */
+function mallasDeVidrio(pieza, zonas) {
+  const rientro = pieza.rientro ?? 0;
+  const grosor = pieza.espesorVidrio ?? 4;
+  const partes = [];
+  for (const zona of zonas) {
+    const puntos = (rientro > 0 ? haciaDentro(zona, -rientro) : null) ?? zona;
+    const geo = extruir({ exterior: { puntos }, huecos: [] }, { espesor: grosor, bisel: 0, biselAncho: 0 });
+    /* 'vidrioSatinado' con D, que es como se llama el acabado en el catalogo de
+       materiales. Puesto 'vidrioSatinato' —a la italiana, como el PAPEL— la
+       malla se crea igual pero con un acabado que no existe, y material() cae
+       en la madera por defecto: sale un cristal de palo. No se ve como un
+       error, se ve como que el vidrio no esta. */
+    if (geo) partes.push({ geo, acabado: pieza.acabadoVidrio ?? 'vidrioSatinado', espesor: grosor });
+  }
+  return partes;
+}
+
+/**
  * Elige como se construye cada pieza.
  *
  * Con un perfil de bugna se teje el relieve a partir del contorno, que es como
@@ -114,6 +147,18 @@ function geometriaDe(pieza, contorno) {
      —lo abre el recorte automatico— y el relieve tiene que rodearlo igual que
      rodea el perimetro. */
   const agujeros = [...(pieza.huecos ?? []), ...(contorno.huecos ?? [])].filter((h) => h?.length >= 3);
+
+  /* Las zonas de vidrio agujerean la madera igual que un calado: donde va el
+     cristal no tiene sentido tejer madera debajo. */
+  const zonasVidrio = (pieza.vidrioPuntos ?? []).filter((h) => h?.length >= 3);
+  for (const z of zonasVidrio) agujeros.push(z);
+
+  /* Con vidrio, la pieza devuelve VARIAS mallas —la madera y cada cristal—
+     porque son materiales distintos, no piezas distintas. Es exactamente el
+     patron que ya usa el realzado con vidrio unas lineas mas abajo. */
+  const vidrios = mallasDeVidrio(pieza, zonasVidrio);
+  const conVidrio = (geo) =>
+    vidrios.length ? [{ geo, acabado: pieza.acabado, espesor: pieza.espesor }, ...vidrios] : geo;
 
   if (conBugna) {
     /* El perfil va ENTERO, sin simplificar.
@@ -153,18 +198,21 @@ function geometriaDe(pieza, contorno) {
     const geo = geometriaBugna(puntos, perfil, { simetrico, huecos: agujeros });
     // Si el relieve no cabe en la figura, geometriaBugna devuelve null y se
     // cae a la extrusion en vez de dejar la pieza sin dibujar.
-    if (geo) return geo;
+    if (geo) return conVidrio(geo);
   }
 
-  return extruir(
-    { exterior: { ...contorno, puntos }, huecos: (contorno.huecos ?? pieza.huecos).map((h) => ({ puntos: h })) },
+  return conVidrio(extruir(
+    {
+      exterior: { ...contorno, puntos },
+      huecos: [...(contorno.huecos ?? pieza.huecos), ...zonasVidrio].map((h) => ({ puntos: h })),
+    },
     {
       espesor: pieza.espesor,
       bisel: pieza.bisel,
       biselAncho: pieza.biselAncho,
       biselPerfil: pieza.biselPerfil,
     },
-  );
+  ));
 }
 
 /**
