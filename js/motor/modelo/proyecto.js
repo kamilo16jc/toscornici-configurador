@@ -44,6 +44,14 @@ const base = () => ({
   angulo: 0,
   visible: true,
   huecos: [], // listas de puntos, en mm
+  /* ZONAS DE VIDRIO DENTRO DE LA PROPIA PIEZA, como listas de puntos en mm.
+     Un hueco deja pasar el aire; esto deja pasar la LUZ: la madera se agujerea
+     igual, pero el agujero lo tapa un cristal que nace con la pieza y viaja con
+     ella. Un panel con una franja de vidrio es UNA pieza de carpinteria.
+     Lo traza la herramienta de vidrio del editor. Aqui hace falta porque el
+     configurador teje las mismas puertas: sin esto, una puerta con vidrio
+     trazado —la PLUGLIA es la primera— saldria como panel de madera macizo. */
+  vidrioPuntos: [],
   // Identificador de grupo. Las piezas de un mismo grupo se seleccionan y se
   // mueven juntas, pero siguen siendo piezas independientes: cada una conserva
   // su espesor, su bisel y su acabado.
@@ -239,6 +247,96 @@ export function cajaDe(pieza) {
 }
 
 /**
+ * El arco del canto alto de una hoja, si es que lo tiene.
+ *
+ * Una puerta de cabeza redonda no se describe con su altura: entre los dos
+ * hombros el canto sube, y el marco tiene que subir con ella o se queda un dedo
+ * de aire sobre los hombros — en la Vienna, 49 mm.
+ *
+ * Se mide sobre la SILUETA y no sobre los nodos de una pieza, porque el canto
+ * alto lo forman varias a la vez: los dos largueros ponen los hombros y el
+ * travesano curvo pone la vuelta. Preguntandole a una sola pieza saldria media
+ * verdad.
+ *
+ * @returns {null|{xIzq:number, xDer:number, yHombro:number, flecha:number}}
+ *   null cuando la cabeza es recta, que es lo normal.
+ */
+export function arcoDelCantoAlto(piezas, paso = 2) {
+  const contornos = piezas
+    .filter((p) => p.visible !== false)
+    .map((p) => puntosDe(p, 200))
+    .filter((c) => c.length >= 3);
+  if (!contornos.length) return null;
+
+  const todos = contornos.flat();
+  const x0 = Math.min(...todos.map((p) => p[0]));
+  const x1 = Math.max(...todos.map((p) => p[0]));
+  if (!(x1 - x0 > 1)) return null;
+
+  /* Lo mas alto que llega la madera en una x. Se mira contra TODOS los
+     contornos a la vez: es el techo de la puerta, no el de ninguna pieza. */
+  const cima = (x) => {
+    let alto = -Infinity;
+    for (const c of contornos) {
+      for (let i = 0; i < c.length; i++) {
+        const a = c[i];
+        const b = c[(i + 1) % c.length];
+        if ((a[0] - x) * (b[0] - x) > 0) continue;
+        if (Math.abs(a[0] - b[0]) < 1e-9) { alto = Math.max(alto, a[1], b[1]); continue; }
+        alto = Math.max(alto, a[1] + ((x - a[0]) / (b[0] - a[0])) * (b[1] - a[1]));
+      }
+    }
+    return alto;
+  };
+
+  const n = Math.max(40, Math.round((x1 - x0) / paso));
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i <= n; i++) {
+    const x = x0 + ((x1 - x0) * i) / n;
+    const y = cima(x);
+    if (!Number.isFinite(y)) return null;
+    xs.push(x);
+    ys.push(y);
+  }
+
+  let cumbre = 0;
+  for (let i = 1; i <= n; i++) if (ys[i] > ys[cumbre]) cumbre = i;
+
+  /* Los hombros estan donde el canto vuelve al NIVEL DEL LARGUERO, y cada lado
+     tiene el suyo: una puerta calcada sobre una foto no tiene los dos a la
+     misma altura —en la Vienna hay 3 mm de uno a otro— y un umbral comun
+     cortaria por el lado equivocado.
+
+     Y el nivel se toma del CANTO DE LA HOJA, no de la muestra de al lado. Mirar
+     si baja de una muestra a la siguiente parece lo natural y falla justo en la
+     cima: un arco rebajado es casi horizontal ahi —0,01 mm por cada 2 de
+     avance— asi que el recorrido se paraba en el primer paso y daba flecha
+     cero. Cerca de la cumbre un arco ES llano; lo que distingue al arco del
+     larguero no es la pendiente, es la altura. */
+  const nivel = (m) => m.slice().sort((p, q) => p - q)[Math.floor(m.length / 2)];
+  const nivelIzq = nivel(ys.slice(0, 5));
+  const nivelDer = nivel(ys.slice(-5));
+  const TOL = 1; // mm sobre el larguero; por debajo ya no es vuelta
+
+  /* Dos condiciones, y hacen falta las dos: se camina mientras se este POR
+     ENCIMA del larguero y ademas se siga bajando hacia afuera. La altura sola
+     se pasaria de largo si la meseta ondula; la pendiente sola se para en la
+     cima. Juntas, el hombro cae donde tiene que caer. */
+  let izq = cumbre;
+  while (izq > 0 && ys[izq] > nivelIzq + TOL && ys[izq - 1] < ys[izq]) izq--;
+  let der = cumbre;
+  while (der < n && ys[der] > nivelDer + TOL && ys[der + 1] < ys[der]) der++;
+
+  const yHombro = (ys[izq] + ys[der]) / 2;
+  const flecha = ys[cumbre] - yHombro;
+  // Por debajo de 4 mm no hay arco que valga: es el pulso de un trazado a mano.
+  if (!(flecha > 4) || !(xs[der] - xs[izq] > 1)) return null;
+
+  return { xIzq: xs[izq], xDer: xs[der], yHombro, flecha };
+}
+
+/**
  * Gira piezas alrededor de un punto cualquiera.
  *
  * Girar una sola pieza sobre si misma es solo subirle el angulo. Girar VARIAS
@@ -262,6 +360,9 @@ export function girarPiezas(piezas, grados, centro) {
     mover(pieza, dx - antes[0], dy - antes[1]);
     if (pieza.huecos.length) {
       pieza.huecos = pieza.huecos.map((h) => girarPuntos(h, grados, antes));
+    }
+    if (pieza.vidrioPuntos?.length) {
+      pieza.vidrioPuntos = pieza.vidrioPuntos.map((h) => girarPuntos(h, grados, antes));
     }
   }
   return piezas;
@@ -300,6 +401,10 @@ export function mover(pieza, dx, dy) {
       pieza.puntos = pieza.puntos.map(([x, y]) => [x + dx, y + dy]);
   }
   pieza.huecos = pieza.huecos.map((h) => h.map(([x, y]) => [x + dx, y + dy]));
+  // Las zonas de vidrio viajan con la pieza, igual que los calados.
+  if (pieza.vidrioPuntos?.length) {
+    pieza.vidrioPuntos = pieza.vidrioPuntos.map((h) => h.map(([x, y]) => [x + dx, y + dy]));
+  }
   return pieza;
 }
 

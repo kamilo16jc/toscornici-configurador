@@ -26,7 +26,7 @@
    ============================================================ */
 
 import * as THREE from 'three';
-import { vanoDe, tirarEnHorizontal } from './motor/geom/telaio.js';
+import { vanoDe, tirarEnHorizontal, bordeAlto, tirarPorElBorde } from './motor/geom/telaio.js';
 
 /** Altezze di listino. Il prezzo copre "fino a 50 cm". */
 export const SOPRALUCE_MIN = 150;
@@ -48,8 +48,12 @@ export function altoTraverso(datos) {
  */
 export function conSopraluce(datos, alturaVano) {
   if (!(alturaVano > 0)) return datos;
+  /* SENZA L'ARCO. L'arco e' della testa della PORTA, e col sopraluce il
+     capotelaio sale sopra il traverso: lassu' il telaio e' dritto. L'arco se lo
+     tiene il traverso, che adesso e' lui a fare da testa alla porta. */
+  const { arcoAlto, ...resto } = datos;
   return {
-    ...datos,
+    ...resto,
     cantoAltoHoja: datos.cantoAltoHoja + altoTraverso(datos) + alturaVano,
   };
 }
@@ -67,11 +71,18 @@ export function traversoDe(datosPuerta, datosAlto, material) {
   const g = new THREE.Group();
 
   for (const c of datosAlto.telaio_alto_imbotto) {
+    /* Se la porta ha la testa in arco, il traverso la segue: e' lui che le fa
+       da capotelaio, e uno dritto le lascerebbe il dito d'aria sulle spalle
+       esattamente come glielo lasciava il cabecero.
+       Col recorrido non serve alzarlo a mano: `bordeAlto` lo mette gia' alla
+       quota del vano della porta, che e' dove andava `desplaza`. */
     const malla = new THREE.Mesh(
-      tirarEnHorizontal(c, vanoAlto.sx, vanoAlto.dx),
+      vanoPuerta.arco
+        ? tirarPorElBorde(c, bordeAlto(vanoPuerta), vanoPuerta.propio)
+        : tirarEnHorizontal(c, vanoAlto.sx, vanoAlto.dx),
       material,
     );
-    malla.position.y = vanoPuerta.desplaza;
+    if (!vanoPuerta.arco) malla.position.y = vanoPuerta.desplaza;
     malla.castShadow = true;
     malla.receiveShadow = true;
     malla.name = 'TraversoSopraluce';
@@ -89,10 +100,25 @@ export function traversoDe(datosPuerta, datosAlto, material) {
 export function vanoSopraluce(datosPuerta, datosAlto) {
   const vP = vanoDe(datosPuerta);
   const vA = vanoDe(datosAlto);
+  /* IL VETRO COMINCIA DOVE IL TRAVERSO E' PIU' BASSO, non dalla sua cima.
+     Con la testa in arco il traverso sale: misurato sulla Vienna, il suo tetto
+     sta a 1966 sulle spalle e a 2014 in cima. Partendo dalla cima —che e'
+     `vP.su`— il cristallo lasciava TRENTADUE MILLIMETRI DI VUOTO per banda fra
+     la spalla del traverso e il suo bordo di sotto. In cima non si vedeva,
+     perche' li' il traverso arriva fino al vetro e lo copre: il buco era solo
+     ai lati, che e' il posto dove non si va a guardare.
+
+     Partendo dall'imposta il vetro scende dietro al traverso su tutta la corda
+     e il legno se lo mangia, che e' come si monta un sopraluce sopra una porta
+     a tutto sesto. Il vano VISIBILE non cambia: quello che si aggiunge sta
+     dietro al legno.
+
+     Sulle porte dritte non cambia niente: li' `arco` e' null e l'imposta e'
+     la cima. */
   return {
     sx: vA.sx,
     dx: vA.dx,
-    y0: vP.su,
+    y0: vP.su - (vP.arco?.flecha ?? 0),
     y1: vA.su - altoTraverso(datosAlto),
   };
 }

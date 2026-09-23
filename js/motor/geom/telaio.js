@@ -48,7 +48,140 @@ export function tirarEnHorizontal(puntos, x0, x1) {
   return g;
 }
 
+/**
+ * Seccion tirada a lo largo de un RECORRIDO, no de una recta.
+ *
+ * Es `tirarEnHorizontal` cuando el recorrido es horizontal, y lo unico que
+ * cambia al combarse es hacia donde mira el ALTO de la seccion: en un cabecero
+ * recto mira siempre arriba, y en uno arqueado mira hacia afuera del arco, o
+ * sea en radial. Por eso no vale tirarlo recto y curvarlo despues: el perfil se
+ * abriria por el lomo y se cerraria por la garganta. Asi sale de la tupi y asi
+ * se monta una vuelta de verdad.
+ *
+ * @param {number[][]} puntos  seccion en (y, z); `y` es una COTA, no un alto
+ * @param {number[][]} camino  recorrido [x, y] por donde pasa el filo de arriba
+ * @param {number} refY  la cota de la seccion que se apoya en el recorrido
+ */
+export function tirarPorElBorde(puntos, camino, refY) {
+  /* El sentido de giro de la seccion no se supone, se MIDE. Los perfiles de
+     fabrica no vienen todos dibujados igual, y con el giro al reves las caras
+     miran hacia dentro: la pieza se vuelve invisible sin dar ningun error. */
+  const area = puntos.reduce((s, [y, z], j) => {
+    const [y2, z2] = puntos[(j + 1) % puntos.length];
+    return s + (y * z2 - y2 * z);
+  }, 0);
+  const seccion = area >= 0 ? puntos : [...puntos].reverse();
+  const n = seccion.length;
+
+  /* La normal de cada estacion: perpendicular al avance y mirando hacia
+     afuera. En un tramo horizontal sale (0, 1) y todo se reduce al caso recto,
+     que es lo que hace que una puerta sin arco salga exactamente igual que
+     antes. */
+  const normales = camino.map((_, i) => {
+    const a = camino[Math.max(0, i - 1)];
+    const b = camino[Math.min(camino.length - 1, i + 1)];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const d = Math.hypot(dx, dy) || 1;
+    return [-dy / d, dx / d];
+  });
+
+  const en = (i, j) => {
+    const [y, z] = seccion[j];
+    return [
+      camino[i][0] + normales[i][0] * (y - refY),
+      camino[i][1] + normales[i][1] * (y - refY),
+      z,
+    ];
+  };
+
+  const pos = [];
+  const tri = (a, b, c) => pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+
+  for (let i = 0; i + 1 < camino.length; i++) {
+    for (let j = 0; j < n; j++) {
+      const k = (j + 1) % n;
+      const A = en(i, j);
+      const B = en(i, k);
+      const C = en(i + 1, k);
+      const D = en(i + 1, j);
+      tri(A, B, C);
+      tri(A, C, D);
+    }
+  }
+
+  /* Las dos testas. Sin ellas el cabecero se ve hueco por los extremos en
+     cuanto la camara se sale del eje: una pieza barrida es un tubo. */
+  const ultimo = camino.length - 1;
+  for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(
+    seccion.map(([y, z]) => new THREE.Vector2(y, z)),
+    [],
+  )) {
+    tri(en(0, a), en(0, c), en(0, b));
+    tri(en(ultimo, a), en(ultimo, b), en(ultimo, c));
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  // Sin indexar, igual que la cornisa: asi las aristas del perfil quedan vivas.
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * El filo alto del vano, como RECORRIDO y no como cota.
+ *
+ * Una hoja con el canto alto en arco NO CABE EN UN NUMERO. Mientras el vano se
+ * describia con `su` a secas, ese numero solo podia ser la cima, y el cabecero
+ * recto se plantaba alli dejando un dedo de aire sobre los hombros — en la
+ * Vienna, 49 mm: el marco tocaba la puerta en un solo punto.
+ *
+ * Por eso el cabecero, el dintel y el tapajuntas leen todos ESTO. En una puerta
+ * recta son dos puntos y sale lo mismo de siempre; en una arqueada, los que
+ * hagan falta. Que los tres beban del mismo sitio es lo que evita que se abra
+ * un filo de muro entre el marco y la pared.
+ *
+ * @param {object} vano      el de vanoDe()
+ * @param {number} desborde  cuanto se pasa de largo a cada lado
+ */
+export function bordeAlto(vano, desborde = 0, pasos = 72) {
+  const a = vano.arco;
+  if (!a) {
+    return [[vano.sx - desborde, vano.su], [vano.dx + desborde, vano.su]];
+  }
+
+  const cuerda = a.dx - a.sx;
+  // R = (c²/4 + f²) / 2f, la cuenta del arco por cuerda y flecha.
+  const radio = (cuerda * cuerda) / 4 / (2 * a.flecha) + a.flecha / 2;
+  const cx = (a.sx + a.dx) / 2;
+  const cy = vano.su - radio; // la cima del arco se queda en `su`
+  const medio = Math.asin(Math.min(1, cuerda / 2 / radio));
+  const hombro = vano.su - a.flecha;
+
+  const camino = [];
+  if (a.sx > vano.sx - desborde) camino.push([vano.sx - desborde, hombro]);
+  for (let i = 0; i <= pasos; i++) {
+    const t = -medio + (2 * medio * i) / pasos;
+    camino.push([cx + radio * Math.sin(t), cy + radio * Math.cos(t)]);
+  }
+  if (a.dx < vano.dx + desborde) camino.push([vano.dx + desborde, hombro]);
+  return camino;
+}
+
 const bordes = (curvas, i) => curvas.flatMap((c) => c.map((p) => p[i]));
+
+/**
+ * El arco del vano, comprobado contra el hueco que hay.
+ *
+ * Llega ya en coordenadas del vano y a su escala, porque quien conoce la forma
+ * del canto alto es quien ha puesto la hoja dentro. Aqui solo se mira que quepa.
+ */
+function arcoDelVano(a, sx, dx) {
+  if (!a || !(a.flecha > 0.5)) return null;
+  const i = Math.max(sx, Math.min(a.sx, a.dx));
+  const d = Math.min(dx, Math.max(a.sx, a.dx));
+  return d - i > 1 ? { sx: i, dx: d, flecha: a.flecha } : null;
+}
 
 /**
  * El borde del vano, calculado UNA vez y usado por todos.
@@ -93,6 +226,10 @@ export function vanoDe(datos) {
     dx: centro + medio,
     su,
     propio,
+    /* El canto alto en arco, o null si esta hoja es de cabeza recta. Cuando lo
+       hay, `su` sigue siendo la COTA MAS ALTA del vano —la cima— y el arco dice
+       por donde baja hasta los hombros. */
+    arco: arcoDelVano(datos.arcoAlto, centro - medio, centro + medio),
     /* Cuanto se mete cada jamba hacia dentro. Como `desplaza` para el cabecero:
        los perfiles traen su sitio metido en las coordenadas y no se mueven
        solos. Positivo = las jambas se acercan. */
@@ -120,8 +257,12 @@ export function construirMarco(datos, material, conTapajuntas = false) {
      por de que lado del centro esta dibujada. */
   const centro = (Math.min(...bordes(datos.telaio_imbotto, 0))
                 + Math.max(...bordes(datos.telaio_imbotto, 0))) / 2;
+  /* Hasta donde suben. Con el vano arqueado, el filo alto sobre las jambas ya
+     no esta en la cima sino en el arranque del arco: dejandolas en `su` se
+     quedaban asomando los 49 mm de la flecha por encima del cabecero. */
+  const arranque = vano.arco ? vano.su - vano.arco.flecha : vano.su;
   for (const c of datos.telaio_imbotto) {
-    const malla = new THREE.Mesh(tirarEnVertical(c, 0, vano.su), material);
+    const malla = new THREE.Mesh(tirarEnVertical(c, 0, arranque), material);
     const suyo = c.reduce((s2, p) => s2 + p[0], 0) / c.length;
     malla.position.x = suyo < centro ? vano.aprieta : -vano.aprieta;
     g.add(malla);
@@ -132,6 +273,13 @@ export function construirMarco(datos, material, conTapajuntas = false) {
      montado conviene cortarlo a ras del vano, y para eso esta `conTapajuntas`. */
   const desborde = conTapajuntas ? vano.sobresale : 0;
   for (const c of datos.telaio_alto_imbotto) {
+    /* Con arco, el cabecero se tira por el recorrido; sin el, por la recta de
+       siempre. No se unifican los dos casos a proposito: el recto lleva años
+       montado y encaja al milimetro, y no hay ninguna razon para rehacerlo. */
+    if (vano.arco) {
+      g.add(new THREE.Mesh(tirarPorElBorde(c, bordeAlto(vano, desborde), vano.propio), material));
+      continue;
+    }
     const malla = new THREE.Mesh(
       tirarEnHorizontal(c, vano.sx - desborde, vano.dx + desborde),
       material,
@@ -190,7 +338,33 @@ export function construirMuro(datos, materialMuro, materialSuelo, conSuelo = tru
   const ARRIBA = 1400;
   ladrillo(vano.sx - LADO, vano.sx, 0, vano.su + ARRIBA);
   ladrillo(vano.dx, vano.dx + LADO, 0, vano.su + ARRIBA);
-  ladrillo(vano.sx - 2, vano.dx + 2, vano.su, vano.su + ARRIBA, 0.5);
+
+  if (!vano.arco) {
+    ladrillo(vano.sx - 2, vano.dx + 2, vano.su, vano.su + ARRIBA, 0.5);
+  } else {
+    /* El dintel con el vientre arqueado. Dejandolo recto a la altura de la
+       cima, el muro cruza por delante del arco y se come el cabecero justo
+       donde mas se mira: la vuelta desaparece detras de la pared. */
+    const camino = bordeAlto(vano);
+    const s = new THREE.Shape();
+    s.moveTo(vano.sx - 2, vano.su + ARRIBA);
+    s.lineTo(vano.sx - 2, camino[0][1]);
+    for (const [x, y] of camino) s.lineTo(x, y);
+    s.lineTo(vano.dx + 2, camino[camino.length - 1][1]);
+    s.lineTo(vano.dx + 2, vano.su + ARRIBA);
+    s.closePath();
+    const geo = new THREE.ExtrudeGeometry(s, {
+      depth: z1 - z0 - 1,
+      bevelEnabled: false,
+      curveSegments: 1,
+    });
+    geo.translate(0, 0, z0 + 0.5);
+    const m = new THREE.Mesh(geo, materialMuro);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    m.name = 'Muro';
+    g.add(m);
+  }
 
   // Con un ambiente montado el suelo lo pone el: dos planos al mismo nivel se
   // disputan los pixeles y salen a manchas.

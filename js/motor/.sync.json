@@ -1,3 +1,5 @@
 {
-  "modelo/papeles.js": "2711034f17de35cb78496ed28a4cf7eb"
+  "modelo/papeles.js": "2711034f17de35cb78496ed28a4cf7eb",
+  "geom/telaio.js": "3cc798954468625a6dfc3510f564f624",
+  "modelo/redimensionar.js": "100687681bb9b0874accbc560c336624"
 }

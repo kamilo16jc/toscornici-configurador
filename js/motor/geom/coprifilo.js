@@ -18,6 +18,7 @@
 
 import * as THREE from 'three';
 import { pegarVeta } from './materiales.js';
+import { bordeAlto } from './telaio.js';
 
 /**
  * Coloca el perfil en el convenio del montaje.
@@ -92,21 +93,40 @@ export function asentar(p, anchura) {
  * Para cada punto de la seccion se dibuja el recorrido metido hacia dentro esa
  * distancia, y entre un punto y el siguiente se tiende la superficie.
  *
+ * El filo alto llega como RECORRIDO y no como cota: sobre una puerta de cabeza
+ * redonda —la Praga y la Vienna— el tapajuntas tiene que dar la vuelta con
+ * ella, o se queda cruzando el arco por delante. En una puerta recta son dos
+ * puntos y sale la misma U de siempre, vertice por vertice.
+ *
  * @param {number[][]} seccion  perfil ya asentado, en [u, v]
  * @param {number} xI  filo izquierdo del vano
  * @param {number} xD  filo derecho del vano
- * @param {number} yA  filo alto del vano
+ * @param {number[][]} camino  filo alto del vano, de izquierda a derecha
  * @param {number} zMuro   cara del muro donde apoya
  * @param {number} sentido +1 hacia delante, -1 hacia atras
  */
-export function cornisa(seccion, xI, xD, yA, zMuro, sentido) {
+export function cornisa(seccion, xI, xD, camino, zMuro, sentido) {
   const pos = [];
-  const via = (u) => [
-    [xI - u, 0],
-    [xI - u, yA + u],
-    [xD + u, yA + u],
-    [xD + u, 0],
-  ];
+  /* Hacia donde se aparta cada punto del filo alto al meter el recorrido hacia
+     afuera. En un tramo horizontal sale (0, 1) y la cuenta es la de antes. */
+  const normales = camino.map((_, i) => {
+    const a = camino[Math.max(0, i - 1)];
+    const b = camino[Math.min(camino.length - 1, i + 1)];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const d = Math.hypot(dx, dy) || 1;
+    return [-dy / d, dx / d];
+  });
+  /* Las dos esquinas altas van a INGLETE: el filo se prolonga hasta la vertical
+     de la jamba en vez de apartarse en radial. Es lo que hacia la version recta
+     —con dos puntos de camino sale exactamente la misma— y es como se monta un
+     tapajuntas de verdad al doblar la esquina. */
+  const via = (u) => {
+    const p = camino.map(([x, y], i) => [x + normales[i][0] * u, y + normales[i][1] * u]);
+    p[0] = [xI - u, camino[0][1] + u];
+    p[p.length - 1] = [xD + u, camino[camino.length - 1][1] + u];
+    return [[xI - u, 0], ...p, [xD + u, 0]];
+  };
   const tri = (a, b, c) => pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 
   for (let i = 0; i < seccion.length; i++) {
@@ -188,6 +208,11 @@ export async function montarCoprifilo(perfil, medida, vano, muro, material, base
   const secciones = await Promise.all(slugs.map((s) => seccionDe(s, base)));
   const g = new THREE.Group();
 
+  /* El filo alto, del MISMO sitio del que lo saca el marco. Si el tapajuntas se
+     calculara su propia vuelta, bastarian decimas para que se abriera una raya
+     entre los dos justo en la parte curva, que es donde se mira. */
+  const camino = bordeAlto(vano);
+
   /* El coprifilo apoya en la CARA DEL MURO, no en el filo interior del ala.
      Son dos planos distintos, separados justo lo que mide el pie: el pie entra
      en el vano y salta por encima del forro, y el dorso se queda fuera. */
@@ -207,7 +232,7 @@ export async function montarCoprifilo(perfil, medida, vano, muro, material, base
 
   caras.forEach((c, i) => {
     const sec = secciones[Math.min(i, secciones.length - 1)];
-    const m = new THREE.Mesh(cornisa(sec, vano.sx, vano.dx, vano.su, c.z, c.sentido), material);
+    const m = new THREE.Mesh(cornisa(sec, vano.sx, vano.dx, camino, c.z, c.sentido), material);
     m.castShadow = true;
     m.receiveShadow = true;
     m.name = 'Coprifilo';
