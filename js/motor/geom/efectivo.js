@@ -20,6 +20,7 @@
 import { puntosDe, cajaDe } from '../modelo/proyecto.js';
 import { recortarPorVanos, recortarSalvo } from './booleanas.js';
 import { haciaDentro } from './offset.js';
+import { apartaDelArmazon } from './perfiles.js';
 
 /** Papeles que son hueco: se llevan por delante la madera que tienen encima. */
 export const PAPELES_VANO = new Set(['bugnato', 'bugnatoVetro', 'pannello', 'vetro', 'vetroSatinato']);
@@ -62,13 +63,13 @@ const solapan = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[
  */
 function cajaDelVano(vano) {
   const c = cajaDe(vano);
-  const a = vano.bastoneAncho ?? 0;
+  const a = apartaDelArmazon(vano);
   return a > 0 ? [c[0] - a, c[1] - a, c[2] + a, c[3] + a] : c;
 }
 
 function huellaDelVano(vano, resolucion) {
   const pts = puntosDe(vano, resolucion);
-  const ancho = vano.bastoneAncho ?? 0;
+  const ancho = apartaDelArmazon(vano);
   if (!(ancho > 0)) return pts;
 
   /* La madera se recorta un pelo MENOS de lo que ocupa la moldura, y esto no
@@ -96,7 +97,7 @@ function firma(pieza, vanos) {
   for (const v of vanos) {
     const q = cajaDe(v);
     // El ancho de la moldura entra en la firma: cambiarlo cambia el recorte.
-    s += `|${q[0]},${q[1]},${q[2]},${q[3]},b${v.bastoneAncho ?? 0}`;
+    s += `|${q[0]},${q[1]},${q[2]},${q[3]},b${apartaDelArmazon(v)}`;
     if (v.tipo === 'trazado') s += `,n${v.nodos.length}`;
   }
   return s;
@@ -184,7 +185,7 @@ export function contornoEfectivo(pieza, todas, resolucion = 160) {
     const huellas = [];
     for (const v of vanos) {
       const ef = contornoEfectivo(v, todas, resolucion);
-      const ancho = Math.max((v.bastoneAncho ?? 0) - 0.4, 0);
+      const ancho = Math.max(apartaDelArmazon(v) - 0.4, 0);
       if (!(ancho > 0)) continue;
       const crecida = haciaDentro(ef.puntos, -ancho);
       if (crecida) huellas.push(crecida);

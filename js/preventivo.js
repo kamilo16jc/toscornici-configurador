@@ -38,7 +38,13 @@ const voce = (r) => `
 
 /* ---------- il documento intero ---------- */
 
+import { tr } from './preventivo-lingua.js';
+
 export function documentoPreventivo(d) {
+  /* Scorciatoia per non ripetere la lingua a ogni stringa. In italiano
+     `tr` restituisce il testo com'e', quindi il documento italiano non
+     paga niente per il fatto che ne esista uno inglese. */
+  const T = (s) => tr(s, d.lingua);
   const piu = d.qty > 1;
 
   // Il foglio 1 ne regge una dozzina; oltre, il resto scende su un
@@ -50,27 +56,29 @@ export function documentoPreventivo(d) {
   const totaleBlocco = `
       <div class="totale">
         <div>
-          <p class="totale-voce">${piu ? 'Totale a porta' : 'Totale'}</p>
-          <p class="totale-nota">IVA esclusa · prezzi di listino 2026</p>
+          <p class="totale-voce">${T(piu ? 'Totale a porta' : 'Totale')}</p>
+          <p class="totale-nota">${T('IVA esclusa · prezzi di listino 2026')}</p>
         </div>
         <div>
           <p class="totale-cifra">${soldi(d.totale)}</p>
-          ${piu ? `<p class="totale-unita">${d.qty} porte — ${soldi(d.totale * d.qty)}</p>` : ''}
+          ${piu ? `<p class="totale-unita">${d.qty} ${T('porte')} — ${soldi(d.totale * d.qty)}</p>` : ''}
         </div>
       </div>`;
 
   const piede = (n) => `
   <footer class="piede">
     <span>Toscocornici · ordini@toscocornici.it</span>
-    <span>Documento generato dal configuratore</span>
-    <span>Foglio ${n} di ${d.fogli}</span>
+    <span>${T('Documento generato dal configuratore')}</span>
+    <span>${T('Foglio')} ${n} ${T('di')} ${d.fogli}</span>
   </footer>`;
 
+  /* Anche l'attributo lang: lo leggono i lettori di schermo e i correttori
+     del browser. Un documento inglese dichiarato "it" li manda in confusione. */
   return `<!DOCTYPE html>
-<html lang="it">
+<html lang="${d.lingua === 'en' ? 'en' : 'it'}">
 <head>
 <meta charset="UTF-8">
-<title>Preventivo ${esc(d.rif)} — ${esc(d.modello)}</title>
+<title>${T('Preventivo')} ${esc(d.rif)} — ${esc(d.modello)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
@@ -79,9 +87,9 @@ export function documentoPreventivo(d) {
 <body>
 
 <div class="barra-stampa">
-  <span><b>Preventivo ${esc(d.rif)}</b> — pronto da salvare.</span>
-  <span>Nella finestra di stampa scegli <b>Salva come PDF</b>.</span>
-  <button type="button" onclick="window.print()">Salva in PDF</button>
+  <span><b>${T('Preventivo')} ${esc(d.rif)}</b> ${T('— pronto da salvare.')}</span>
+  <span>${T('Nella finestra di stampa scegli')} <b>${T('Salva come PDF')}</b>.</span>
+  <button type="button" onclick="window.print()">${T('Salva in PDF')}</button>
 </div>
 
 <!-- ---------- foglio 1: il preventivo ---------- -->
@@ -91,7 +99,7 @@ export function documentoPreventivo(d) {
     ${d.logo ? `<img src="${d.logo}" alt="Toscocornici">`
              : '<p class="doc-tipo">Toscocornici</p>'}
     <div class="testata-dati">
-      <p class="doc-tipo">Preventivo</p>
+      <p class="doc-tipo">${T('Preventivo')}</p>
       <p class="doc-rif">RIF. ${esc(d.rif)}</p>
       <p class="doc-data">${esc(d.data)}</p>
     </div>
@@ -101,25 +109,29 @@ export function documentoPreventivo(d) {
   <div class="corpo">
 
     <div class="intro">
-      <p class="occhiello">La tua porta</p>
+      <p class="occhiello">${T('La tua porta')}</p>
       <h1 class="titolo">${esc(d.modello)}</h1>
       <p class="sottotitolo">${esc(d.sottotitolo)}</p>
     </div>
 
+    <!-- Prima i titoli portavano le due lingue affiancate —"Cliente
+         Customer"— perche' il documento usciva sempre in italiano e quello
+         era l'unico modo di farsi capire fuori. Adesso che esce davvero
+         nella lingua scelta, il doppione sarebbe rumore. -->
     <section class="sezione">
-      <h3 class="sezione-titolo"><span class="num">01</span> Cliente <span class="en">Customer</span></h3>
+      <h3 class="sezione-titolo"><span class="num">01</span> ${T('Cliente')}</h3>
       <dl class="coppie">${d.cliente.map((c) => coppia(c[0], c[1], c[2])).join('')}
       </dl>
     </section>
 
     <section class="sezione">
-      <h3 class="sezione-titolo"><span class="num">02</span> La configurazione <span class="en">Configuration</span></h3>
+      <h3 class="sezione-titolo"><span class="num">02</span> ${T('La configurazione')}</h3>
       <dl class="coppie">${d.config.map((c) => coppia(c[0], c[1], c[2])).join('')}
       </dl>
     </section>
 
     <section class="sezione">
-      <h3 class="sezione-titolo"><span class="num">03</span> Il preventivo <span class="en">Quote</span></h3>
+      <h3 class="sezione-titolo"><span class="num">03</span> ${T('Il preventivo')}</h3>
       <table class="voci"><tbody>${primeVoci.map(voce).join('')}
       </tbody></table>
       ${restoVoci.length ? '' : totaleBlocco}
@@ -127,20 +139,20 @@ export function documentoPreventivo(d) {
 
     ${restoVoci.length ? '' : `
     <div class="chiusura">
-      ${d.note ? `<div class="note"><b>Nota del cliente.</b> ${esc(d.note)}</div>`
-               : '<div class="note"><b>Rilievo.</b> Le misure indicate sono quelle dichiarate dal cliente: prima della produzione vanno confermate in cantiere.</div>'}
+      ${d.note ? `<div class="note"><b>${T('Nota del cliente.')}</b> ${esc(d.note)}</div>`
+               : `<div class="note"><b>${T('Rilievo.')}</b> ${T('Le misure indicate sono quelle dichiarate dal cliente: prima della produzione vanno confermate in cantiere.')}</div>`}
       <div class="condizioni">
-        <h4>Condizioni</h4>
-        <p><b>Validità</b> — 30 giorni dalla data del documento.</p>
-        <p><b>Misure</b> — vale il rilievo in cantiere.</p>
-        <p><b>Consegna</b> — 6–8 settimane dalla conferma.</p>
+        <h4>${T('Condizioni')}</h4>
+        <p><b>${T('Validità')}</b> ${T('— 30 giorni dalla data del documento.')}</p>
+        <p><b>${T('Misure')}</b> ${T('— vale il rilievo in cantiere.')}</p>
+        <p><b>${T('Consegna')}</b> ${T('— 6–8 settimane dalla conferma.')}</p>
       </div>
     </div>`}
 
     ${d.fuoriListino ? `
     <div class="avviso-listino">
-      <b>Fuori listino.</b> ${esc(d.fuoriListino)} Il totale qui sopra non comprende
-      questa lavorazione: il prezzo lo conferma la fabbrica.
+      <b>${T('Fuori listino.')}</b> ${esc(d.fuoriListino)}
+      ${T('Il totale qui sopra non comprende questa lavorazione: il prezzo lo conferma la fabbrica.')}
     </div>` : ''}
 
   </div>
@@ -150,23 +162,23 @@ export function documentoPreventivo(d) {
 ${restoVoci.length ? `
 <!-- ---------- foglio di seguito: le voci restanti ---------- -->
 <section class="foglio">
-  <p class="seguito">Preventivo ${esc(d.rif)} · seguito</p>
+  <p class="seguito">${T('Preventivo')} ${esc(d.rif)} · ${T('seguito')}</p>
   <div class="corpo">
     <section class="sezione">
-      <h3 class="sezione-titolo"><span class="num">03</span> Il preventivo <span class="en">segue</span></h3>
+      <h3 class="sezione-titolo"><span class="num">03</span> ${T('Il preventivo')} · ${T('segue')}</h3>
       <table class="voci"><tbody>${restoVoci.map(voce).join('')}
       </tbody></table>
       ${totaleBlocco}
     </section>
 
     <div class="chiusura">
-      ${d.note ? `<div class="note"><b>Nota del cliente.</b> ${esc(d.note)}</div>`
-               : '<div class="note"><b>Rilievo.</b> Le misure indicate sono quelle dichiarate dal cliente: prima della produzione vanno confermate in cantiere.</div>'}
+      ${d.note ? `<div class="note"><b>${T('Nota del cliente.')}</b> ${esc(d.note)}</div>`
+               : `<div class="note"><b>${T('Rilievo.')}</b> ${T('Le misure indicate sono quelle dichiarate dal cliente: prima della produzione vanno confermate in cantiere.')}</div>`}
       <div class="condizioni">
-        <h4>Condizioni</h4>
-        <p><b>Validità</b> — 30 giorni dalla data del documento.</p>
-        <p><b>Misure</b> — vale il rilievo in cantiere.</p>
-        <p><b>Consegna</b> — 6–8 settimane dalla conferma.</p>
+        <h4>${T('Condizioni')}</h4>
+        <p><b>${T('Validità')}</b> ${T('— 30 giorni dalla data del documento.')}</p>
+        <p><b>${T('Misure')}</b> ${T('— vale il rilievo in cantiere.')}</p>
+        <p><b>${T('Consegna')}</b> ${T('— 6–8 settimane dalla conferma.')}</p>
       </div>
     </div>
   </div>
@@ -178,33 +190,32 @@ ${restoVoci.length ? `
 
   <header class="porta-testa">
     <div>
-      <p class="occhiello">Come sarà</p>
+      <p class="occhiello">${T('Buona scelta')}</p>
       <h2>${esc(d.modello)}</h2>
     </div>
     <p class="rif">RIF. ${esc(d.rif)}</p>
   </header>
 
   <figure class="telaio-foto${d.scena ? '' : ' telaio-foto--oggetto'}">
-    ${d.immagine ? `<img src="${d.immagine}" alt="La porta configurata">`
-                 : '<figcaption class="segnaposto">Render della configurazione</figcaption>'}
+    ${d.immagine ? `<img src="${d.immagine}" alt="La porta configurata"
+           onerror="this.onerror=null;this.src='assets/collezioni/listino.webp'">`
+                 : `<figcaption class="segnaposto">${T('Render della configurazione')}</figcaption>`}
   </figure>
 
   <dl class="porta-dati">
-    <div><dt>Modello</dt><dd>${esc(d.modello)}</dd></div>
-    <div><dt>Essenza</dt><dd>${esc(d.essenza)}</dd></div>
-    <div><dt>Luce</dt><dd>${esc(d.luce)}</dd></div>
-    <div><dt>Maniglia</dt><dd>${esc(d.maniglia)}</dd></div>
+    <div><dt>${T('Modello')}</dt><dd>${esc(d.modello)}</dd></div>
+    <div><dt>${T('Essenza')}</dt><dd>${esc(T(d.essenza))}</dd></div>
+    <div><dt>${T('Luce')}</dt><dd>${esc(d.luce)}</dd></div>
+    <div><dt>${T('Maniglia')}</dt><dd>${esc(T(d.maniglia))}</dd></div>
   </dl>
 
   <p class="avviso-render" style="margin-top: 7mm;">
-    L’immagine è una rappresentazione della configurazione scelta, non una fotografia
-    del prodotto finito: venature, tonalità del legno e luce dell’ambiente possono
-    differire. Fanno fede le misure e le voci del foglio 1.
+    ${T('L’immagine è una rappresentazione della configurazione scelta, non una fotografia del prodotto finito: venature, tonalità del legno e luce dell’ambiente possono differire. Fanno fede le misure e le voci del foglio 1.')}
   </p>
 
   <footer class="porta-piede">
     <span>Toscocornici · ordini@toscocornici.it</span>
-    <span>Foglio ${d.fogli} di ${d.fogli}</span>
+    <span>${T('Foglio')} ${d.fogli} ${T('di')} ${d.fogli}</span>
   </footer>
 
 </section>

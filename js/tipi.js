@@ -9,7 +9,8 @@
      TIPO 2  modanatura ASTRAGALO, bugna 'doble'
      TIPO 3  modanatura SMUSSO,    bugna 'doble'
 
-   Il campo —bugna o liscio— e' una scelta a parte sul 2 e sul 3.
+   Il campo —con bugna o senza— e' una scelta a parte, su tutti e tre.
+   Senza bugna il campo e' liscio e porta solo la modanatura.
 
    Da dove esce. Dai tre tracciati della ROMA fatti in fabbrica
    (ROMA TIPO 1/2/3). Confrontandoli campo per campo: fra il TIPO 1
@@ -35,6 +36,8 @@
    e' la bugna: senza pannello non c'e' niente da rialzare.
    ============================================================ */
 
+import { MOLDURAS } from './motor/geom/perfiles.js';
+
 /** Le tre finiture di listino. La chiave e' il numero che vede il cliente. */
 export const TIPI = {
   1: { bastone: 'gola',      liscio: false, bugna: 'escalonado', bisel: 4 },
@@ -53,14 +56,15 @@ export const TIPI = {
    Ma la fabbrica li fa in tutt'e due i modi — un TIPO 3 con la bugna esiste,
    ed e' quello a spigolo vivo— e allora la modanatura e il campo sono due
    scelte, non una.
-   Il TIPO 1 resta fuori: nasce con la bugna e non si tocca.
+   Anche il TIPO 1, da ottobre 2026: con la bugna di fabbrica o senza, e
+   senza porta solo la sua modanatura (lo ha chiesto Julian, 3 ott 2026).
    Questi sono solo i valori DI PARTENZA quando si cambia tipo, scelti perche'
    nessuno si trovi cambiata una porta che aveva gia' configurato: il 2 come
    era (con bugna) e il 3 come era (liscio). */
 export const BUGNA_DI_PARTENZA = { 1: true, 2: true, 3: false };
 
-/** Vero se questo tipo lascia scegliere il campo. Il TIPO 1 no. */
-export const scegliBugna = (tipo) => Number(tipo) !== 1;
+/** Vero se questo tipo lascia scegliere il campo. Adesso tutti e tre. */
+export const scegliBugna = (tipo) => [1, 2, 3].includes(Number(tipo));
 
 /** Il numero di tipo con cui nasce una porta se non se ne sceglie uno. */
 export const TIPO_DEFAULT = 1;
@@ -98,10 +102,15 @@ export function haVetro(pezzi) {
  */
 export function applicaTipo(pezzi, tipo, conBugna = null) {
   const t = TIPI[tipo] ?? TIPI[TIPO_DEFAULT];
-  /* Se non si dice niente, vale il campo storico del tipo. Il TIPO 1 la bugna
-     ce l'ha sempre, qualunque cosa arrivi da fuori. */
-  const liscio = Number(tipo) === 1 ? false
-    : conBugna == null ? t.liscio : !conBugna;
+  // Se non si dice niente, vale il campo storico del tipo.
+  const liscio = conBugna == null ? t.liscio : !conBugna;
+  /* Il TIPO 1 SENZA BUGNA: il campo liscio va proprio sotto la modanatura,
+     cosi' lei ci si posa e si vede intera, unghia compresa. La modanatura
+     di fabbrica ha la sua misura (17,5 di alto dalla faccia dell'anta), e il
+     pannello liscio prende la faccia dove lei appoggia, sulle due facce. */
+  const molde = MOLDURAS[t.bastone];
+  const cara = Math.max(...pezzi.map((p) => p.espesor ?? 0)) / 2;
+  const appoggio = molde?.perfilMm ? cara - molde.perfilMm[molde.perfilMm.length - 1][1] : null;
 
   return pezzi.map((p) => {
     if (!VANI.has(p.papel)) return p;
@@ -137,6 +146,10 @@ export function applicaTipo(pezzi, tipo, conBugna = null) {
     q.bisel = 0;
     q.biselAncho = 0;
     q.biselPerfil = 'recto';
+    if (appoggio > 0) {
+      q.espesor = 2 * appoggio;
+      q.z = 0;
+    }
     return q;
   });
 }

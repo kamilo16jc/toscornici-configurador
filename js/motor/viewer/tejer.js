@@ -17,9 +17,9 @@
 
 import * as THREE from 'three';
 import { extruir } from '../geom/extruir.js';
-import { material, esMadera, pegarVeta } from '../geom/materiales.js';
+import { material, esMadera, pegarVeta, TAM_VETA } from '../geom/materiales.js';
 import { geometriaBugna, campoDe, perfilQueQuepa } from '../geom/relieve.js';
-import { perfilEnMm, perfilBastoneEnMm } from '../geom/perfiles.js';
+import { perfilEnMm, perfilBastoneEnMm, MOLDURAS, formaDeMoldura } from '../geom/perfiles.js';
 import { haciaDentro } from '../geom/offset.js';
 import { contornoEfectivo } from '../geom/efectivo.js';
 import { recortarPorVanos } from '../geom/booleanas.js';
@@ -68,6 +68,28 @@ function conRientro(puntos, rientro, topes = []) {
  * cualquier forma —tambien las de cabeza redonda— sin dibujar nada aparte.
  */
 function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45) {
+  /* Una moldura de fabrica con su medida real (la TIPO 1): va por DENTRO del
+     vano, posada en el panel y con el lomo contra el armazon, que no se
+     aparta. El lomo entra 0,3 mm en el armazon para que las dos caras no
+     caigan en el mismo plano y parpadeen. La bugna TIPO 1 la lleva siempre. */
+  const forma = formaDeMoldura(pieza);
+  const molde = MOLDURAS[forma];
+  if (molde?.perfilMm) {
+    const ENTRA = 0.3;
+    const fuera = haciaDentro(puntosDelVano, -ENTRA);
+    if (!fuera) return null;
+    const caraHoja = espesorHoja / 2;
+    /* El primer punto, en el contorno crecido: la meseta de arriba se
+       alarga esos 0,3 hacia el armazon y lo demas queda donde mide. */
+    return geometriaBugna(fuera, [
+      [0, caraHoja - molde.perfilMm[0][1]],
+      ...molde.perfilMm.map(([e, baja]) => [e + ENTRA, caraHoja - baja]),
+    ], {
+      simetrico: true,
+      sinCampo: true,
+      uvDeBarrido: TAM_VETA,
+    });
+  }
   const ancho = pieza.bastoneAncho ?? 0;
   if (!(ancho > 0)) return null;
 
@@ -92,9 +114,10 @@ function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45) {
   const fondo = (pieza.z ?? 0) + pieza.espesor / 2 - HOLGURA;
   if (!(caraHoja > fondo + 0.5)) return null;
 
-  return geometriaBugna(fuera, perfilBastoneEnMm(ancho, caraHoja, fondo, pieza.bastoneForma), {
+  return geometriaBugna(fuera, perfilBastoneEnMm(ancho, caraHoja, fondo, forma), {
     simetrico: true,
     sinCampo: true,
+    uvDeBarrido: TAM_VETA,
   });
 }
 
@@ -225,11 +248,12 @@ function geometriaDe(pieza, contorno) {
  * @param {number} o.espesorHoja      para la cota del bastone
  * @param {THREE.Group} [o.grupo]     donde meterlas; si no, uno nuevo
  * @param {Map} [o.cache]             materiales reutilizados entre llamadas
+ * @param {number} [o.realce]         cuanto se exagera el sombreado del relieve (1 = el real)
  */
-export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, grupo = null, cache = null } = {}) {
+export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, grupo = null, cache = null, realce = 1 } = {}) {
   const g = grupo ?? new THREE.Group();
   const mats = cache ?? new Map();
-  const ctx = { _veta: veta, uv, espesorHoja, grupo: g };
+  const ctx = { _veta: veta, uv, espesorHoja, grupo: g, realce };
 
   /* UNA PIEZA QUE REVIENTA NO PUEDE LLEVARSE LA PUERTA ENTERA.
      Aqui dentro se llama a todo el motor —el recorte entre piezas, el
@@ -268,6 +292,33 @@ export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, g
   return g;
 }
 
+/**
+ * REALCE DEL RELIEVE: exagera la inclinacion de las normales, no la madera.
+ *
+ * Una bugna de fabrica sube 3,7 mm en 42: una pendiente de cinco grados. Con
+ * la madera mate y la luz de una habitacion, cinco grados casi no cambian de
+ * tono y la bugna se pierde entera aunque la geometria este bien. Multiplicar
+ * por k la parte de la normal que mira de lado (x, y) hace que la luz lea esa
+ * pendiente como si fuera k veces mas inclinada: el bisel que mira a la luz se
+ * aclara, el otro se oscurece, y la bugna y las golas se ven. Las medidas no
+ * cambian ni una decima: las caras planas (normal en z) y los cantos (normal
+ * sin z) quedan igual, solo se tuerce el sombreado de lo inclinado.
+ */
+function realzarRelieve(geo, k) {
+  const n = geo?.attributes?.normal;
+  if (!n || !(k > 1)) return;
+  for (let i = 0; i < n.count; i++) {
+    const x = n.getX(i) * k;
+    const y = n.getY(i) * k;
+    const z = n.getZ(i);
+    const l = Math.hypot(x, y, z) || 1;
+    n.setXYZ(i, x / l, y / l, z / l);
+  }
+  n.needsUpdate = true;
+}
+
+const esVidrioParte = (parte) => String(parte.acabado ?? '').startsWith('vidrio');
+
 /** Teje una pieza —o uno de sus trozos— y la mete en la escena. */
 function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
   const contorno = { puntos: efectivo.puntos };
@@ -292,7 +343,9 @@ function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
      travesano que lo rodea y no el del panel, que puede ser vidrio. */
   if (aro) {
     const marco = piezas.find((x) => ['traverso', 'tavola', 'montante', 'perfilado'].includes(x.papel));
-    partes.push({ geo: aro, acabado: marco?.acabado ?? 'robleClaro', espesor: 45, zAbsoluto: 0 });
+    /* moldura: lleva su propia veta (a lo largo, ver geometriaBugna) y no se
+       realza: su curva ya es fuerte y exagerarla la volvia un muro de un tono. */
+    partes.push({ geo: aro, acabado: marco?.acabado ?? 'robleClaro', espesor: 45, zAbsoluto: 0, moldura: true });
   }
 
   for (const parte of partes) {
@@ -305,12 +358,15 @@ function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
        pide. El configurador es el segundo caso: no usa la veta del motor —
        tiene sus propias esencias con fotos reales— pero sus materiales SI
        necesitan UV, y sin ellas la madera sale lisa. */
-    if ((ctx._veta || ctx.uv) && esMadera(parte.acabado)) {
+    if ((ctx._veta || ctx.uv) && esMadera(parte.acabado) && !parte.moldura) {
       const xs = efectivo.puntos.map((q) => q[0]);
       const ys = efectivo.puntos.map((q) => q[1]);
       const cruzada = Math.max(...xs) - Math.min(...xs) > Math.max(...ys) - Math.min(...ys);
       pegarVeta(parte.geo, cruzada);
     }
+
+    // El cristal no: su brillo es el de una luna plana.
+    if (!esVidrioParte(parte) && !parte.moldura) realzarRelieve(parte.geo, ctx.realce);
 
     const malla = new THREE.Mesh(parte.geo, cache.get(claveMat));
     malla.position.z = parte.zAbsoluto ?? pieza.z ?? 0;

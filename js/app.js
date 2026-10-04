@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mostraApertura } from './aperture.js';
 import { stampaPreventivo, documentoPreventivo } from './preventivo.js';
+import { arrancaFoto, fotoLista } from './render-ia.js';
+import { tr } from './preventivo-lingua.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* Il motore delle porte. Copia meccanica di puertas3d: non si edita qui, si
    corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
@@ -149,20 +151,33 @@ const state = {
    sul 400-C Liverpool.
    ============================================================ */
 
-// Fuori misura (voci 16/17): scaglioni, NON proporzionale.
-// Oltre 1200×2600 il listino non dà prezzo → su preventivo.
+/* FUORI MISURA. Tutto il listino vale per una luce di 900×2100: basta
+   passarla di un centimetro, in larghezza O in altezza, e TUTTO IL LEGNO
+   costa il 50% in piu' —la porta, il telaio, l'allargato, i coprifili, il
+   sopraluce, le forme e i capitelli—. Una volta sola: passarle tutte e due
+   non fa +100%. Ferramenta, aperture e colore RAL restano al prezzo di
+   listino. Prima erano gli scaglioni delle voci 16/17 (+20% larghezza, +40%
+   altezza, solo sulla porta) e i coprifili a metri lineari; deciso con
+   Julián il 3 ott 2026.
+   Oltre 1200×2600 il listino non da' prezzo → su preventivo. */
+const LUCE_STD = { w: 900, h: 2100 };
+const FUORI_MISURA = 1.5;
+const fuoriMisura = (w, h) => w > LUCE_STD.w || h > LUCE_STD.h;
 function sizeBand(w, h) {
   const out = { ok: true, factor: 1, note: [] };
   if (w > 1200 || h > 2600) { out.ok = false; return out; }
-  if (w > 900)  { out.factor *= 1.20; out.note.push('fuori misura larghezza +20%'); }
-  if (h > 2100) { out.factor *= 1.40; out.note.push('fuori misura altezza +40%'); }
+  if (fuoriMisura(w, h)) { out.factor = FUORI_MISURA; out.note.push('fuori misura +50%'); }
   return out;
 }
 
-// Coprifili: l'EXTRA A PORTA copre la misura standard = 11,50 ml;
-// oltre, proporzionale ai metri lineari. Mai sconto sotto lo standard.
-const STD_PERIM = 2 * 2100 + 900; // 5100 mm per lato
-const mlFactor = (w, h) => (!w || !h ? 1 : Math.max(1, (2 * h + w) / STD_PERIM));
+// quanto pesa la misura su un extra in legno: 1 a misura standard, 1,5 oltre
+const fattoreLegno = () => sizeBand(state.w, state.h).factor;
+const legno = (v) => Math.round(v * fattoreLegno() * 100) / 100;
+
+// Coprifili: l'EXTRA A PORTA e' per la misura standard, 11,50 ml. Le misure
+// vendute a metro si contano sempre su quei 11,50: fuori misura non si
+// rifanno i metri, sale il 50% come il resto del legno.
+const ML_STD = 11.5;
 
 const TELAI = [
   { id: 'std',           label: 'Standard (compreso)',                    extra: 0 },
@@ -301,11 +316,11 @@ function misuraAttiva(cop) {
   return ms.find((m) => m.id === state.copriMisura) || ms[0];
 }
 
-// extra a porta di una misura, per legno e metri lineari effettivi
-function extraMisura(cop, mis, wood, metri) {
+// extra a porta di una misura, per legno, alla misura standard
+function extraMisura(cop, mis, wood) {
   if (mis.cad) return Math.max(0, mis.cad[wood] - COPRI_INCLUSO_CAD);
   if (mis.pack) return cop.prezzi[wood];
-  return Math.max(0, mis.ml[wood] * metri - COPRI_INCLUSO_CAD);
+  return Math.max(0, mis.ml[wood] * ML_STD - COPRI_INCLUSO_CAD);
 }
 
 // Aperture speciali (pagg. 61–62)
@@ -328,7 +343,7 @@ const APERTURE = [
   { id: 'koblenz',    label: '21 · A libro KOBLENZ',                                extra: 600 },
 ];
 
-// Porte ad arco e curve (pag. 62) — solo fino a 90×210
+// Porte ad arco e curve (pag. 62) — prezzi per 90×210, oltre +50%
 const FORME = [
   { id: 'diritta', label: 'Diritta (standard)',                    extra: 0 },
   { id: 'arco_ts', label: 'Ad arco tutto sesto',                   extra: 1000 },
@@ -402,7 +417,8 @@ const TELAIO_COPRI = {
 const TELAIO_FORMA = { arco_ts: 750, arco_sr: 1000, curva: 1500 };
 
 // Capitelli e zoccoli (pagg. 56–58) — prezzi Toulipier, Laccato Bianco
-// Tosco compreso, "solo un lato" (×2 per due lati). SOLO fino a 900×2100.
+// Tosco compreso, "solo un lato" (×2 per due lati). Prezzi per 900×2100:
+// il listino li vende solo fino a li', oltre si fanno a +50% come il legno.
 const CAPITELLI = [
   { id: 'no',    label: 'Nessun capitello',                   extra: 0 },
   { id: 'c900',  label: 'Capitello 900',                      extra: 80 },
@@ -640,7 +656,14 @@ renderer.domElement.addEventListener('pointerdown', () => {
 
 // luce chiave radente dall'alto-sinistra: fa emergere bugne e modanature
 // con ombre proprie; il riempimento resta basso per non appiattire.
-const key = new THREE.DirectionalLight(0xffffff, 2.1);
+/* PIU' SOMBRA NELLE CURVE (3 ott 2026: «se está perdiendo absolutamente toda
+   la bugna»). La bugna di fabbrica sale 3,7 mm in 42: cinque gradi. Con tanta
+   luce d'ambiente sul legno quei cinque gradi non cambiano tono. Ora il legno
+   prende meno ambiente (vedi applyFinish) e piu' chiave, dalla STESSA
+   direzione: se la si fa piu' radente, lo stipite getta una fascia d'ombra su
+   mezza porta, che e' incassata 5 cm nel muro. Misurato: il legno resta chiaro
+   come prima (171 contro 168 di luminanza) e gole e bugne segnano. */
+const key = new THREE.DirectionalLight(0xffffff, 3.3);
 key.position.set(-3.2, 3.6, 1.6);
 key.castShadow = true;
 key.shadow.mapSize.set(profilo().ombra, profilo().ombra);
@@ -651,7 +674,7 @@ key.shadow.camera.left = key.shadow.camera.bottom = -4.5;
 key.shadow.camera.right = key.shadow.camera.top = 4.5;
 scene.add(key);
 
-const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+const fill = new THREE.DirectionalLight(0xffffff, 0.2);
 fill.position.set(3, 2, 2.5);
 scene.add(fill);
 
@@ -665,7 +688,7 @@ scene.add(fill);
    altezza, stesso taglio radente da sinistra. La chiave di dietro fa ombra
    come quella davanti, se no il rilievo di la' resterebbe piatto — ed e' il
    rilievo il motivo per cui la si accende. */
-const keyDietro = new THREE.DirectionalLight(0xffffff, 2.1);
+const keyDietro = new THREE.DirectionalLight(0xffffff, 3.3);
 keyDietro.position.set(-3.2, 3.6, -1.6);
 keyDietro.castShadow = true;
 keyDietro.shadow.mapSize.set(profilo().ombra, profilo().ombra);
@@ -676,7 +699,7 @@ keyDietro.shadow.camera.left = keyDietro.shadow.camera.bottom = -4.5;
 keyDietro.shadow.camera.right = keyDietro.shadow.camera.top = 4.5;
 scene.add(keyDietro);
 
-const fillDietro = new THREE.DirectionalLight(0xffffff, 0.3);
+const fillDietro = new THREE.DirectionalLight(0xffffff, 0.2);
 fillDietro.position.set(3, 2, -2.5);
 scene.add(fillDietro);
 
@@ -705,6 +728,12 @@ scene.add(fillDietro);
    resta identica, perde solo l'ombra dentro l'incasso. */
 const OCCLUSIONE = true;
 
+/* Quanto si esagera l'inclinazione delle normali di bugne e modanature: la
+   geometria resta quella di fabbrica, cambia solo come la luce la legge. Vedi
+   realzarRelieve nel motore. 1 = com'e'; a 3 la bugna di cinque gradi si legge
+   come una di quindici. */
+const REALCE_RILIEVO = 3;
+
 let composer = null;
 let gtaoPass = null;
 
@@ -729,17 +758,20 @@ function montaOcclusione() {
 
     const ao = new GTAOPass(scene, camera, w, h);
     ao.output = GTAOPass.OUTPUT.Default;      // AO composta sopra la scena
-    ao.blendIntensity = 0.85;
+    ao.blendIntensity = 1.0;
     /* Meno campioni sullo schermo piccolo. Il telefono ha meno GPU e la porta
        ci sta dentro alta due dita: l'occlusione si legge lo stesso, e quello
        che si guadagna e' che il visore continua a girare fluido. */
     const fine = Math.min(w, h) >= 520;
     const campioni = fine ? profilo().aoCampioni : Math.max(4, profilo().aoCampioni >> 1);
+    /* Piu' fine e piu' forte: i dettagli da segnare adesso sono la gola della
+       modanatura TIPO 1 (14 mm) e il gradino della bugna (2 mm), non solo
+       l'incasso del TIPO 3. 2 cm li coprono senza sporcare i campi larghi. */
     ao.updateGtaoMaterial({
-      radius: 0.05,           // metri: l'incasso da risolvere e' 0,0138
+      radius: 0.02,           // metri: gola 0,014, incasso TIPO 3 0,0138
       distanceExponent: 1,
-      thickness: 0.5,
-      scale: 1.1,
+      thickness: 1.2,
+      scale: 2.2,
       samples: campioni,
       distanceFallOff: 1,
       screenSpaceRadius: false,
@@ -840,7 +872,9 @@ function applyMaterialLook() {
     // 1 = manda su mapa. Barnizada se cierra un poco y coge vernice.
     woodMat.roughness = raw ? (receta.rugosidad ?? 1) : (receta.rugosidad ?? 1) * 0.75;
     woodMat.clearcoat = raw ? (receta.barniz ?? 0) : 0.08;
-    woodMat.envMapIntensity = raw ? 0.35 : 0.7;
+    /* Poco ambiente sul legno: e' la luce che arriva da tutte le parti e
+       spiana la bugna. Il chiaro lo rimette la chiave, che ha direzione. */
+    woodMat.envMapIntensity = raw ? 0.12 : 0.35;
     return;
   }
 
@@ -852,7 +886,7 @@ function applyMaterialLook() {
      legno nudo — niente vernice e molto piu' ruvida. */
   woodMat.roughness = lacc ? 0.42 : (raw ? 0.85 : 0.38);
   woodMat.clearcoat = lacc ? 0.5 : (raw ? 0 : 0.08);
-  woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.35 : 0.7);
+  woodMat.envMapIntensity = lacc ? 0.9 : (raw ? 0.12 : 0.35);
 }
 
 /* Il fondale prende il tono del visore: chiaro di solito, scuro quando il
@@ -1211,7 +1245,7 @@ function loadModel(key) {
          e il giro vogliono soltanto quella che apre. */
       const hoja = new THREE.Group();
       const ante = (bande ? bande.map((b) => b.piezas) : [pezzi]).map((g) => {
-        const m = tejerHoja(g, { veta: null, uv: true, espesorHoja: spessore });
+        const m = tejerHoja(g, { veta: null, uv: true, espesorHoja: spessore, realce: REALCE_RILIEVO });
         hoja.add(m);
         return m;
       });
@@ -1326,6 +1360,10 @@ function loadModel(key) {
       /* E il capitello, che va DOPO: se c'e' lui, il coprifilo e' andato solo
          sullo spallone e il fronte lo chiude questo. */
       await montaCapitello(mio, marco, datiMarco);
+      /* E gli zoccoli, che stanno dall'altra parte della porta: non dipendono
+         dal capitello —si possono prendere anche da soli— ma leggono lo stesso
+         vano, cosi' cadono sul bordo delle jambe qualunque sia la misura. */
+      await montaZoccoli(mio, marco, datiMarco);
       if (mio !== numeroCarico) { disposeSubtree(conjunto); return; }
 
       // La parete con il suo vano, tagliata sulle misure di QUESTA porta
@@ -1994,6 +2032,15 @@ function loadModel(key) {
       loaderEl.classList.add('is-hidden');
       refreshUI();
       window.__dbg = { scene, camera, model, size, center, renderer, doorPivot, toggleDoor, setModello,
+        /* Per regolare occlusione e luci A CALDO. La definizione di una
+           modanatura si giudica guardandola, non leggendo i numeri: senza
+           questo aggancio ogni prova costava un ricaricamento.
+           Con i getter, perche' gtaoPass e composer si rifanno da zero quando
+           si cambia qualita': una copia diretta resterebbe appesa al vecchio. */
+        get gtaoPass() { return gtaoPass; },
+        get composer() { return composer; },
+        luci: { key, fill, keyDietro, fillDietro },
+        chiediFotogramma,
         get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; },
         /* La corsa della scorrevole. Il bersaglio si posa SUBITO, il movimento
            no: serve per misurare la legge senza dipendere dai fotogrammi. */
@@ -2042,7 +2089,11 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
     /* Anche l'ESTERNO MURO vuole il coprifilo solo dietro: da questa parte
        l'anta scorre sulla parete e gli passerebbe sopra. In fabbrica infatti
        quella faccia si lascia liscia. */
-    const conCapitello = state.capitello !== 'no' || movimento() === 'esterno';
+    /* Ma SOLO il capitello a colonne: e' lui che chiude anche le jambe. Un
+       architrave —il 200, il 300, il 400, il 500— copre la testa e basta, e
+       togliendo il coprifilo davanti le due jambe restavano nude dal telaio
+       alla parete. Si vedeva il taglio del muro. */
+    const conCapitello = !!CAP_3D[state.capitello]?.colonne || movimento() === 'esterno';
     const g = await montarCoprifilo(perfil, undefined, vanoDe(datiTelaio),
       datiTelaio.muro, woodMat, 'assets/catalogo/coprifili',
       conCapitello ? { soloCara: 'espaldar' } : {});
@@ -2056,38 +2107,73 @@ async function montaCoprifilo(mio, conjunto, marco, datiTelaio) {
 /**
  * Il capitello, in 3D.
  *
- * Il 'Capitello 900 completo (colonne)' non e' una modanatura tirata lungo il
- * perimetro come il coprifilo: e' un PEZZO, con cornice, fregio, due colonne e
- * i loro plinti scanalati. Per questo arriva come GLB e non come sezione.
+ * Ce ne sono di due razze e non si montano allo stesso modo.
  *
- * Il modello nasce dallo script parametrico di Blender (capitello_con_parales)
- * e si e' rigenerato su misura: la sua LUCE e' 847 x 2021 e fuori misura
- * 1161 x 2198 x 119 mm.
+ * L'ARCHITRAVE —il 200, il 300, il 400, il 500— e' solo il pezzo orizzontale
+ * che si posa SOPRA il telaio. La sua altezza e' quella che e': una porta piu'
+ * alta non vuole un capitello piu' alto, vuole lo stesso capitello piu' su.
  *
- * QUEL 2021 E' MISURATO, non copiato. La prima versione portava 2127, che e' il
- * vano delle porte dello scaparate; ma il vano della Siena qui misura 2027 dal
- * pavimento —lo dicono il muro e il coprifilo, che finiscono tutti e due li'— e
- * l'architrave restava cento millimetri piu' in alto del telaio: fra i due si
- * vedeva una striscia di parete. Adesso la luce nasce a 2021, sei millimetri
- * sotto il vano, cosi' il capitello MONTA sul telaio invece di sfiorarlo, che e'
- * quello che fa anche il coprifilo. Di lato fa lo stesso: luce 847 contro un
- * vano di 856, cioe' 4,5 mm per banda.
+ * LE COLONNE —il 900 completo— vanno da terra fin sopra la porta: cornice,
+ * fregio e due fusti coi loro plinti. Qui l'altezza SI' segue la porta, perche'
+ * quello che si allunga e' il fusto.
  *
- * UNITA': il GLB e' in metri e l'insieme del motore in millimetri, quindi va
- * moltiplicato per mille. Gli assi coincidono: X larghezza, Y altezza da terra,
- * Z profondita' verso chi guarda.
+ * IN LARGHEZZA li segue tutti e due, ma non in proporzione. Un capitello vero
+ * si fa con le stesse modanature e si taglia piu' lungo: per questo il VOLO
+ * —quanto sporge di fianco al vano— resta quello del disegno e si allunga solo
+ * il mezzo. E i pezzi staccati —i blocchi, le rosette, le bugne, le cadute— non
+ * si stirano per niente: una rosetta stirata diventa un'ellisse e si vede da
+ * lontano. Si allontanano fra loro, che e' quello che fa il pezzo vero.
  *
- * Gli altri capitelli del listino restano solo prezzo, come stavano.
+ * L'ARCO. La Praga e la Vienna non hanno la testa dritta, quindi il 200 dritto
+ * non ci si posa sopra: per loro c'e' lo stesso capitello con l'intradosso
+ * curvo. Misurato: la sua curva sale 49,1 mm su una corda di 470, e la testa
+ * della porta ne sale 47,6. Un millimetro e mezzo, sono lo stesso arco.
+ *
+ * UNITA': i GLB nuovi sono in MILLIMETRI. Il c900c, che e' il primo che
+ * arrivo', e' in metri e se lo dice da solo. L'origine invece non conta: il
+ * caricatore centra il pezzo in X e gli appoggia la base a zero, cosi' chi
+ * modella non deve stare attento a niente.
  */
-const CAP_3D = { c900c: 'assets/capitelli/c900c.glb' };
-const LUZ_CAPITELLO = { ancho: 847, alto: 2021 };
+const LUCE_DISEGNO = 900;      // la luce per cui e' disegnato tutto il listino
+/* Il coprifilo del listino per quella luce: 900 di luce piu' 90 per banda, che
+   e' il liscio listellare compreso. Serve come metro: la differenza fra la
+   larghezza di un capitello e questo numero E' il suo volo di progetto, quanto
+   sporge di fianco alla cornice. Il 400 vola 26 mm per banda, il 500 ne vola 58,
+   e quella differenza fra i due e' voluta: e' il disegno. */
+const COPRIFILO_DISEGNO = LUCE_DISEGNO + 90 * 2;
+const CAP_3D = {
+  c200:  { url: 'assets/capitelli/200.glb', arco: 'assets/capitelli/200-praga.glb' },
+  c300:  { url: 'assets/capitelli/300.glb' },
+  c400:  { url: 'assets/capitelli/400.glb' },
+  c500:  { url: 'assets/capitelli/500.glb' },
+  /* Le colonne non si incassano: sostituiscono il coprifilo e vanno a filo
+     di muro. Per questo il loro empotre e' zero. */
+  c900c: { url: 'assets/capitelli/c900c.glb', metri: true, colonne: true, empotre: 0,
+           luce: { ancho: 847, alto: 2021 } },
+};
+/* Lo zoccolo DECO' RIGATO, tirato fuori dalla base delle colonne del 900
+   completo: e' lo stesso pezzo del listino, tre scanalature con la centrale
+   piu' lunga. Non si scala con la porta —un plinto e' un plinto— e va a terra,
+   ai piedi delle due jambe. */
+const ZOCCOLO_3D = 'assets/capitelli/zoccolo-deco-rigato.glb';
 /* Quanto il capitello monta sul telaio, come il coprifilo. */
 const SOLAPE_CAPITELLO = 6;
+/* Sotto questa frazione della larghezza totale un pezzo e' un DETTAGLIO e non
+   si stira; sopra e' una modanatura tirata e si stira. Il confine sta dove non
+   taglia niente a meta': il losange del 300 misura il 33 per cento ed e' giusto
+   che si allunghi col fregio, mentre il blocco piu' grosso del 200 non arriva
+   all'otto. */
+const CAP_RIGIDO = 0.28;
+/* Quanto il capitello entra nel muro. E' la media di come li hanno disegnati
+   —il 300 sta a 30, il 400 a 28, il 500 a 32— e serve a metterli tutti d'accordo
+   in profondita' senza spostare nessuno piu' di qualche millimetro. */
+const EMPOTRE_CAPITELLO = 30;
 const cacheCapitello = new Map();
 
 /**
- * Le geometrie del capitello, gia' in MILLIMETRI e con le coordinate di
- * texture attaccate. Si preparano una volta sola per file.
+ * Le geometrie di un capitello, gia' in MILLIMETRI, centrate, con la base a
+ * zero, con la vena attaccata e con detto chi si stira e chi no.
+ * Si preparano una volta sola per file.
  *
  * Il GLB porta solo posizione e normale: senza UV il legno uscirebbe liscio,
  * una tinta piatta, perche' la texture si leggerebbe tutta nello stesso punto.
@@ -2095,7 +2181,7 @@ const cacheCapitello = new Map();
  * vena del capitello ha lo stesso passo di quella dell'anta. Due scale di vena
  * accanto si vedono subito, anche se il legno e' lo stesso.
  */
-async function geometriasDelCapitello(url) {
+async function geometriasDelCapitello(url, enMetros, empotre = EMPOTRE_CAPITELLO) {
   if (!cacheCapitello.has(url)) {
     cacheCapitello.set(url, gltfLoader.loadAsync(url).then((gltf) => {
       gltf.scene.updateMatrixWorld(true);
@@ -2104,58 +2190,219 @@ async function geometriasDelCapitello(url) {
         if (!o.isMesh) return;
         const geo = o.geometry.clone();
         geo.applyMatrix4(o.matrixWorld);
-        geo.scale(1000, 1000, 1000);          // il GLB va in metri, il motore in mm
+        if (enMetros) geo.scale(1000, 1000, 1000);
         geo.computeBoundingBox();
-        const t = geo.boundingBox.getSize(new THREE.Vector3());
-        /* Come in tejer.js: la fibra corre per il LUNGO del pezzo. Le colonne
-           la prendono in piedi; la cornice, il fregio e i plinti di traverso. */
-        pegarVeta(geo, t.x > t.y);
-        piezas.push(geo);
+        piezas.push({ geo, caja: geo.boundingBox.clone() });
       });
-      return piezas;
+      if (!piezas.length) throw new Error('il GLB non porta nessuna mesh');
+
+      /* L'ORIGINE SI NORMALIZZA QUI, non nel file. Ogni modello arriva col suo
+         —il 300 ha la base a 23,5 e il 400 a zero— e correggerli a mano uno per
+         uno vuol dire ricordarsene al prossimo. Centrato in X e con la base a
+         zero, chi monta non ha bisogno di sapere da dove viene.
+
+         E LO STESSO IN PROFONDITA'. Qui i modelli litigavano: quelli disegnati
+         a mano stanno a cavallo dello zero e cadevano giusti, ma quelli che ho
+         preparato io —l'arco e lo zoccolo— hanno tutto il corpo dietro lo zero
+         e finivano DENTRO il muro, invisibili. Invece di ricordarsi caso per
+         caso, si mette la schiena di tutti alla stessa quota: incassata di
+         EMPOTRE_CAPITELLO, e quello che sporge sporge da se'. */
+      const todo = new THREE.Box3();
+      for (const p of piezas) todo.union(p.caja);
+      const desp = new THREE.Vector3(-(todo.min.x + todo.max.x) / 2, -todo.min.y, -empotre - todo.min.z);
+      for (const p of piezas) { p.geo.translate(desp.x, desp.y, desp.z); p.caja.translate(desp); }
+      const ancho = todo.max.x - todo.min.x;
+      const alto = todo.max.y - todo.min.y;
+
+      /* CHI SI STIRA E CHI NO. I pezzi stretti sono dettagli; ma un dettaglio
+         quasi mai e' un pezzo solo —un blocco del 200 sono il fondo, le quattro
+         cornici e la rosetta, sei pezzi accostati— e se ognuno si spostasse per
+         conto suo il blocco si aprirebbe. Per questo i rigidi si raggruppano per
+         contatto e tutto il gruppo si muove come se fosse uno. */
+      const rigidos = piezas.filter((p) => (p.caja.max.x - p.caja.min.x) < CAP_RIGIDO * ancho);
+      rigidos.sort((a, b) => a.caja.min.x - b.caja.min.x);
+      let grupo = null;
+      for (const p of rigidos) {
+        if (!grupo || p.caja.min.x > grupo.max + 1) { grupo = { min: p.caja.min.x, max: p.caja.max.x, n: 0 }; }
+        grupo.max = Math.max(grupo.max, p.caja.max.x);
+        grupo.n++;
+        p.grupo = grupo;
+      }
+      for (const p of rigidos) p.cx = (p.grupo.min + p.grupo.max) / 2;
+
+      /* DOVE APPOGGIA. Non e' il punto piu' basso del modello: quello sono le
+         cadute laterali, che scendono apposta sulle jambe. Il piano che si posa
+         sul telaio e' l'intradosso IN MEZZERIA. Misurandolo invece di darlo per
+         zero, la testa in arco viene da sola: li' l'intradosso in mezzeria e' la
+         chiave della volta, che e' proprio dove tocca la porta. */
+      let apoyo = Infinity;
+      const margen = ancho * 0.01;
+      for (const p of piezas) {
+        if (p.caja.min.x > margen || p.caja.max.x < -margen) continue;
+        const pos = p.geo.attributes.position;
+        for (let i = 0; i < pos.count; i++)
+          if (Math.abs(pos.getX(i)) <= margen) apoyo = Math.min(apoyo, pos.getY(i));
+      }
+      if (!Number.isFinite(apoyo)) apoyo = 0;
+
+      /* Come in tejer.js: la fibra corre per il LUNGO del pezzo. */
+      for (const p of piezas) {
+        const t = p.caja.getSize(new THREE.Vector3());
+        pegarVeta(p.geo, t.x > t.y);
+      }
+      return { piezas, ancho, alto, apoyo };
     }));
   }
   return cacheCapitello.get(url);
 }
 
+/**
+ * Quanto e' largo il coprifilo che si e' appena montato, misurato nello stesso
+ * spazio del capitello.
+ *
+ * IL CAPITELLO NON SI MISURA SUL VANO, SI MISURA SU DI LUI. Il vano e' un buco;
+ * quello che il capitello corona e' la cornice, e la cornice cambia con il
+ * profilo che sceglie il cliente —il Pierre e' da 70, il Cartesio da 100—.
+ * Misurandolo sul vano il capitello restava sempre della stessa larghezza e
+ * sopra una cornice stretta sporgeva di 79 mm per banda invece dei 58 del
+ * disegno: si vedeva che non erano dello stesso mobile.
+ */
+function coprifiloMontato(marco) {
+  marco.updateMatrixWorld(true);
+  const aMarco = new THREE.Matrix4().copy(marco.matrixWorld).invert();
+  const caja = new THREE.Box3();
+  const m = new THREE.Matrix4();
+  marco.traverse((o) => {
+    if (o.name !== 'Coprifilo') return;
+    o.traverse((q) => {
+      if (!q.isMesh) return;
+      if (!q.geometry.boundingBox) q.geometry.computeBoundingBox();
+      caja.union(q.geometry.boundingBox.clone().applyMatrix4(m.multiplyMatrices(aMarco, q.matrixWorld)));
+    });
+  });
+  if (caja.isEmpty()) return null;
+  return {
+    ancho: caja.max.x - caja.min.x,
+    centro: (caja.min.x + caja.max.x) / 2,
+    dx: caja.max.x,
+    arriba: caja.max.y,
+  };
+}
+
 async function montaCapitello(mio, marco, datiTelaio) {
-  const url = CAP_3D[state.capitello];
-  if (!url) return;
+  const cap = CAP_3D[state.capitello];
+  if (!cap) return;
   try {
-    const piezas = await geometriasDelCapitello(url);
+    /* CON LA TESTA IN ARCO si monta il gemello curvo. Se un capitello non ce
+       l'avesse si dice, invece di posare zitti una traversa dritta su una
+       volta: e' la cosa che si vede di piu' di tutte. */
+    const enArco = !!(modelloConArco && cap.arco);
+    if (modelloConArco && !cap.arco)
+      console.warn(`capitello: ${state.capitello} non ha la versione in arco e la testa della porta e' curva`);
+    const d = await geometriasDelCapitello(enArco ? cap.arco : cap.url, cap.metri, cap.empotre);
     if (mio !== numeroCarico) return;
     const vano = vanoDe(datiTelaio);
     const ancho = vano.dx - vano.sx;
-    /* IL VANO SI MISURA, non si suppone: ogni modello ha il suo. L'architrave
-       deve cadere sul telaio, quindi l'altezza si corregge di quel tanto che
-       manca. Col vano di serie il fattore e' 1 e non si tocca niente; se una
-       porta obbligasse a storcerlo piu' dell'otto per cento, si dice, perche'
-       allora e' il capitello sbagliato e non un aggiustamento. */
-    const k = (vano.su - SOLAPE_CAPITELLO) / LUZ_CAPITELLO.alto;
-    if (Math.abs(k - 1) > 0.08) {
+
+    /* LA LARGHEZZA. Il volo del disegno —quanto il capitello sporge di fianco—
+       si tiene, e si allunga solo quello che sta in mezzo: una porta da 700 e
+       una da 1200 hanno lo stesso risvolto in punta, che e' quello che succede
+       in bottega, dove si taglia la modanatura piu' lunga.
+       Il volo si conta dal COPRIFILO, non dal vano, perche' e' lui che il
+       capitello corona. Se il coprifilo non c'e' —ci sono profili di listino
+       che lo escludono— resta il vano, che e' meglio di niente. */
+    const copri = cap.colonne ? null : coprifiloMontato(marco);
+    const objetivo = copri
+      ? copri.ancho + (d.ancho - COPRIFILO_DISEGNO)
+      : ancho + (d.ancho - LUCE_DISEGNO);
+    const s = cap.colonne ? 1 : objetivo / d.ancho;
+
+    /* L'ALTEZZA. Le colonne si allungano col vano perche' quello che cresce e'
+       il fusto. L'architrave no: e' un pezzo finito, e si alza e basta. */
+    const k = cap.colonne ? (vano.su - SOLAPE_CAPITELLO) / cap.luce.alto : 1;
+    if (cap.colonne && Math.abs(k - 1) > 0.08)
       console.warn(`capitello: il vano alto ${Math.round(vano.su)} obbliga a correggere l'altezza del ${Math.round((k - 1) * 100)} per cento`);
-    }
-    if (ancho > LUZ_CAPITELLO.ancho + 1) {
-      console.warn(`capitello: il vano e' largo ${Math.round(ancho)} mm e la luce ne misura ${LUZ_CAPITELLO.ancho}`);
-    }
-    /* IL LEGNO E' QUELLO DELL'ANTA, non piu' l'avorio del modello.
-       Si usa woodMat, lo stesso oggetto materiale della porta: cosi' il
-       capitello segue l'essenza da solo —e anche il laccato— senza rimontare
-       niente, perche' applyEssenza cambia quel materiale sul posto. */
+    if (s > 1.6 || s < 0.6)
+      console.warn(`capitello: il vano largo ${Math.round(ancho)} mm porta la modanatura al ${Math.round(s * 100)} per cento del disegno`);
+
+    /* IL LEGNO E' QUELLO DELL'ANTA, non l'avorio del modello: woodMat e' lo
+       stesso oggetto materiale della porta, quindi il capitello segue l'essenza
+       —e il laccato— da solo, senza rimontare niente. */
     const g = new THREE.Group();
-    for (const geo of piezas) {
-      const m = new THREE.Mesh(geo, woodMat);
+    for (const p of d.piezas) {
+      const m = new THREE.Mesh(p.geo, woodMat);
+      /* Il pezzo rigido si difende dallo stiramento del gruppo con la scala
+         opposta, e si riposiziona perche' il suo centro cada dove lo porta la
+         scala: si allontana dagli altri senza deformarsi. */
+      if (p.cx !== undefined && s !== 1) {
+        m.scale.x = 1 / s;
+        m.position.x = (p.cx * (s - 1)) / s;
+      }
       m.castShadow = true;
       m.receiveShadow = true;
       g.add(m);
     }
-    // Le geometrie sono gia' in millimetri: qui resta solo la correzione d'altezza.
-    g.scale.set(1, k, 1);
-    g.position.set((vano.sx + vano.dx) / 2, 0, datiTelaio.muro.z1);
+    g.scale.set(s, k, 1);
+    /* Le colonne partono da terra. L'architrave si appoggia SOPRA IL
+       COPRIFILO, non sul vano.
+       Misurato: prendendo il vano il 200 scendeva 88 mm sotto il capotelaio e
+       si mangiava la testa dell'anta —si vedeva benissimo, la fascia bassa
+       copriva la porta—. Il vano e' il buco fra le jambe e la sua quota alta
+       non dice dove finisce la cornice; il coprifilo invece e' proprio il pezzo
+       che il capitello viene a coronare, e il suo canto di sopra e' la riga su
+       cui posarlo. */
+    const y = cap.colonne
+      ? 0
+      : (copri ? copri.arriba : vano.su) - SOLAPE_CAPITELLO - d.apoyo;
+    g.position.set(copri ? copri.centro : (vano.sx + vano.dx) / 2, y, datiTelaio.muro.z1);
     g.name = 'Capitello';
     marco.add(g);
   } catch (err) {
     console.warn(`capitello ${state.capitello} non montato`, err);
+  }
+}
+
+/**
+ * Gli ZOCCOLI, ai piedi delle due jambe.
+ *
+ * Non si scalano con la porta: un plinto e' un pezzo di listino, 100 x 334, e
+ * resta quello sia sotto una porta da 600 che da 1400. Quello che cambia e'
+ * dove cadono, perche' seguono il bordo del vano.
+ *
+ * Vanno col capitello 900 completo? No: quello ha gia' i suoi plinti sotto le
+ * colonne, e montarne altri due farebbe due basi una sopra l'altra.
+ */
+async function montaZoccoli(mio, marco, datiTelaio) {
+  if (!state.capCompl.zoc) return;
+  const cap = CAP_3D[state.capitello];
+  if (cap && cap.colonne) return;
+  try {
+    const d = await geometriasDelCapitello(ZOCCOLO_3D, false);
+    if (mio !== numeroCarico) return;
+    const vano = vanoDe(datiTelaio);
+    /* Il canto di fuori dello zoccolo va a filo con quello del coprifilo: e' il
+       piede della stessa cornice, e sporgere di piu' si vede subito. Senza
+       coprifilo si appoggia al bordo del vano. */
+    const copri = coprifiloMontato(marco);
+    const g = new THREE.Group();
+    for (const lado of [-1, 1]) {
+      const borde = copri
+        ? copri.centro + lado * (copri.ancho / 2)
+        : (lado < 0 ? vano.sx : vano.dx) + lado * d.ancho;
+      const x = borde - (lado * d.ancho) / 2;
+      for (const p of d.piezas) {
+        const m = new THREE.Mesh(p.geo, woodMat);
+        m.position.x = x;
+        m.castShadow = true;
+        m.receiveShadow = true;
+        g.add(m);
+      }
+    }
+    g.position.set(0, 0, datiTelaio.muro.z1);
+    g.name = 'Zoccoli';
+    marco.add(g);
+  } catch (err) {
+    console.warn('zoccoli non montati', err);
   }
 }
 
@@ -2863,8 +3110,9 @@ function currentPrices() {
   return MODELLI[state.modello].listino[state.essenza][state.finitura];
 }
 
-/* Motore del preventivo: porta completa a listino → scaglioni fuori
-   misura → 2 ante → extra. Ritorna le righe pronte per UI e PDF. */
+/* Motore del preventivo: porta completa a listino → fuori misura +50%
+   → 2 ante → extra (quelli in legno anche +50%). Ritorna le righe pronte
+   per UI e PDF. */
 // Spegne gli extra che la scelta corrente non ammette più. Deve girare PRIMA
 // del calcolo: se lo si fa dopo, il totale resta indietro di un clic.
 function coerenza() {
@@ -2891,29 +3139,30 @@ function computePreventivo() {
 
   if (laccatoExtra()) righe.push({ k: `Colore RAL — ${LACCATI[state.colore].label}`, sub: 'listino n. 50', v: laccatoExtra() });
 
+  /* Gli extra in legno salgono con la porta. FM e' il pezzetto di nota che
+     lo dice su ogni riga che e' salita, per chi legge il preventivo. */
+  const fuori = band.factor > 1;
+  const FM = 'fuori misura +50%';
+  const conFM = (...parti) => [...parti.filter(Boolean), fuori ? FM : ''].filter(Boolean).join(' · ');
+
   const tel = TELAI.find((t) => t.id === state.telaio);
+  // il fermaporta e' ferramenta: resta a listino
   const fermaporta = state.telaio === 'alpha_comp_sp' ? FERMAPORTA : 0;
-  if (tel.extra) righe.push({ k: `Telaio ${tel.label}`, sub: fermaporta ? 'fermaporta a pavimento obbligatorio compreso' : '', v: tel.extra + fermaporta });
+  if (tel.extra) righe.push({ k: `Telaio ${tel.label}`, sub: conFM(fermaporta ? 'fermaporta a pavimento obbligatorio compreso' : ''), v: legno(tel.extra) + fermaporta });
 
   const all = allargatoExtra(state.muro, state.allargato);
-  if (all.extra) righe.push({ k: 'Allargato telaio', sub: all.label, v: all.extra });
+  if (all.extra) righe.push({ k: 'Allargato telaio', sub: conFM(all.label), v: legno(all.extra) });
 
   const cop = COPRI.find((c) => c.id === state.copri);
-  const fml = mlFactor(state.w, state.h);
   const mis = misuraAttiva(cop);
-  const metri = 11.5 * fml;
-  // il pacchetto di listino si scala sui ml; le altre misure sono già a ml
-  const copBase = extraMisura(cop, mis, state.copriWood, metri);
-  const copExtra = Math.round((mis.pack && !mis.cad ? copBase * fml : copBase) * 100) / 100;
+  const copExtra = legno(extraMisura(cop, mis, state.copriWood));
   // il nome porta già la misura di listino fra parentesi: la si toglie quando
   // se ne mostra una scelta a parte, per non leggere "(90/70) 90 / 90"
   const copNome = misureDi(cop.id).length > 1
     ? cop.label.replace(/\s*\(.*?\)/, '') : cop.label;
   if (copExtra) righe.push({
     k: `Coprifili ${copNome} ${mis.label} · ${COPRI_WOOD_LABEL[state.copriWood]}`,
-    sub: mis.pack
-      ? (fml > 1 ? `${ml1(metri)} ml (extra a porta ${eur.format(cop.prezzi[state.copriWood])} fino a 11,5 ml)` : '')
-      : `${ml1(metri)} ml a listino, meno il listellare 22×70 compreso (${eur.format(COPRI_INCLUSO_CAD)})`,
+    sub: conFM(mis.pack ? '' : `${ml1(ML_STD)} ml a listino, meno il listellare 22×70 compreso (${eur.format(COPRI_INCLUSO_CAD)})`),
     v: copExtra,
   });
 
@@ -2933,34 +3182,30 @@ function computePreventivo() {
 
   const forma = FORME.find((f) => f.id === state.forma);
   const telForma = TELAIO_FORMA[forma.id];
+  /* Archi e curve: il listino li prezza solo fino a 90×210. Oltre, come
+     tutto il legno, +50% (prima andavano su preventivo). */
   if (forma.extra) righe.push({
     k: `Porta ${forma.label}`,
-    sub: telForma ? 'solo l’anta: il telaio di passaggio è la voce sotto' : '',
-    v: forma.extra });
+    sub: conFM(telForma ? 'solo l’anta: il telaio di passaggio è la voce sotto' : ''),
+    v: legno(forma.extra) });
   if (telForma && state.telaioForma)
-    righe.push({ k: `Telaio di passaggio ${forma.label}`, sub: 'voci 41/43/45', v: telForma });
-  // il taglio obliquo non è una curva: non ha il limite di 90×210
-  if (!['diritta', 'diagonale'].includes(forma.id) && (state.w > 900 || state.h > 2100)) {
-    suPreventivo = true; motivo = 'archi e curve solo fino a 90×210 — fuori listino';
-  }
+    righe.push({ k: `Telaio di passaggio ${forma.label}`, sub: conFM('voci 41/43/45'), v: legno(telForma) });
 
   const sop = SOPRALUCI.find((s) => s.id === state.sopraluce);
-  if (sop.extra) righe.push({ k: sop.label, sub: '', v: sop.extra });
+  if (sop.extra) righe.push({ k: sop.label, sub: conFM(), v: legno(sop.extra) });
 
   const cap = CAPITELLI.find((c) => c.id === state.capitello);
   const complAttivi = Object.entries(state.capCompl).filter(([, on]) => on);
   const capBase = cap.extra + complAttivi.reduce((s, [id]) => s + CAP_COMPL[id].extra, 0);
+  // capitelli e complementi sono legno: oltre 900×2100, +50% (prima su preventivo)
   if (capBase > 0) {
-    const capTot = capBase * state.capLati;
+    const capTot = legno(capBase * state.capLati);
     const complTxt = complAttivi.map(([id]) => CAP_COMPL[id].label.split(' ')[0]).join(' + ');
     righe.push({
       k: `${cap.extra ? cap.label : 'Complementi capitello'}${complTxt && cap.extra ? ' + ' + complTxt : complTxt && !cap.extra ? ' ' + complTxt : ''} · ${state.capLati} lato${state.capLati > 1 ? 'i' : ''}`,
-      sub: 'Toulipier · Bianco Tosco compreso (pagg. 56–58)',
+      sub: conFM('Toulipier · Bianco Tosco compreso (pagg. 56–58)'),
       v: capTot,
     });
-    if (state.w > 900 || state.h > 2100) {
-      suPreventivo = true; motivo = 'capitelli solo fino a luce 900×2100 — fuori listino';
-    }
   }
 
   const ser = SERRATURE.find((s) => s.id === state.serratura);
@@ -3262,16 +3507,18 @@ function renderExtras() {
     b.addEventListener('click', () => {
       state.capCompl[b.dataset.compl] = !state.capCompl[b.dataset.compl];
       refreshUI();
+      /* Lo ZOCCOLO adesso si vede, quindi la scena va rifatta. Finali e
+         diamanti restano solo prezzo: finche' non hanno un GLB non c'e'
+         niente da rimontare e rifare la porta per niente si sente. */
+      if (b.dataset.compl === 'zoc') loadModel(currentModelKey);
     }));
 }
 
-// il menu coprifili mostra il prezzo già scalato sui ml della misura attuale
+// il menu coprifili mostra il prezzo già con il fuori misura, se c'è
 function refreshCopriSelect() {
   // griglia con anteprima: stessa immagine per tutte le misure di uno stesso
   // modello (il profilo non cambia, cambia solo la larghezza).
-  const fml = mlFactor(state.w, state.h);
   const grid = document.getElementById('copriGrid');
-  const metri = 11.5 * fml;
   // senza le pastiglie esterne il legno attivo non si vedrebbe: va in nota,
   // perché è quello a cui si riferiscono i prezzi delle schede.
   const nota = document.getElementById('copriNote');
@@ -3280,8 +3527,7 @@ function refreshCopriSelect() {
   grid.innerHTML = COPRI.map((c) => {
     const attiva = c.id === state.copri;
     const mis = attiva ? misuraAttiva(c) : misureDi(c.id)[0];
-    const b = extraMisura(c, mis, state.copriWood, metri);
-    const p = Math.round((mis.pack && !mis.cad ? b * fml : b) * 100) / 100;
+    const p = legno(extraMisura(c, mis, state.copriWood));
     const n = misureDi(c.id).length;
     return `
     <button class="man-card${attiva ? ' is-active' : ''}" data-copri="${c.id}">
@@ -3339,8 +3585,6 @@ function chiudiVisoreCopri() {
 
 function renderVisoreCopri() {
   const cop = COPRI.find((c) => c.id === state.copri);
-  const fml = mlFactor(state.w, state.h);
-  const metri = 11.5 * fml;
   const misure = misureDi(cop.id);
   const attiva = misuraAttiva(cop);
 
@@ -3355,8 +3599,7 @@ function renderVisoreCopri() {
       data-vlegno="${k}">${v}</button>`).join('');
 
   document.getElementById('copriVisoreMisure').innerHTML = misure.map((m) => {
-    const b = extraMisura(cop, m, state.copriWood, metri);
-    const p = Math.round((m.pack && !m.cad ? b * fml : b) * 100) / 100;
+    const p = legno(extraMisura(cop, m, state.copriWood));
     return `<button class="misura-row${m.id === attiva.id ? ' is-active' : ''}" data-vmisura="${m.id}">
       <span class="misura-mis">${m.label}</span>
       <span class="misura-cod">${m.code || (m.cad ? 'prezzo cad a listino' : '')}${
@@ -3368,11 +3611,13 @@ function renderVisoreCopri() {
 
   const minimo = attiva.minimo
     ? ` Acquistato a metro ha un minimo fatturabile di ${eur.format(attiva.minimo)}.` : '';
+  const fm = fattoreLegno() > 1
+    ? ' Porta fuori misura (oltre 900×2100): prezzi +50%.' : '';
   document.getElementById('copriVisoreNota').textContent = (attiva.pack || attiva.cad
-    ? `Prezzo a listino per ${ml1(metri)} ml (misura porta attuale).`
+    ? `Prezzo a listino per porta 900×2100 (${ml1(ML_STD)} ml).`
     : `Combinazione non tariffata a pacchetto: calcolata al prezzo di listino al metro `
-      + `(${eur.format(attiva.ml[state.copriWood])}/ml × ${ml1(metri)} ml) meno il `
-      + `liscio listellare 22×70 già compreso. Da confermare con la fabbrica.`) + minimo;
+      + `(${eur.format(attiva.ml[state.copriWood])}/ml × ${ml1(ML_STD)} ml) meno il `
+      + `liscio listellare 22×70 già compreso. Da confermare con la fabbrica.`) + fm + minimo;
 
   document.querySelectorAll('[data-vlegno]').forEach((b) =>
     b.addEventListener('click', () => { state.copriWood = b.dataset.vlegno; renderVisoreCopri(); }));
@@ -3424,7 +3669,7 @@ function refreshUI() {
   const band = sizeBand(state.w, state.h);
   const misureNote = document.getElementById('misureNote');
   if (!band.ok) misureNote.textContent = '⚠ Oltre 1200×2600 mm: fuori listino, su preventivo.';
-  else if (band.note.length) misureNote.textContent = `Scaglioni listino: ${band.note.join(' e ')} sul prezzo base.`;
+  else if (band.factor > 1) misureNote.textContent = 'Fuori misura (oltre 900×2100): +50% sulla porta e su tutto il legno — telaio, coprifili, sopraluce, capitelli.';
   else if (state.w < 700) misureNote.textContent = '⚠ Luce minima 700 mm: sotto, occorre cambiare modello.';
   else misureNote.textContent = 'Misura standard di listino (900×2100).';
 
@@ -3462,7 +3707,7 @@ function refreshUI() {
      cara, e' una porta che non si puo' ordinare. */
   if (state.apertura === 'ergon' && (state.h < 1900 || state.h > 2200))
     apNote.push(`⚠ La voce 20 copre le altezze 1900–2200 mm: ${state.h} mm è fuori listino.`);
-  if (state.forma !== 'diritta' && (state.w > 900 || state.h > 2100)) apNote.push('⚠ Archi e curve solo fino a 90×210.');
+  if (!['diritta', 'diagonale'].includes(state.forma) && fuoriMisura(state.w, state.h)) apNote.push('Arco o curva oltre 90×210: +50% come tutto il legno.');
   document.getElementById('aperturaNote').textContent = apNote.join(' ');
 
   document.querySelectorAll('#antePills .pill').forEach((b) =>
@@ -3495,7 +3740,20 @@ function refreshUI() {
   const btf = document.querySelector('[data-telforma]');
   btf.classList.toggle('is-active', state.telaioForma);
   if (tf) btf.innerHTML =
-    `Aggiungi telaio di passaggio <span class="en">+€${tf}</span>`;
+    `Aggiungi telaio di passaggio <span class="en">+€${legno(tf)}</span>`;
+
+  /* Il prezzo scritto accanto a ogni scelta e' quello che si paga: fuori
+     misura, gli extra in legno salgono con la porta anche nei menu. */
+  for (const [id, lista] of [['telaioSelect', TELAI], ['formaSelect', FORME],
+                             ['sopraluceSelect', SOPRALUCI], ['capitelloSelect', CAPITELLI]]) {
+    for (const o of document.getElementById(id).options) {
+      const r = lista.find((x) => x.id === o.value);
+      o.textContent = `${r.label}${r.extra ? ` — + ${eur.format(legno(r.extra))}` : ''}`;
+    }
+  }
+  document.querySelectorAll('#capComplPills .pill .en').forEach((s) => {
+    s.textContent = `+€${legno(CAP_COMPL[s.closest('.pill').dataset.compl].extra)}`;
+  });
 
   document.querySelectorAll('#manoPills .pill').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.mano === state.mano));
@@ -3505,10 +3763,11 @@ function refreshUI() {
     b.classList.toggle('is-active', !!state.capCompl[b.dataset.compl]));
   const capNote = document.getElementById('capitelloNote');
   const capAttivo = state.capitello !== 'no' || Object.values(state.capCompl).some(Boolean);
-  capNote.textContent = capAttivo && (state.w > 900 || state.h > 2100)
-    ? '⚠ I capitelli sono disponibili solo fino a luce 900×2100 — oltre, su preventivo.'
-    : 'Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato. Solo fino a luce 900×2100.';
-  capNote.classList.toggle('warn', capAttivo && (state.w > 900 || state.h > 2100));
+  const capFuori = capAttivo && fuoriMisura(state.w, state.h);
+  capNote.textContent = capFuori
+    ? 'Porta oltre 900×2100: capitello +50%, come tutto il legno.'
+    : 'Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato, per luce 900×2100 (oltre +50%).';
+  capNote.classList.toggle('warn', capFuori);
 
   // la laccatura è una verniciatura: "grezza" resta cliccabile e,
   // se scelta, toglie il colore e torna al legno a vista
@@ -3756,7 +4015,7 @@ function datiPreventivo(cliente, rif) {
     // il tipo va scritto: e' la porta che si costruisce, non un dettaglio
     ['Tipo', TIPO_LABEL[state.tipo]
       + (scegliBugna(state.tipo) && modelloConPannello
-        ? (state.bugna ? ' · con bugna' : ' · campo liscio') : '')],
+        ? (state.bugna ? ' · con bugna' : ' · senza bugna') : '')],
     ['Finitura', FINITURA_LABEL[state.finitura]],
     ['Misure luce', `${state.w} × ${state.h} mm`,
       `${state.ante === 1 ? '1 anta' : '2 ante'} · mano ${state.mano.toUpperCase()}`],
@@ -3771,34 +4030,54 @@ function datiPreventivo(cliente, rif) {
   ];
   if (sop.id !== 'no') config.push(['Sopraluce', sop.label]);
 
+  /* LA LINGUA DEL DOCUMENTO LA SCEGLIE IL CLIENTE, e non e' per forza
+     quella del sito: chi naviga in italiano puo' volere il preventivo in
+     inglese per il suo architetto. Arriva dal modulo (`linguaDoc`).
+     Si traducono etichette e valori; i nomi commerciali —ALPHA, Tintoretto,
+     ARIANNA, JUSTOR— passano intatti perche' non stanno nel dizionario. */
+  const lingua = cliente.linguaDoc === 'en' ? 'en' : 'it';
+  const configTr = config.map((riga) => riga.map((cella) => tr(cella, lingua)));
+
   return {
     rif,
-    data: new Date().toLocaleDateString('it-IT',
+    lingua,
+    data: new Date().toLocaleDateString(lingua === 'en' ? 'en-GB' : 'it-IT',
       { day: 'numeric', month: 'long', year: 'numeric' }),
     logo: logoData,
     modello: mod.linea === 'Base' ? mod.label : `${mod.label} ${mod.linea}`,
-    sottotitolo: `${mod.descIt} · ${essenzaLabel()}, ${FINITURA_LABEL[state.finitura]}`,
+    /* La descrizione del modello esiste gia' nelle due lingue nel catalogo:
+       descIt / descEn. Non c'e' niente da tradurre, solo da scegliere. */
+    sottotitolo: `${lingua === 'en' ? mod.descEn : mod.descIt} · `
+      + `${tr(essenzaLabel(), lingua)}, ${tr(FINITURA_LABEL[state.finitura], lingua)}`,
     essenza: essenzaLabel(),
     luce: `${state.w} × ${state.h} mm`,
     maniglia,
     cliente: [
-      ['Nome', cliente.nome],
-      ['Telefono', cliente.telefono],
-      ['Email', cliente.email],
-      ['Città', citta],
-      ['Indirizzo', cliente.indirizzo],
-      ['Quantità', `${qty} ${qty === 1 ? 'porta' : 'porte uguali'}`],
+      [tr('Nome', lingua), cliente.nome],
+      [tr('Telefono', lingua), cliente.telefono],
+      [tr('Email', lingua), cliente.email],
+      [tr('Città', lingua), citta],
+      [tr('Indirizzo', lingua), cliente.indirizzo],
+      [tr('Quantità', lingua), `${qty} ${tr(qty === 1 ? 'porta' : 'porte uguali', lingua)}`],
     ],
-    config,
-    righe: prev.righe,
+    config: configTr,
+    /* Le voci di prezzo nascono in quindici punti di computePreventivo().
+       Si traducono QUI, dove si consumano: una riga sola invece di quindici
+       modifiche sparse nella logica del listino. */
+    righe: prev.righe.map((r) => ({ ...r, k: tr(r.k, lingua), sub: tr(r.sub, lingua) })),
     totale: prev.totale,
     qty,
     note: cliente.note || '',
     fuoriListino: prev.suPreventivo ? prev.motivo : '',
-    // Finche' l'assistente non genera il render della configurazione,
-    // il foglio 2 porta sempre questa scena. Lo scatto del 3D era
-    // peggio: una porta che galleggia su bianco a tutta pagina.
-    immagine: 'assets/collezioni/listino.webp',
+    /* IL RENDER DEL MODELLO SCELTO. Ogni porta del catalogo ha il suo:
+       si parte dal disegno 3D vero e si rifa' in una stanza arredata.
+       NON rispecchia la configurazione —essenza, colore, maniglia— ed e'
+       voluto: e' ambiente, non scheda tecnica. Quello che il cliente deve
+       riconoscere e' il DISEGNO della sua porta. Le misure e le voci
+       fanno fede sul foglio 1.
+       Se il file mancasse, l'immagine ripiega su quella di catalogo:
+       vedi l'onerror in preventivo.js. */
+    immagine: `assets/renders/${state.modello}.webp`,
     scena: true,
     fogli: prev.righe.length > 12 ? 3 : 2,
   };
@@ -3972,6 +4251,25 @@ function openQuote() {
   quoteDoneView.hidden = true;
   quoteModal.hidden = false;
   quoteForm.querySelector('[name="nome"]').focus();
+
+  /* La lingua del DOCUMENTO parte da quella del sito, ma resta scelta del
+     cliente: chi naviga in italiano puo' volerlo in inglese per il suo
+     architetto. Si preseleziona, non si impone. */
+  const suaLingua = (window.lingua && window.lingua() === 'en') ? 'en' : 'it';
+  const radioLingua = quoteForm.querySelector(`[name="linguaDoc"][value="${suaLingua}"]`);
+  if (radioLingua) radioLingua.checked = true;
+
+  /* AQUI EMPIEZA LA FOTO, no al enviar. El cliente tiene por delante
+     ocho campos que rellenar; ese rato es gratis y es justo lo que
+     tarda la IA. Se dispara y no se espera. */
+  arrancaFoto({
+    THREE, renderer, scene, camera, doorPivot, composer, gtaoPass, controls,
+    essenza: state.essenza,
+    laccato: state.colore !== 'nessuno' ? state.colore : null,
+    /* Lo que ES esta puerta, del catalogo. De aqui sale que la IA sepa que
+       las 43 puertas acristaladas llevan cristal y no madera. */
+    descripcion: MODELLI[state.modello]?.descEn,
+  });
 }
 
 function closeQuote() { quoteModal.hidden = true; }
@@ -4004,6 +4302,12 @@ quoteForm.addEventListener('submit', async (e) => {
   const rif = `TC-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
   const dati = datiPreventivo(cliente, rif);
+
+  /* Si la foto de su puerta ha llegado, sustituye a la de catalogo.
+     Si no —sin proxy, sin red, o ha tardado de mas— `dati.immagine`
+     se queda como estaba y el preventivo sale igual que siempre. */
+  const suya = await fotoLista();
+  if (suya) { dati.immagine = suya; dati.scena = true; }
 
   // il modulo di fabbrica resta un PDF scaricato: e' jsPDF sopra la
   // scansione del TL_2018, con le caselle calibrate al punto

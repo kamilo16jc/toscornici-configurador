@@ -143,10 +143,10 @@
     tipo_3: { it: 'Tipo 3', en: 'Type 3' },
     sez_bugna: { it: 'Campo', en: 'Panel field' },
     bugna_si: { it: 'Con bugna', en: 'Raised panel' },
-    bugna_no: { it: 'Campo liscio', en: 'Flat panel' },
+    bugna_no: { it: 'Senza bugna', en: 'Flat panel' },
     tipo_n1: {
-      it: 'Modanatura a gola, con bugna rialzata.',
-      en: 'Ogee moulding, with a raised panel.',
+      it: 'Modanatura TIPO 1 di fabbrica. Il campo si sceglie qui sotto.',
+      en: 'Factory TIPO 1 moulding. Choose the panel field below.',
     },
     tipo_n2: {
       it: 'Modanatura ad astragalo (tondino). Il campo si sceglie qui sotto.',
@@ -231,6 +231,24 @@
       it: 'Consegna, misure particolari, senso di apertura\u2026',
       en: 'Delivery, special sizes, opening direction\u2026',
     },
+    /* I campi del modulo erano rimasti in italiano anche col sito in
+       inglese: solo la nota e il bottone avevano data-t. */
+    /* L'asterisco sta DENTRO la stringa tradotta: lo span e' a blocco nel
+       css, e lasciandolo fuori finiva su una riga per conto suo. */
+    prev_nome: { it: 'Nome e cognome *', en: 'Full name *' },
+    prev_email: { it: 'Email *', en: 'Email *' },
+    prev_telefono: { it: 'Telefono *', en: 'Phone *' },
+    prev_quantita: { it: 'Quantità porte', en: 'Number of doors' },
+    prev_indirizzo: { it: 'Indirizzo *', en: 'Address *' },
+    prev_indirizzo_ph: { it: 'Via e numero civico', en: 'Street and number' },
+    /* CAP e' il codice postale italiano: per un inglese e' il postcode. */
+    prev_citta: { it: 'Città *', en: 'City *' },
+    prev_cap: { it: 'CAP', en: 'Postcode' },
+    prev_provincia: { it: 'Provincia', en: 'Province' },
+    prev_annulla: { it: 'Annulla', en: 'Cancel' },
+    /* La lingua del DOCUMENTO, che non e' quella del sito: si chiede
+       perche' chi naviga in italiano puo' volerlo in inglese, e viceversa. */
+    prev_lingua: { it: 'Lingua del preventivo', en: 'Quote language' },
     prev_invia: { it: 'Genera PDF e invia', en: 'Generate PDF and send' },
     prev_inviato: { it: 'Preventivo inviato', en: 'Quote sent' },
     demo_nota: {

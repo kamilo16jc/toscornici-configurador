@@ -116,12 +116,12 @@
       </div>
       <p class="pill-note" id="tipoNote"></p>
 
-      <!-- Il campo. Solo sul 2 e sul 3: il TIPO 1 la bugna ce l'ha sempre. -->
+      <!-- Il campo: con bugna o senza, su tutti e tre i tipi. -->
       <div id="bugnaBox" hidden>
         <p class="lacc-title" data-t="sez_bugna">Campo</p>
         <div class="pills" id="bugnaPills">
           <button class="pill is-active" data-bugna="si" data-t="bugna_si">Con bugna</button>
-          <button class="pill" data-bugna="no" data-t="bugna_no">Campo liscio</button>
+          <button class="pill" data-bugna="no" data-t="bugna_no">Senza bugna</button>
         </div>
       </div>
     </section>
@@ -261,7 +261,7 @@
         <button class="pill" data-compl="dia">Diamanti <span class="en">+€50</span></button>
         <button class="pill" data-compl="zoc">Zoccoli <span class="en">+€80</span></button>
       </div>
-      <p class="pill-note" id="capitelloNote">Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato. Solo fino a luce 900×2100.</p>
+      <p class="pill-note" id="capitelloNote">Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato, per luce 900×2100 (oltre +50%).</p>
     </section>
 
     <!-- Ferramenta -->
@@ -370,18 +370,31 @@
       <h2 class="modal-title" data-t="prev_titolo">I tuoi dati</h2>
       <form id="quoteForm">
         <div class="form-grid">
-          <label>Nome e cognome *<input required name="nome" type="text" autocomplete="name" placeholder="Mario Rossi"></label>
-          <label>Email *<input required name="email" type="email" autocomplete="email" placeholder="mario@esempio.it"></label>
-          <label>Telefono *<input required name="telefono" type="tel" autocomplete="tel" placeholder="+39 333 000 0000"></label>
-          <label>Quantità porte<input name="quantita" type="number" min="1" max="99" value="1"></label>
-          <label class="span2">Indirizzo *<input required name="indirizzo" type="text" autocomplete="street-address" placeholder="Via e numero civico"></label>
-          <label>Città *<input required name="citta" type="text" placeholder="Firenze"></label>
-          <label>CAP<input name="cap" type="text" inputmode="numeric" placeholder="50100"></label>
-          <label>Provincia<input name="provincia" type="text" placeholder="FI"></label>
+          <!-- Il testo va dentro uno <span data-t>: lingua.js sostituisce il
+               textContent dell'elemento tradotto, e sull'etichetta intera si
+               porterebbe via anche l'<input> che ci sta dentro. -->
+          <label><span data-t="prev_nome">Nome e cognome *</span><input required name="nome" type="text" autocomplete="name" placeholder="Mario Rossi"></label>
+          <label><span data-t="prev_email">Email *</span><input required name="email" type="email" autocomplete="email" placeholder="mario@esempio.it"></label>
+          <label><span data-t="prev_telefono">Telefono *</span><input required name="telefono" type="tel" autocomplete="tel" placeholder="+39 333 000 0000"></label>
+          <label><span data-t="prev_quantita">Quantità porte</span><input name="quantita" type="number" min="1" max="99" value="1"></label>
+          <label class="span2"><span data-t="prev_indirizzo">Indirizzo *</span><input required name="indirizzo" type="text" autocomplete="street-address" data-t-ph="prev_indirizzo_ph" placeholder="Via e numero civico"></label>
+          <label><span data-t="prev_citta">Città *</span><input required name="citta" type="text" placeholder="Firenze"></label>
+          <label><span data-t="prev_cap">CAP</span><input name="cap" type="text" inputmode="numeric" placeholder="50100"></label>
+          <label><span data-t="prev_provincia">Provincia</span><input name="provincia" type="text" placeholder="FI"></label>
           <label class="span2"><span data-t="prev_note">Note per il produttore</span><textarea name="note" rows="3" data-t-ph="prev_note_ph" placeholder="Consegna, misure particolari, senso di apertura…"></textarea></label>
+          <!-- La lingua del DOCUMENTO, che non e' per forza quella del sito:
+               chi naviga in italiano puo' volere il preventivo in inglese per
+               il suo architetto. Si preseleziona quella del configuratore. -->
+          <div class="span2" id="linguaDocBox">
+            <span data-t="prev_lingua">Lingua del preventivo</span>
+            <div class="pills pills-lingua">
+              <label class="pill"><input type="radio" name="linguaDoc" value="it" checked> Italiano</label>
+              <label class="pill"><input type="radio" name="linguaDoc" value="en"> English</label>
+            </div>
+          </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" id="quoteCancel">Annulla</button>
+          <button type="button" class="btn-ghost" id="quoteCancel" data-t="prev_annulla">Annulla</button>
           <button type="submit" class="cta cta-compact" data-t="prev_invia">Genera PDF e invia</button>
         </div>
       </form>

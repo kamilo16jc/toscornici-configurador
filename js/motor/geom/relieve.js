@@ -57,7 +57,7 @@ function maximoLimpio(contorno, tope = 400) {
   return bajo;
 }
 
-export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = false, huecos = [] } = {}) {
+export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = false, huecos = [], uvDeBarrido = 0 } = {}) {
   if (contorno.length < 3 || perfil.length < 2) return null;
 
   /* Los agujeros del contorno llevan su propio relieve. Un perfilado metido
@@ -115,9 +115,9 @@ export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = 
   const idx = [];
   let cuenta = 0;
 
-  const poner = (p, z) => {
+  const poner = (p, z, u = p[0] / 1000, v = p[1] / 1000) => {
     pos.push(p[0], p[1], z);
-    uv.push(p[0] / 1000, p[1] / 1000);
+    uv.push(u, v);
     return cuenta++;
   };
 
@@ -128,8 +128,29 @@ export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = 
       const base = cuenta;
       const m = seq.length;
 
-      for (let j = 0; j < anillos.length; j++) {
-        for (const i of seq) poner(anillos[j][i], cara * alturas[j]);
+      /* LA VETA DE UNA MOLDURA corre a lo largo de la pieza y se dobla con el
+         perfil, como en una moldura de verdad. Proyectada de frente cruzaba
+         la gola en linea recta, como si fuera un tablero plano, y la curva no
+         se leia. Con uvDeBarrido (el tamaño de la veta, en mm): v es lo que se
+         ha recorrido a lo largo del tramo y u lo recorrido por el perfil. En
+         cada inglete el tramo vuelve a empezar: la veta cambia de direccion,
+         que es lo que hace un inglete de taller. */
+      if (uvDeBarrido > 0) {
+        const largo = [0];
+        for (let k = 1; k < m; k++) {
+          const a = anillos[0][seq[k - 1]];
+          const b = anillos[0][seq[k]];
+          largo.push(largo[k - 1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
+        }
+        let recorrido = 0;
+        for (let j = 0; j < anillos.length; j++) {
+          if (j > 0) recorrido += Math.hypot(perfil[j][0] - perfil[j - 1][0], alturas[j] - alturas[j - 1]);
+          for (let k = 0; k < m; k++) poner(anillos[j][seq[k]], cara * alturas[j], recorrido / uvDeBarrido, largo[k] / uvDeBarrido);
+        }
+      } else {
+        for (let j = 0; j < anillos.length; j++) {
+          for (const i of seq) poner(anillos[j][i], cara * alturas[j]);
+        }
       }
 
       for (let j = 0; j + 1 < anillos.length; j++) {

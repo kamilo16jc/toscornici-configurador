@@ -101,11 +101,15 @@ function buildComponents(md, warnings) {
     }
     perFin[fin] = acc;
   }
-  // componenti = unione (grezza è il superset); verniciata eredita i mancanti
+  // componenti = unione (grezza è il superset).
+  /* LA VERNICIATA NON EREDITA NIENTE DALLA GREZZA. Prima le righe che la
+     tabella verniciata non elenca (anube e serratura, montaggio fermavetro e
+     a volte il grigliato) si copiavano dalla grezza, e la porta verniciata
+     usciva sopra il listino: +20 € quasi ovunque, +51 € con il fermavetro,
+     fino a +838 € nella Laguna Lux. Il listino è chiaro: la "Porta completa"
+     verniciata è il prezzo, e le sue righe sommano esattamente quello. Quel
+     che manca vale zero. Deciso con Julián il 3 ott 2026. */
   const ids = COMP_ORDER.filter((id) => perFin.grezza[id] || perFin.verniciata[id]);
-  for (const id of ids) {
-    if (!perFin.verniciata[id] && perFin.grezza[id]) perFin.verniciata[id] = perFin.grezza[id];
-  }
   // verifica somme contro PUERTA COMPLETA
   for (const fin of ['grezza', 'verniciata']) {
     const total = md.tables[fin].total;

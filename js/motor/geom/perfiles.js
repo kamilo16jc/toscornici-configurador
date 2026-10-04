@@ -264,6 +264,25 @@ function escalonadoTipo1(rientro, mitad) {
   return ESCALONADO.map(([d, h]) => [d * kd, mitad - (ESCALONADO_CAMPO - h) * kh]);
 }
 
+/* LA BUGNA TIPO 1 DE FABRICA, la buena. La trazo Julian a mano en el corte
+   de la bugna («BUGNA TIPO 1», 3 oct 2026), sobre un panel de 21 mm con 16 de
+   lengüeta, con la moldura TIPO 1 de fondo. Sustituye a la escalonada de
+   antes, que salia de escalar los trazados del LAGUNA: «en cambio a la que
+   teniamos, esta es la correcta, a todas las puertas TIPO 1 sin excepciones».
+   Cada punto: [entra desde el canto del panel, alto desde su centro], en mm. */
+const BUGNA_TIPO1 = [
+  [0, 3.623], [8.211, 3.623], [8.211, 5.035], [11.472, 5.035], [13.714, 5.586],
+  [15.956, 6.115], [18.198, 6.603], [20.439, 7.031], [22.681, 7.382], [24.923, 7.643],
+  [26.904, 7.817], [29.749, 8.009], [36.3, 8.397], [53.857, 8.776], [53.901, 10.715],
+];
+/* A su medida. Con otra lengüeta corre todo lo demas; con otro grueso queda
+   anclada al campo, como las demas de fabrica. */
+function bugnaTipo1(rientro = 16, mitad = 10.5) {
+  const dr = (rientro ?? 16) - 16;
+  const dh = mitad - 10.5;
+  return BUGNA_TIPO1.map(([e, h], i) => [i === 0 ? 0 : Math.max(0, e + dr), h + dh]);
+}
+
 export const PERFILES = {
   dobleEscalon: {
     nombre: 'Doble escalón clásico (ficha de fábrica)',
@@ -293,11 +312,11 @@ export const PERFILES = {
   escalonado: {
     /* LA BUGNA DEL TIPO 1. En milimetros de taller, con `construir`, igual
        que la del TIPO 2 y 3: la seccion esta arriba, en escalonadoTipo1. */
-    nombre: 'TIPO 1 · escalonado',
-    construir: escalonadoTipo1,
-    /* VEINTIUNO Y MEDIO: anchoDelPerfil le SUMA el rientro y la seccion mide
-       37,5 con el arranque ya dentro. */
-    anchoTotal: 21.5,
+    nombre: 'Bugna TIPO 1',
+    construir: bugnaTipo1,
+    /* anchoDelPerfil le SUMA el rientro: la seccion mide 53,9 con los 16 de
+       lengüeta ya dentro. */
+    anchoTotal: 37.901,
   },
   doble: {
     /* LA BUGNA DE LOS TIPOS 2 Y 3, la de verdad.
@@ -519,11 +538,36 @@ const FORMAS = {
 /* Los tres de catalogo van primero y llevan el TIPO en el nombre: quien traza
    los ve juntos al principio del selector y el archivo guardado queda
    identificado sin tener que acordarse de que 'cavetto' era el TIPO 2. */
+/* LA MOLDURA TIPO 1 DE FABRICA, a su medida real: la trazo Julian sobre la
+   captura del perfil («moldura tipo 1», 3 oct 2026), 17,5 mm de alto y la uña
+   extendida sobre el panel. No es una forma que se estira y se labra en el
+   larguero como las demas: va POR DENTRO del vano, con el lomo contra el
+   armazon, lo alto a ras de la cara de la hoja y la uña sobre el panel, y no
+   aparta madera del armazon.
+   Cada punto: [cuanto entra desde la linea del vano, cuanto baja desde la
+   cara de la hoja], en mm. */
+const TIPO1_FABRICA = [
+  [0, 0], [3.1, 0], [3.549, 1.552], [4.201, 3.03], [5.044, 4.408], [6.063, 5.662],
+  [7.187, 6.677], [8.436, 7.534], [9.795, 8.151], [11.105, 8.868], [12.005, 9.671],
+  [12.802, 10.576], [13.305, 11.458], [13.699, 12.394], [13.977, 13.371], [14.136, 14.374],
+  [14.136, 16.441], [26.127, 16.441], [26.127, 17.5],
+];
+const TIPO1_MOLDE = {
+  nombre: 'Moldura TIPO 1',
+  perfilMm: TIPO1_FABRICA,
+  // La misma forma en 0..1, para la miniatura del selector.
+  forma: () => TIPO1_FABRICA.map(([e, baja]) => [e / 26.127, baja / 17.5]),
+};
+
 export const MOLDURAS = {
   /* Los tres de fabrica, sacados de los trazados (LAGUNA en sus tres tipos,
      CARRARA TIPO 2). Antes figuraban doppioGradinoCurvo, cavetto y vivo con
      estos numeros y no es ninguna de las tres. */
-  gola: { nombre: 'TIPO 1 · gola', forma: FORMAS.gola },
+  /* «gola» era la TIPO 1 aproximada: ahora ES la de fabrica, asi todas las
+     puertas TIPO 1 la llevan sin tocar su archivo. «tipo1» es el nombre con
+     que la guarda algun archivo del editor: el mismo molde. */
+  gola: TIPO1_MOLDE,
+  tipo1: { ...TIPO1_MOLDE, oculta: true },
   astragalo: { nombre: 'TIPO 2 · junquillo', forma: FORMAS.astragalo },
   smusso: { nombre: 'TIPO 3 · chaflán a 45°', forma: FORMAS.smusso },
 
@@ -536,6 +580,16 @@ export const MOLDURAS = {
   doppioGradino: { nombre: 'Doble escalón recto', forma: FORMAS.doppioGradino },
   unghietta: { nombre: 'Uña', forma: FORMAS.unghietta },
 };
+
+/* La moldura que se teje: la que diga el panel. En el configurador el TIPO
+   ya pone la suya a todas las puertas (TIPO 1 = la Moldura TIPO 1), asi que
+   aqui no se fuerza nada y en el editor se puede elegir del menu. */
+export const formaDeMoldura = (p) => p?.bastoneForma ?? 'sagomato';
+
+/* Cuanto se aparta el armazon para la moldura del vano. Las de catalogo van
+   labradas en el y le quitan su ancho; las de fabrica a su medida van por
+   dentro del vano y no le quitan nada. */
+export const apartaDelArmazon = (p) => (MOLDURAS[formaDeMoldura(p)]?.perfilMm ? 0 : p?.bastoneAncho ?? 0);
 
 export function perfilBastoneEnMm(ancho, caraHoja, fondo, forma = 'sagomato') {
   const caida = caraHoja - fondo;
