@@ -672,7 +672,19 @@ controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
    bersaglio si muove; qui lo si tiene dentro la porta, cosi' non la si perde
    mai di vista. Si sposta camera e bersaglio insieme: l'angolo di vista non
    cambia, la porta resta sempre di fronte. */
-let inquadratura = null;     // { dist, lx, ly }: la distanza di casa e mezza porta
+let inquadratura = null;     // { lx, ly, alto, largo }: mezza porta e la porta intera
+
+/* La distanza a cui la porta ci sta INTERA, in alto e in largo, con un filo
+   di margine. Di solito comanda l'altezza; in un telefono in verticale o con
+   una porta a due ante puo' comandare la larghezza, e allora si arretra
+   quanto serve perche' non si tagli ai lati. */
+const MARGINE_INTERA = 1.06;
+function distanzaIntera() {
+  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const perAlto = (inquadratura.alto * MARGINE_INTERA / 2) / tanV;
+  const perLargo = (inquadratura.largo * MARGINE_INTERA / 2) / (tanV * camera.aspect);
+  return Math.max(perAlto, perLargo);
+}
 const _sguardo = new THREE.Vector3();
 const _sposta = new THREE.Vector3();
 function tieniInquadratura() {
@@ -782,6 +794,22 @@ const REALCE_RILIEVO = { pieza: 3, moldura: 1, molduraDeFabrica: 1.3 };
 
 let composer = null;
 let gtaoPass = null;
+/* IL FOTOGRAMMA LEGGERO, per quando qualcosa si muove (vedi QUIETE). Prima
+   era la scena diretta, senza occlusione: fermandosi, gli angoli del telaio,
+   le giunte e i filetti delle modanature —il 5 % dell'immagine, fino a 84
+   livelli su 255— si scurivano di colpo, e con la rotella che va a scatti
+   si accendevano e spegnevano a ogni tacca: i lampi che vedeva Julian.
+   Adesso porta anche lui l'occlusione, a meta' risoluzione e senza
+   multisampling: 5,9 ms contro i 20,6 del pieno sul MacBook Air M4, e
+   fermandosi cambia solo la finezza. */
+let composerLeggero = null;
+let gtaoLeggero = null;
+const misuraLeggero = (w, h) => {
+  if (!composerLeggero) return;
+  composerLeggero.setSize(w, h);
+  const pr = renderer.getPixelRatio();
+  gtaoLeggero.setSize(Math.max(1, Math.round(w * pr / 2)), Math.max(1, Math.round(h * pr / 2)));
+};
 
 function montaOcclusione() {
   /* In qualita' bassa si esce di qui e si torna al render diretto: niente
@@ -839,6 +867,24 @@ function montaOcclusione() {
     c.setSize(w, h);
     composer = c;
     gtaoPass = ao;
+
+    /* Il leggero: stessa occlusione e stessa forza, ma senza multisampling nel
+       bersaglio (e' lui che costa: con MSAA x4 il leggero saliva a 14 ms) e
+       con l'occlusione calcolata a meta' risoluzione. */
+    const cl = new EffectComposer(renderer, new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType }));
+    cl.addPass(new RenderPass(scene, camera));
+    const aol = new GTAOPass(scene, camera, w, h);
+    aol.output = GTAOPass.OUTPUT.Default;
+    aol.blendIntensity = ao.blendIntensity;
+    aol.updateGtaoMaterial({
+      radius: 0.05, distanceExponent: 1, thickness: 0.5, scale: 1.1,
+      samples: Math.min(8, campioni), distanceFallOff: 1, screenSpaceRadius: false,
+    });
+    cl.addPass(aol);
+    cl.addPass(new OutputPass());
+    composerLeggero = cl;
+    gtaoLeggero = aol;
+    misuraLeggero(w, h);
   } catch (e) {
     /* Se l'occlusione non si puo' montare —WebGL vecchio, addon cambiato—
        il configuratore continua a rendere senza. Una porta senza AO si
@@ -846,6 +892,8 @@ function montaOcclusione() {
     console.warn('Occlusione ambientale non disponibile, si rende senza.', e);
     composer = null;
     gtaoPass = null;
+    composerLeggero = null;
+    gtaoLeggero = null;
   }
 }
 
@@ -1436,6 +1484,19 @@ function loadModel(key) {
          diversi non esistono. Per questo montar() accetta un materiale. */
       const marco = montar(datiMarco, { conTapajuntas: false, conSuelo: false, material: woodMat });
       if (conSopra) marco.add(traversoDe(datiTelaio, datiMarco, woodMat));
+      /* LA VENA DEL TELAIO. Le jambe e il cabecero escono dall'estrusione con
+         le coordenadas di texture in MILLIMETRI: la venatura si ripeteva ogni
+         millimetro, da lontano una tinta piatta e da vicino rumore e
+         scintillii. Il cabecero in arco e il traverso del sopraluce non ne
+         avevano nemmeno. Qui le prende tutte da pegarVeta, con lo stesso passo
+         dell'anta: per il lungo nelle jambe, per traverso in testa, e per la
+         faccia che si vede di piu' (l'interno delle jambe, il soffitto). */
+      marco.traverse((o) => {
+        if (!o.isMesh || !['Telaio', 'TraversoSopraluce'].includes(o.name)) return;
+        o.geometry.computeBoundingBox();
+        const b = o.geometry.boundingBox;
+        pegarVeta(o.geometry, b.max.x - b.min.x > b.max.y - b.min.y, { porCara: true });
+      });
       conjunto.add(marco);
 
       /* IL VETRO del sopraluce. Va nell'insieme e NON in doorPivot: aprendo la
@@ -1594,13 +1655,17 @@ function loadModel(key) {
 
       /* DI FRONTE (Julian, 27 ott 2026: il tre quarti non gli piaceva). Con la
          camera ferma e' questa la vista che il cliente ha sempre davanti; un
-         filo piu' in alto del centro, all'altezza dell'occhio. */
-      const dist = size.y * 2.0;
+         filo piu' in alto del centro, all'altezza dell'occhio.
+         E PIU' VICINO DI COSI' NON SI VA: la porta intera, telaio e coprifilo
+         compresi, e' il massimo dell'avvicinamento (lo ha chiesto Julian lo
+         stesso giorno). Allontanarsi resta come prima, fino a 3,2 volte
+         l'altezza. */
+      inquadratura = { lx: size.x * 0.5, ly: size.y * 0.5, alto: size.y, largo: size.x };
+      const dist = distanzaIntera();
       camera.position.set(0, size.y * 0.12, dist);
       controls.target.set(0, 0, 0);
-      controls.minDistance = dist * 0.35;
-      controls.maxDistance = dist * 1.6;
-      inquadratura = { dist: camera.position.length(), lx: size.x * 0.5, ly: size.y * 0.5 };
+      controls.minDistance = dist;
+      controls.maxDistance = Math.max(dist, size.y * 3.2);
       controls.update();
 
       /* Niente piano d'ombra: il motore porta il suo pavimento vero, e due
@@ -2156,6 +2221,7 @@ function loadModel(key) {
            si cambia qualita': una copia diretta resterebbe appesa al vecchio. */
         get gtaoPass() { return gtaoPass; },
         get composer() { return composer; },
+        get composerLeggero() { return composerLeggero; },
         /* LUCI e non { key, ... }: qui dentro `key` e' il nome del modello,
            e l'aggancio restituiva una stringa al posto della luce. */
         luci: LUCI,
@@ -3026,11 +3092,19 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  /* Cambiando finestra cambia quanto ci sta: il limite dell'avvicinamento si
+     rifa' perche' resti "la porta intera". */
+  if (inquadratura) {
+    controls.minDistance = distanzaIntera();
+    controls.maxDistance = Math.max(controls.minDistance, inquadratura.alto * 3.2);
+    controls.update();
+  }
   /* composer.setSize ridimensiona anche tutti i suoi pass, l'occlusione
      compresa, e alla misura vera (per il pixelRatio). Qui dopo c'era un
      gtaoPass.setSize(w, h) in pixel CSS che la riportava a meta' risoluzione:
      l'occlusione si calcolava sempre a un quarto dei pixel, anche in Alta. */
   if (composer) composer.setSize(w, h);
+  misuraLeggero(w, h);
   chiediFotogramma(30);
 }
 window.addEventListener('resize', resize);
@@ -3058,12 +3132,13 @@ window.addEventListener('resize', resize);
 let fotogrammiDaFare = 60;
 
 /* L'ALTA A RIPOSO. Mentre qualcosa si muove —la camera che si avvicina, l'anta
-   che gira— si disegna la scena diretta, senza occlusione di schermo ne'
-   multisampling del composer: sul MacBook Air M4 sono 28 ms a fotogramma in
-   Alta, e 17 di quei 28 sono l'occlusione. Appena tutto e' fermo da QUIETE ms,
-   un fotogramma pieno, in Alta vera. L'ombra di rilievo cotta resta sempre, e
-   il rilievo si legge anche in movimento. */
-const QUIETE = 180;           // ms senza movimento prima del fotogramma pieno
+   che gira— si disegna il fotogramma leggero (composerLeggero: occlusione a
+   meta' risoluzione, senza multisampling): sul MacBook Air M4 il pieno costa
+   20 ms e il leggero 6. Appena tutto e' fermo da QUIETE ms, un fotogramma
+   pieno, in Alta vera. L'ombra di rilievo cotta resta sempre. */
+/* 300 e non 180: la rotella va a tacche, e girandola piano fra una tacca e
+   l'altra passavano piu' di 180 ms — si disegnava un pieno a ogni tacca. */
+const QUIETE = 300;           // ms senza movimento prima del fotogramma pieno
 const PAUSA_PIENO = 100;      // a riposo, un fotogramma pieno ogni tanto, non a ogni giro
 let ultimoMoto = -Infinity;
 let ultimoLeggero = -Infinity;
@@ -3214,6 +3289,7 @@ renderer.setAnimationLoop(() => {
     renderer.shadowMap.needsUpdate = ombreSporche;
     ombreSporche = false;
     if (pieno && composer) composer.render();
+    else if (!pieno && composerLeggero) composerLeggero.render();
     else renderer.render(scene, camera);
   };
 
@@ -3269,8 +3345,12 @@ function applicaQualita(nome) {
      il target non si cambia a caldo: si getta e se ne fa un altro. */
   gtaoPass?.dispose?.();
   composer?.dispose?.();
+  gtaoLeggero?.dispose?.();
+  composerLeggero?.dispose?.();
   composer = null;
   gtaoPass = null;
+  composerLeggero = null;
+  gtaoLeggero = null;
   montaOcclusione();
 
   // L'ombra di rilievo ha la sua finezza per qualita': si ricuoce.

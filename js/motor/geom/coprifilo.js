@@ -134,12 +134,22 @@ export function cornisa(seccion, xI, xD, camino, zMuro, sentido) {
      cabecero— y cada uno lleva la suya: a lo largo en las jambas, a lo ancho
      arriba, y el cambio cae justo en el inglete, como en un tapajuntas de
      verdad. Mismo paso y mismo convenio que pegarVeta. */
+  /* Y por la cara que mas se ve: los escalones del perfil miran de lado
+     —en X en las jambas, en Y en el cabecero— y proyectados desde delante
+     tenian uv de area cero: rayas y destellos al acercarse. */
   const uv = [];
   const tri = (a, b, c, testa) => {
     pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const nx = Math.abs(uy * vz - uz * vy);
+    const ny = Math.abs(uz * vx - ux * vz);
+    const nz = Math.abs(ux * vy - uy * vx);
     for (const q of [a, b, c]) {
-      const x = q[0] / TAM_VETA;
-      const y = q[1] / TAM_VETA;
+      let x = q[0] / TAM_VETA;
+      let y = q[1] / TAM_VETA;
+      if (nx >= ny && nx >= nz) x = q[2] / TAM_VETA;
+      else if (ny > nz) y = q[2] / TAM_VETA;
       uv.push(testa ? y : x, testa ? x : y);
     }
   };

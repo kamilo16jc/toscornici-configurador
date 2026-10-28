@@ -649,12 +649,36 @@ export const TAM_VETA = 400;
  * Vive aqui y no en el tejido porque no lo necesita solo el tejido: el
  * coprifilo es madera igual, y sin UV le salia lisa.
  */
-export function pegarVeta(geo, cruzada) {
+export function pegarVeta(geo, cruzada, { porCara = false } = {}) {
   const p = geo.attributes.position;
   const uv = new Float32Array(p.count * 2);
+  /* POR LA CARA QUE MAS SE VE, si se pide (lo trae puertas3d). En una malla
+     sin indice cada triangulo tiene sus vertices, asi que se puede elegir por
+     triangulo: las caras con la normal en X toman (z, y) y las de la normal en
+     Y toman (x, z). Proyectando todo por (x, y) esas caras tienen uv de area
+     cero y salen a rayas: el interior de las jambas del telaio y el techo del
+     cabecero, que con la vista que se desplaza se ven de lado.
+     Solo a peticion, para no mover la veta de lo que ya esta bien. */
+  const cara = porCara && !geo.index && p.count % 3 === 0;
+  const A = new THREE.Vector3();
+  const B = new THREE.Vector3();
+  const C = new THREE.Vector3();
+  const n = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
-    const a = p.getX(i) / TAM_VETA;
-    const b = p.getY(i) / TAM_VETA;
+    let a = p.getX(i) / TAM_VETA;
+    let b = p.getY(i) / TAM_VETA;
+    if (cara) {
+      const t = i - (i % 3);
+      A.fromBufferAttribute(p, t);
+      B.fromBufferAttribute(p, t + 1);
+      C.fromBufferAttribute(p, t + 2);
+      n.subVectors(B, A).cross(C.sub(A));
+      const ax = Math.abs(n.x);
+      const ay = Math.abs(n.y);
+      const az = Math.abs(n.z);
+      if (ax >= ay && ax >= az) a = p.getZ(i) / TAM_VETA;
+      else if (ay > az) b = p.getZ(i) / TAM_VETA;
+    }
     uv[i * 2] = cruzada ? b : a;
     uv[i * 2 + 1] = cruzada ? a : b;
   }
