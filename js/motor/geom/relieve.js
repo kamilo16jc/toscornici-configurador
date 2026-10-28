@@ -57,7 +57,7 @@ function maximoLimpio(contorno, tope = 400) {
   return bajo;
 }
 
-export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = false, huecos = [], uvDeBarrido = 0 } = {}) {
+export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = false, huecos = [], uvDeBarrido = 0, entero = false } = {}) {
   if (contorno.length < 3 || perfil.length < 2) return null;
 
   /* Los agujeros del contorno llevan su propio relieve. Un perfilado metido
@@ -88,6 +88,9 @@ export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = 
     alturas.push(alto);
   }
   if (anillos.length < 2) return null;
+  /* Quien pide el perfil ENTERO prefiere nada a una moldura cortada a medias:
+     asi puede poner otra que si quepa. */
+  if (entero && anillos.length < perfil.length) return null;
 
   const n = contorno.length;
   const quiebros = esquinas(contorno);
@@ -282,6 +285,66 @@ export function geometriaBugna(contorno, perfil, { simetrico = true, sinCampo = 
   g.setIndex(idx);
   g.computeVertexNormals();
   return g;
+}
+
+/**
+ * El perfil, ajustado para que TODOS sus anillos salgan limpios.
+ *
+ * geometriaBugna teje un anillo por muestra y, si uno no sale limpio, CORTA
+ * ahi: lo que quedaba de perfil no se teje. Con los perfiles de catalogo no
+ * pasaba nunca; con la bugna TIPO 1 de fabrica, que llega 2 mm mas adentro,
+ * un panel de la Cosenza se quedaba 0,26 mm corto y perdia el escalon del
+ * campo entero: una bugna sin campo. perfilQueQuepa no lo ve, porque busca el
+ * limite por biseccion y en un contorno con arcos el "sale limpio" no es
+ * monotono.
+ *
+ * Aqui se comprueban los anillos de verdad, uno por muestra:
+ *  - si los que fallan son los del final, el perfil no cabe: se encoge todo
+ *    hasta el ultimo sitio donde el anillo sale limpio —un 2 o un 3 %, no se
+ *    nota— y el campo se conserva;
+ *  - si falla uno suelto en medio y los de despues salen, se quita esa
+ *    muestra: se pierde un vertice del perfil, no medio perfil.
+ * Donde todo sale limpio devuelve el mismo perfil, sin tocarlo.
+ */
+export function perfilTejible(contorno, perfil, vueltas = 4) {
+  if (contorno.length < 3 || perfil.length < 2) return perfil;
+  const n = contorno.length;
+  const limpio = (d) => {
+    const a = haciaDentro(contorno, d);
+    return !!a && a.length === n;
+  };
+
+  let actual = perfil;
+  for (let v = 0; v < vueltas; v++) {
+    const malos = new Set();
+    for (let j = 0; j < actual.length; j++) if (!limpio(actual[j][0])) malos.add(j);
+    if (!malos.size) return actual;
+    // Sin el primero no hay nada que tejer: se deja como viene.
+    if (malos.has(0)) return actual;
+
+    const ultimo = actual.length - 1;
+    let cola = ultimo;
+    while (cola >= 0 && malos.has(cola)) cola--;
+    if (cola === ultimo) {
+      // La cola sale: los malos son sueltos, de en medio.
+      actual = actual.filter((_, j) => !malos.has(j));
+      continue;
+    }
+
+    /* La cola no cabe. El limite de verdad esta entre el ultimo anillo bueno
+       y el primero malo: se busca y se encoge todo hasta un pelo por debajo. */
+    let bajo = actual[cola][0];
+    let alto = actual[cola + 1][0];
+    for (let i = 0; i < 10; i++) {
+      const medio = (bajo + alto) / 2;
+      if (limpio(medio)) bajo = medio; else alto = medio;
+    }
+    const pedido = actual[ultimo][0];
+    if (!(bajo > 0) || !(pedido > 0)) return actual;
+    const factor = (bajo * 0.985) / pedido;
+    actual = actual.map(([d, h]) => [d * factor, h]);
+  }
+  return actual;
 }
 
 /**

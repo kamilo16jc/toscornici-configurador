@@ -2,5 +2,6 @@
   "modelo/papeles.js": "2711034f17de35cb78496ed28a4cf7eb",
   "geom/telaio.js": "3cc798954468625a6dfc3510f564f624",
   "modelo/redimensionar.js": "100687681bb9b0874accbc560c336624",
-  "geom/efectivo.js": "c2665d98bf3ccce8721093e2450758d2"
+  "geom/efectivo.js": "c2665d98bf3ccce8721093e2450758d2",
+  "viewer/sombraRelieve.js": "163305520aff1a04a2ef6cee1d1cbeb9"
 }

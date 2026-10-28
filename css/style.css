@@ -114,7 +114,9 @@ body {
   width: 100%;
   height: 100%;
   touch-action: none;
+  cursor: grab;              /* si trascina per spostare la vista */
 }
+.viewer canvas:active { cursor: grabbing; }
 
 .viewer-brand {
   position: absolute;
@@ -1364,3 +1366,109 @@ input[type="email"], input[type="tel"], input[type="number"] {
 }
 .lingue--chiare .lingua-scelta:hover { color: var(--brass); }
 .lingue--chiare .lingua-scelta.is-attiva { background: var(--brass); color: #fff; }
+
+/* ---------- la qualita' del visore, in cima al pannello ----------
+   Fuori dalla numerazione: non e' una scelta della porta. Stesso disegno
+   del selettore di lingua, che e' il controllo piu' sobrio della pagina. */
+.qualita {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.qualita-etichetta {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.qualita-scelte {
+  display: flex;
+  flex: none;
+  border: 1px solid var(--hairline);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.qualita-scelta {
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+}
+.qualita-scelta + .qualita-scelta { border-left: 1px solid var(--hairline); }
+.qualita-scelta:hover { color: var(--brass); }
+.qualita-scelta.is-active { background: var(--brass); color: #fff; }
+.qualita-scelta:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Illuminati finche' l'avviso e' aperto, perche' si veda dove si cambia. */
+@keyframes qualita-luce {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(169, 71, 47, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(169, 71, 47, 0.22), 0 0 16px rgba(194, 84, 58, 0.5); }
+}
+.qualita.is-evidenziata .qualita-scelte {
+  border-color: var(--brass);
+  animation: qualita-luce 1.6s ease-in-out infinite;
+}
+.qualita.is-evidenziata .qualita-etichetta { color: var(--brass); }
+@media (prefers-reduced-motion: reduce) {
+  .qualita.is-evidenziata .qualita-scelte {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(169, 71, 47, 0.28);
+  }
+}
+
+/* L'avviso, appeso sotto i bottoni con la sua freccia. */
+.avviso-qualita {
+  position: relative;
+  margin: -6px 0 22px;
+  padding: 14px 16px 12px;
+  background: var(--espresso);
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.avviso-qualita[hidden] { display: none; }
+.avviso-qualita::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 72px;
+  width: 12px;
+  height: 12px;
+  background: var(--espresso);
+  transform: rotate(45deg);
+}
+.avviso-qualita-titolo {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.avviso-qualita-testo { margin: 0; color: rgba(238, 233, 223, 0.86); }
+.avviso-qualita-testo strong { color: #fff; font-weight: 600; }
+.avviso-qualita-chiudi {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(238, 233, 223, 0.35);
+  background: none;
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.avviso-qualita-chiudi:hover { background: var(--brass); border-color: var(--brass); }

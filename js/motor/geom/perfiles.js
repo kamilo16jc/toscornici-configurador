@@ -264,23 +264,75 @@ function escalonadoTipo1(rientro, mitad) {
   return ESCALONADO.map(([d, h]) => [d * kd, mitad - (ESCALONADO_CAMPO - h) * kh]);
 }
 
-/* LA BUGNA TIPO 1 DE FABRICA, la buena. La trazo Julian a mano en el corte
-   de la bugna («BUGNA TIPO 1», 3 oct 2026), sobre un panel de 21 mm con 16 de
-   lengüeta, con la moldura TIPO 1 de fondo. Sustituye a la escalonada de
-   antes, que salia de escalar los trazados del LAGUNA: «en cambio a la que
-   teniamos, esta es la correcta, a todas las puertas TIPO 1 sin excepciones».
-   Cada punto: [entra desde el canto del panel, alto desde su centro], en mm. */
-const BUGNA_TIPO1 = [
+/* LA BUGNA TIPO 1 DE FABRICA. La trazo Julian a mano en el corte de la bugna
+   («BUGNA TIPO 1», 3 oct 2026), sobre un panel de 21 mm con 16 de lengüeta y
+   CON LA MOLDURA TIPO 1 DIBUJADA DE FONDO: lo que su dibujo fija es la bugna
+   respecto a la moldura. Sustituye a la escalonada de antes: «en cambio a la
+   que teniamos, esta es la correcta, a todas las puertas TIPO 1».
+   Cada punto: [entra desde el canto del panel, alto desde su centro], en mm,
+   tal como se trazo: con el lomo de la moldura puesto en la linea del vano. */
+const BUGNA_TIPO1_TRAZADA = [
   [0, 3.623], [8.211, 3.623], [8.211, 5.035], [11.472, 5.035], [13.714, 5.586],
   [15.956, 6.115], [18.198, 6.603], [20.439, 7.031], [22.681, 7.382], [24.923, 7.643],
   [26.904, 7.817], [29.749, 8.009], [36.3, 8.397], [53.857, 8.776], [53.901, 10.715],
 ];
-/* A su medida. Con otra lengüeta corre todo lo demas; con otro grueso queda
+
+/* LO QUE MIDE EL CUERPO DE LA MOLDURA TIPO 1: la meseta (3,1) y la gola
+   (11,04). Es lo que va LABRADO EN EL ARMAZON, en la banda de 12 mm donde iba
+   la gola de antes; hacia el panel solo sale la uña.
+   El primer dia la pareja se monto entera por dentro del vano, con el lomo en
+   la linea trazada: la gola caia 14 mm dentro del panel, el campo de la bugna
+   empezaba a 37,9 de la linea en vez de a 21,5, y todas las puertas cambiaban
+   de proporcion («me estas deformando las puertas», 4 oct 2026). Los numeros
+   decian donde iba: la gola mide 11,04 —los 12 de la banda de siempre, con
+   un filo de meseta— y el campo, medido desde el pie de la gola, empieza a
+   23,8 —los 21,5 de la bugna de antes—. Asi que la pareja ENTERA se corre
+   ese cuerpo hacia el armazon: el pie de la gola cae en la linea trazada, y
+   moldura y bugna quedan entre si exactamente como se trazaron. */
+const TIPO1_CUERPO = 14.136;
+/* La lengüeta, lo que va escondido en la ranura, nunca mide menos de esto. */
+const TIPO1_LENGUETA_MIN = 1.2;
+
+/**
+ * Corre una bugna trazada a mano CON LA GUIA DEL PRIMER DIA (el lomo de la
+ * moldura en la linea del vano) a donde va hoy la pareja: el cuerpo de la
+ * moldura hacia el armazon. Es la misma cuenta que bugnaTipo1; sirve para
+ * abrir los archivos guardados aquel dia sin que la bugna quede 14 mm fuera
+ * de sitio respecto a la moldura (ver migrarTipo1DelPrimerDia en proyecto.js).
+ */
+export function correrBugnaConLaMoldura(perfil) {
+  const lengueta = perfil[0][1];
+  const relieve = perfil.slice(1).map(([e, h]) => [e - TIPO1_CUERPO, h]);
+  if (relieve[0][0] > TIPO1_LENGUETA_MIN) return [[0, lengueta], ...relieve];
+  const i = relieve.findIndex(([e]) => e > TIPO1_LENGUETA_MIN);
+  if (i < 1) return perfil.map(([e, h]) => [e, h]);
+  const a = relieve[i - 1];
+  const b = relieve[i];
+  const t = (TIPO1_LENGUETA_MIN - a[0]) / (b[0] - a[0]);
+  return [[0, lengueta], [TIPO1_LENGUETA_MIN, lengueta], [TIPO1_LENGUETA_MIN, a[1] + t * (b[1] - a[1])], ...relieve.slice(i)];
+}
+
+/* A su medida. Con otra lengüeta corre todo el relieve; con otro grueso queda
    anclada al campo, como las demas de fabrica. */
 function bugnaTipo1(rientro = 16, mitad = 10.5) {
-  const dr = (rientro ?? 16) - 16;
   const dh = mitad - 10.5;
-  return BUGNA_TIPO1.map(([e, h], i) => [i === 0 ? 0 : Math.max(0, e + dr), h + dh]);
+  const corre = (rientro ?? 16) - 16 - TIPO1_CUERPO;
+  const lengueta = BUGNA_TIPO1_TRAZADA[0][1] + dh;
+  const relieve = BUGNA_TIPO1_TRAZADA.slice(1).map(([e, h]) => [e + corre, h + dh]);
+  if (relieve[0][0] > TIPO1_LENGUETA_MIN) return [[0, lengueta], ...relieve];
+  /* El arranque del relieve cae fuera del panel: se corta donde acaba la
+     lengüeta minima y de ahi se sube al relieve. Todo eso queda bajo el
+     armazon y no se ve. */
+  const i = relieve.findIndex(([e]) => e > TIPO1_LENGUETA_MIN);
+  if (i < 1) return [[0, lengueta], [TIPO1_LENGUETA_MIN, lengueta], [TIPO1_LENGUETA_MIN, relieve[relieve.length - 1][1]]];
+  const a = relieve[i - 1];
+  const b = relieve[i];
+  const t = (TIPO1_LENGUETA_MIN - a[0]) / (b[0] - a[0]);
+  return [
+    [0, lengueta], [TIPO1_LENGUETA_MIN, lengueta],
+    [TIPO1_LENGUETA_MIN, a[1] + t * (b[1] - a[1])],
+    ...relieve.slice(i),
+  ];
 }
 
 export const PERFILES = {
@@ -314,9 +366,9 @@ export const PERFILES = {
        que la del TIPO 2 y 3: la seccion esta arriba, en escalonadoTipo1. */
     nombre: 'Bugna TIPO 1',
     construir: bugnaTipo1,
-    /* anchoDelPerfil le SUMA el rientro: la seccion mide 53,9 con los 16 de
-       lengüeta ya dentro. */
-    anchoTotal: 37.901,
+    /* anchoDelPerfil le SUMA el rientro: desde la linea del vano, el campo
+       empieza a 23,8 mm (37,9 trazados menos el cuerpo de la moldura). */
+    anchoTotal: 23.765,
   },
   doble: {
     /* LA BUGNA DE LOS TIPOS 2 Y 3, la de verdad.
@@ -539,13 +591,19 @@ const FORMAS = {
    los ve juntos al principio del selector y el archivo guardado queda
    identificado sin tener que acordarse de que 'cavetto' era el TIPO 2. */
 /* LA MOLDURA TIPO 1 DE FABRICA, a su medida real: la trazo Julian sobre la
-   captura del perfil («moldura tipo 1», 3 oct 2026), 17,5 mm de alto y la uña
-   extendida sobre el panel. No es una forma que se estira y se labra en el
-   larguero como las demas: va POR DENTRO del vano, con el lomo contra el
-   armazon, lo alto a ras de la cara de la hoja y la uña sobre el panel, y no
-   aparta madera del armazon.
-   Cada punto: [cuanto entra desde la linea del vano, cuanto baja desde la
-   cara de la hoja], en mm. */
+   captura del perfil («moldura tipo 1», 3 oct 2026), 17,5 mm de alto.
+   Cada punto: [a lo ancho desde el lomo, cuanto baja desde la cara de la
+   hoja], en mm. De izquierda a derecha: la meseta (de 0 a 3,1), la gola
+   (hasta 14,136) y la uña (de 14,136 a 26,127), que es lo unico que se
+   extiende sobre el panel.
+   DONDE VA: el cuerpo —meseta y gola— labrado en el armazon, en la banda que
+   el armazon se aparta del vano (12 mm), con el pie de la gola en la linea
+   trazada; la uña, por dentro, sobre el panel. Ver TIPO1_CUERPO.
+   LA UÑA SE VE SOBRE UN PANEL LISO. Con la bugna TIPO 1 queda medio milimetro
+   BAJO la bugna (cara de la uña a z 6,06; la bugna pasa por ahi a 6,5-7,0):
+   asi esta en el trazado de Julian, y lo que se ve es la gola y un escalon de
+   1,6 mm en la linea del vano. Para verla sobre la bugna habria que retrazar
+   la bugna mas baja en esos 12 mm; no sale de correrla. */
 const TIPO1_FABRICA = [
   [0, 0], [3.1, 0], [3.549, 1.552], [4.201, 3.03], [5.044, 4.408], [6.063, 5.662],
   [7.187, 6.677], [8.436, 7.534], [9.795, 8.151], [11.105, 8.868], [12.005, 9.671],
@@ -555,6 +613,12 @@ const TIPO1_FABRICA = [
 const TIPO1_MOLDE = {
   nombre: 'Moldura TIPO 1',
   perfilMm: TIPO1_FABRICA,
+  cuerpo: TIPO1_CUERPO,   // meseta + gola: lo que va en el armazon
+  meseta: 3.1,
+  banda: 12,              // lo que se aparta el armazon si la pieza no dice otro ancho
+  /* La que va en su lugar donde ella no puede ir: en un vano con cristal —la
+     uña taparia vidrio— y donde no cabe limpia. Es la gola de antes. */
+  pequena: 'golaPequena',
   // La misma forma en 0..1, para la miniatura del selector.
   forma: () => TIPO1_FABRICA.map(([e, baja]) => [e / 26.127, baja / 17.5]),
 };
@@ -568,6 +632,9 @@ export const MOLDURAS = {
      que la guarda algun archivo del editor: el mismo molde. */
   gola: TIPO1_MOLDE,
   tipo1: { ...TIPO1_MOLDE, oculta: true },
+  /* La gola de catalogo, la que habia antes de tener la de fabrica. Es la
+     que llevan los vidrios de una puerta TIPO 1, y se puede elegir suelta. */
+  golaPequena: { nombre: 'Gola pequeña (la de los vidrios)', forma: FORMAS.gola },
   astragalo: { nombre: 'TIPO 2 · junquillo', forma: FORMAS.astragalo },
   smusso: { nombre: 'TIPO 3 · chaflán a 45°', forma: FORMAS.smusso },
 
@@ -581,15 +648,80 @@ export const MOLDURAS = {
   unghietta: { nombre: 'Uña', forma: FORMAS.unghietta },
 };
 
-/* La moldura que se teje: la que diga el panel. En el configurador el TIPO
-   ya pone la suya a todas las puertas (TIPO 1 = la Moldura TIPO 1), asi que
-   aqui no se fuerza nada y en el editor se puede elegir del menu. */
-export const formaDeMoldura = (p) => p?.bastoneForma ?? 'sagomato';
+/* Un vano con cristal: de vidrio entero, realzado con vidrio en el campo, o
+   panel con una zona de vidrio trazada dentro. */
+export const esVanoDeVidrio = (p) =>
+  p?.papel === 'vetro' || p?.papel === 'vetroSatinato' || p?.papel === 'bugnatoVetro'
+  || p?.vidrioEnElCampo === true || (p?.vidrioPuntos?.length ?? 0) > 0
+  || String(p?.acabado ?? '').startsWith('vidrio');
 
-/* Cuanto se aparta el armazon para la moldura del vano. Las de catalogo van
-   labradas en el y le quitan su ancho; las de fabrica a su medida van por
-   dentro del vano y no le quitan nada. */
-export const apartaDelArmazon = (p) => (MOLDURAS[formaDeMoldura(p)]?.perfilMm ? 0 : p?.bastoneAncho ?? 0);
+/**
+ * LA MOLDURA QUE LE TOCA A UN VANO.
+ *
+ * La que diga la pieza, salvo una cosa: la de fabrica a su medida saca una
+ * uña de 12 mm por dentro del vano. Sobre un panel de madera es lo suyo; sobre
+ * un cristal es comerse el vidrio —en una puerta de cuarterones tapaba hasta
+ * el 60 % de cada luz—.
+ * LA REGLA ES POR PUERTA (`conVidrio`): una puerta con ventanas lleva SOLO la
+ * pequeña, en todos sus vanos, tambien en sus paneles de madera: la gola de
+ * catalogo, labrada en el armazon y sin tocar el vidrio, como estaba. Asi no
+ * conviven dos molduras distintas en la misma puerta («las puertas con
+ * ventanas solo la moldura pequeña», 4 oct 2026). La de fabrica con su uña
+ * queda para las puertas de solo madera.
+ * (Donde la de fabrica no cabe limpia tambien va la pequeña; eso lo decide
+ * quien teje, que es quien tiene el contorno: ver geometriaBastone.)
+ */
+export function molduraDelVano(p, { conVidrio = false } = {}) {
+  const pedida = MOLDURAS[p?.bastoneForma] ? p.bastoneForma : 'sagomato';
+  const molde = MOLDURAS[pedida];
+  if (molde.perfilMm && (conVidrio || esVanoDeVidrio(p))) {
+    return { clave: molde.pequena, molde: MOLDURAS[molde.pequena], deFabrica: false };
+  }
+  return { clave: pedida, molde, deFabrica: !!molde.perfilMm };
+}
+
+/** La clave de la moldura que se teje de verdad en ese vano. */
+export const formaDeMoldura = (p, o) => molduraDelVano(p, o).clave;
+
+/* Cuanto se aparta el armazon para la moldura del vano. TODAS van labradas en
+   el: las de catalogo le quitan su ancho, y la de fabrica la banda donde va
+   su cuerpo —el ancho de la pieza, o sus 12 mm si la pieza no dice ninguno—.
+   No depende de si al final se teje la de fabrica o su pequeña: el armazon se
+   aparta lo mismo, y asi las holguras con que estan dibujadas las piezas
+   quedan siempre debajo del aro. (El primer dia la de fabrica no apartaba
+   nada y esas holguras salieron como ranuras: 130 vanos en 36 puertas.) */
+export const apartaDelArmazon = (p) => {
+  const molde = MOLDURAS[p?.bastoneForma];
+  const ancho = p?.bastoneAncho ?? 0;
+  return molde?.perfilMm ? (ancho > 0 ? ancho : molde.banda) : ancho;
+};
+
+/* Cuanto se corre una moldura de fabrica hacia el armazon: su cuerpo entero
+   si la banda da para la gola; si no, hasta donde llegue (la meseta es lo
+   primero que se pierde, que es madera lisa a ras de cara). */
+const correDeFabrica = (molde, banda) => Math.min(molde.cuerpo, banda + molde.meseta);
+
+/**
+ * La seccion de una moldura de fabrica, lista para tejer.
+ * @returns {number[][]} [distancia desde el borde de fuera de la banda, z]
+ */
+export function perfilDeFabricaEnMm(molde, banda, caraHoja) {
+  const corre = correDeFabrica(molde, banda);
+  /* La meseta arranca 0,1 mm BAJO la cara: el armazon se mete 0,4 mm en esta
+     banda (HOLGURA de efectivo.js) y, a la misma cota, las dos caras caerian
+     en el mismo plano y parpadearian a lo largo del filo. */
+  const pts = [[0, caraHoja - molde.perfilMm[0][1] - 0.1]];
+  for (const [e, baja] of molde.perfilMm) {
+    const d = e - corre + banda;
+    // La meseta que cae fuera de la banda ya es armazon: no se repite.
+    if (d > 1e-6) pts.push([d, caraHoja - baja]);
+  }
+  return pts;
+}
+
+/** Cuanto entra una moldura de fabrica sobre el panel, desde la linea del vano. */
+export const entraSobreElPanel = (molde, banda) =>
+  molde.perfilMm[molde.perfilMm.length - 1][0] - correDeFabrica(molde, banda);
 
 export function perfilBastoneEnMm(ancho, caraHoja, fondo, forma = 'sagomato') {
   const caida = caraHoja - fondo;

@@ -36,7 +36,7 @@
    e' la bugna: senza pannello non c'e' niente da rialzare.
    ============================================================ */
 
-import { MOLDURAS } from './motor/geom/perfiles.js';
+import { MOLDURAS, esVanoDeVidrio } from './motor/geom/perfiles.js';
 
 /** Le tre finiture di listino. La chiave e' il numero che vede il cliente. */
 export const TIPI = {
@@ -110,17 +110,28 @@ export function applicaTipo(pezzi, tipo, conBugna = null) {
      pannello liscio prende la faccia dove lei appoggia, sulle due facce. */
   const molde = MOLDURAS[t.bastone];
   const cara = Math.max(...pezzi.map((p) => p.espesor ?? 0)) / 2;
-  const appoggio = molde?.perfilMm ? cara - molde.perfilMm[molde.perfilMm.length - 1][1] : null;
+  /* Solo dove va la modanatura di fabbrica, cioe' nelle porte senza vetri:
+     con i vetri la porta porta la gola piccola e il campo liscio resta la
+     tavola di sempre. */
+  const conVetri = pezzi.some((p) => p.visible !== false && esVanoDeVidrio(p));
+  const appoggio = molde?.perfilMm && !conVetri ? cara - molde.perfilMm[molde.perfilMm.length - 1][1] : null;
 
   return pezzi.map((p) => {
     if (!VANI.has(p.papel)) return p;
 
     /* La modanatura gira intorno a OGNI vano, vetro compreso: e' lei che si
        vede per prima ed e' quello che davvero separa un tipo dall'altro. */
-    const q = { ...p, bastoneForma: t.bastone };
+    /* Un vano disegnato SENZA modanatura (larghezza 0) resta senza in ogni
+       tipo: darle la forma del tipo le farebbe comparire un anello che nel
+       disegno non c'e'. */
+    const q = (p.bastoneAncho ?? 0) > 0 ? { ...p, bastoneForma: t.bastone } : { ...p };
 
     // Sul vetro finisce qui: non c'e' campo da rialzare ne' da spianare.
-    if (!CAMPI.has(p.papel)) return q;
+    /* E anche sul pannello con una zona di VETRO tracciata dentro (Pluglia):
+       resta com'e' disegnato. Rialzato a bugna, il campo di legno copriva il
+       vetro intero — la porta usciva senza il suo cristallo in ogni tipo con
+       bugna, da prima di questa sessione. */
+    if (!CAMPI.has(p.papel) || (p.vidrioPuntos?.length ?? 0) > 0) return q;
 
     if (!liscio) {
       /* Con la bugna: il campo torna rialzato e prende il rilievo del tipo.

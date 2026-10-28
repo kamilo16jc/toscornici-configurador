@@ -17,7 +17,7 @@
  */
 
 import * as THREE from 'three';
-import { pegarVeta } from './materiales.js';
+import { TAM_VETA } from './materiales.js';
 import { bordeAlto } from './telaio.js';
 
 /**
@@ -127,7 +127,22 @@ export function cornisa(seccion, xI, xD, camino, zMuro, sentido) {
     p[p.length - 1] = [xD + u, camino[camino.length - 1][1] + u];
     return [[xI - u, 0], ...p, [xD + u, 0]];
   };
-  const tri = (a, b, c) => pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  /* LA VETA, TRAMO A TRAMO. La U es una sola malla, y antes la veta se decidia
+     con su caja: mas alta que ancha, asi que vertical tambien en el cabecero,
+     donde la madera corre a lo ancho. Aqui se sabe de que tramo es cada
+     cuadrilatero —el primero y el ultimo son las jambas, los de en medio el
+     cabecero— y cada uno lleva la suya: a lo largo en las jambas, a lo ancho
+     arriba, y el cambio cae justo en el inglete, como en un tapajuntas de
+     verdad. Mismo paso y mismo convenio que pegarVeta. */
+  const uv = [];
+  const tri = (a, b, c, testa) => {
+    pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+    for (const q of [a, b, c]) {
+      const x = q[0] / TAM_VETA;
+      const y = q[1] / TAM_VETA;
+      uv.push(testa ? y : x, testa ? x : y);
+    }
+  };
 
   for (let i = 0; i < seccion.length; i++) {
     const [u0, v0] = seccion[i];
@@ -137,22 +152,24 @@ export function cornisa(seccion, xI, xD, camino, zMuro, sentido) {
     const z0 = zMuro + sentido * v0;
     const z1 = zMuro + sentido * v1;
     for (let j = 0; j + 1 < A.length; j++) {
+      const testa = j > 0 && j < A.length - 2;
       const a = [A[j][0], A[j][1], z0];
       const b = [A[j + 1][0], A[j + 1][1], z0];
       const c = [B[j + 1][0], B[j + 1][1], z1];
       const e = [B[j][0], B[j][1], z1];
       if (sentido > 0) {
-        tri(a, b, c);
-        tri(a, c, e);
+        tri(a, b, c, testa);
+        tri(a, c, e, testa);
       } else {
-        tri(a, c, b);
-        tri(a, e, c);
+        tri(a, c, b, testa);
+        tri(a, e, c, testa);
       }
     }
   }
 
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   // Sin indexar a proposito: asi las aristas quedan vivas.
   g.computeVertexNormals();
   return g;
@@ -236,13 +253,9 @@ export async function montarCoprifilo(perfil, medida, vano, muro, material, base
     m.castShadow = true;
     m.receiveShadow = true;
     m.name = 'Coprifilo';
-    /* Y sus coordenadas de textura. Sin ellas la moldura salia LISA al lado de
-       un marco veteado, que es de lo primero que canta: es la misma madera y
-       tiene que tener la misma fibra. La jamba se lee a lo largo, el cabecero a
-       lo ancho, asi que el sentido se saca de su propia caja. */
-    m.geometry.computeBoundingBox();
-    const caja = m.geometry.boundingBox;
-    pegarVeta(m.geometry, caja.max.x - caja.min.x > caja.max.y - caja.min.y);
+    /* Las coordenadas de textura ya las trae cornisa(), tramo por tramo: la
+       jamba se lee a lo largo y el cabecero a lo ancho. Sin ellas la moldura
+       salia LISA al lado de un marco veteado. */
     g.add(m);
   });
 

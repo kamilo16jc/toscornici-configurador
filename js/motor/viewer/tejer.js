@@ -18,8 +18,9 @@
 import * as THREE from 'three';
 import { extruir } from '../geom/extruir.js';
 import { material, esMadera, pegarVeta, TAM_VETA } from '../geom/materiales.js';
-import { geometriaBugna, campoDe, perfilQueQuepa } from '../geom/relieve.js';
-import { perfilEnMm, perfilBastoneEnMm, MOLDURAS, formaDeMoldura } from '../geom/perfiles.js';
+import { geometriaBugna, campoDe, perfilQueQuepa, perfilTejible } from '../geom/relieve.js';
+import { perfilEnMm, perfilBastoneEnMm, molduraDelVano, apartaDelArmazon, perfilDeFabricaEnMm, esVanoDeVidrio } from '../geom/perfiles.js';
+import { pesarRelieve } from './sombraRelieve.js';
 import { haciaDentro } from '../geom/offset.js';
 import { contornoEfectivo } from '../geom/efectivo.js';
 import { recortarPorVanos } from '../geom/booleanas.js';
@@ -67,36 +68,36 @@ function conRientro(puntos, rientro, topes = []) {
  * aro nace donde acaba la cara de la hoja y baja hasta el panel. Por eso sigue
  * cualquier forma —tambien las de cabeza redonda— sin dibujar nada aparte.
  */
-function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45) {
-  /* Una moldura de fabrica con su medida real (la TIPO 1): va por DENTRO del
-     vano, posada en el panel y con el lomo contra el armazon, que no se
-     aparta. El lomo entra 0,3 mm en el armazon para que las dos caras no
-     caigan en el mismo plano y parpadeen. La bugna TIPO 1 la lleva siempre. */
-  const forma = formaDeMoldura(pieza);
-  const molde = MOLDURAS[forma];
-  if (molde?.perfilMm) {
-    const ENTRA = 0.3;
-    const fuera = haciaDentro(puntosDelVano, -ENTRA);
-    if (!fuera) return null;
-    const caraHoja = espesorHoja / 2;
-    /* El primer punto, en el contorno crecido: la meseta de arriba se
-       alarga esos 0,3 hacia el armazon y lo demas queda donde mide. */
-    return geometriaBugna(fuera, [
-      [0, caraHoja - molde.perfilMm[0][1]],
-      ...molde.perfilMm.map(([e, baja]) => [e + ENTRA, caraHoja - baja]),
-    ], {
-      simetrico: true,
-      sinCampo: true,
-      uvDeBarrido: TAM_VETA,
-    });
-  }
-  const ancho = pieza.bastoneAncho ?? 0;
+function geometriaBastone(pieza, puntosDelVano, espesorHoja = 45, conVidrio = false) {
+  const { clave, molde, deFabrica } = molduraDelVano(pieza, { conVidrio });
+  /* La banda que el armazon se ha apartado del vano. Es la misma se teja la
+     moldura que se teja: asi no queda ni ranura ni madera repetida. */
+  const ancho = apartaDelArmazon(pieza);
   if (!(ancho > 0)) return null;
 
   const fuera = haciaDentro(puntosDelVano, -ancho);
   if (!fuera) return null;
 
   const caraHoja = espesorHoja / 2;
+
+  /* LA DE FABRICA, a su medida: el cuerpo en la banda del armazon y la uña
+     sobre el panel. NUNCA CORTADA A MEDIAS: en un vano de arco muy cerrado
+     los anillos de dentro se anudan (Alessandria: limpios hasta la linea del
+     vano, anudados en la punta de la uña). Primero se intenta entera; si no,
+     SOLO EL CUERPO —meseta y gola, que van por fuera del vano y caben
+     siempre—, sin uña; y solo si ni eso sale, su hermana pequeña. */
+  if (deFabrica) {
+    const perfilFab = perfilDeFabricaEnMm(molde, ancho, caraHoja);
+    const opcionesFab = { simetrico: true, sinCampo: true, uvDeBarrido: TAM_VETA, entero: true };
+    const pieDelCuerpo = Math.max(ancho, molde.cuerpo - molde.meseta) + 1e-6;
+    const geo = geometriaBugna(fuera, perfilFab, opcionesFab)
+      ?? geometriaBugna(fuera, perfilFab.filter(([d]) => d <= pieDelCuerpo), opcionesFab);
+    if (geo) {
+      geo.userData.molduraDeFabrica = true;
+      return geo;
+    }
+  }
+  const forma = deFabrica ? molde.pequena : clave;
 
   /* Muere un pelo POR DEBAJO de la cara del panel, no justo en ella.
      Acababa exactamente en (z + espesor/2), o sea en el mismo plano que la cara
@@ -195,7 +196,9 @@ function geometriaDe(pieza, contorno) {
        a 300 triangulos. */
     const pedido = perfilEnMm(pieza.perfilPuntos ?? pieza.perfilBugna, pieza.biselAncho, pieza.espesor, pieza.rientro ?? 0);
     // Si la figura no da de si, se estrecha el bisel en vez de no dibujar nada.
-    const perfil = perfilQueQuepa(puntos, pedido).muestras;
+    /* Y ademas comprobado anillo a anillo: lo que no cabe se encoge un pelo
+       en vez de cortarse a medias (ver perfilTejible). */
+    const perfil = perfilTejible(puntos, perfilQueQuepa(puntos, pedido).muestras);
     const simetrico = pieza.biselSimetrico !== false;
 
     /* Realzado con vidrio: el bisel es MADERA y el cristal ocupa solo la
@@ -248,12 +251,30 @@ function geometriaDe(pieza, contorno) {
  * @param {number} o.espesorHoja      para la cota del bastone
  * @param {THREE.Group} [o.grupo]     donde meterlas; si no, uno nuevo
  * @param {Map} [o.cache]             materiales reutilizados entre llamadas
- * @param {number} [o.realce]         cuanto se exagera el sombreado del relieve (1 = el real)
+ * @param {number|object} [o.realce]  cuanto se exagera el SOMBREADO del relieve
+ *   (1 = el real; la geometria no se toca). Un numero vale solo para las piezas
+ *   —bugnas y paneles—; con un objeto se da cada clase por separado:
+ *   { pieza, moldura, molduraDeFabrica }. Las molduras no se exageran si no se pide.
+ * @param {object} [o.sombra]         peso con que cada clase recibe la sombra de
+ *   relieve horneada (viewer/sombraRelieve.js): { pieza, moldura, molduraDeFabrica }.
+ *   Sin esto no se escribe el atributo y la hoja no cambia.
+ * @param {boolean} [o.conVidrio]     si la PUERTA lleva cristal: entonces todos
+ *   sus vanos van con la moldura pequeña (ver molduraDelVano). Si no se dice,
+ *   se mira en estas piezas; quien teje una puerta por hojas tiene que decirlo
+ *   mirando la puerta entera, o una hoja sin vidrio saldria distinta.
  */
-export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, grupo = null, cache = null, realce = 1 } = {}) {
+export function tejerHoja(piezas, { veta = null, uv = false, espesorHoja = 45, grupo = null, cache = null, realce = 1, sombra = null, conVidrio = null } = {}) {
   const g = grupo ?? new THREE.Group();
   const mats = cache ?? new Map();
-  const ctx = { _veta: veta, uv, espesorHoja, grupo: g, realce };
+  const porClase = (v, omision) => (typeof v === 'number'
+    ? { pieza: v, moldura: omision, molduraDeFabrica: omision }
+    : { pieza: v?.pieza ?? omision, moldura: v?.moldura ?? omision, molduraDeFabrica: v?.molduraDeFabrica ?? v?.moldura ?? omision });
+  const ctx = {
+    _veta: veta, uv, espesorHoja, grupo: g,
+    realce: porClase(realce, 1),
+    sombra: sombra ? porClase(sombra, 1) : null,
+    conVidrio: conVidrio ?? piezas.some((p) => p.visible !== false && esVanoDeVidrio(p)),
+  };
 
   /* UNA PIEZA QUE REVIENTA NO PUEDE LLEVARSE LA PUERTA ENTERA.
      Aqui dentro se llama a todo el motor —el recorte entre piezas, el
@@ -338,14 +359,14 @@ function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
 
   /* Y ademas el bastone, que va en la cara del armazon y no en el plano de
      la pieza: por eso lleva su propia cota. */
-  const aro = geometriaBastone(pieza, efectivo.puntos, ctx.espesorHoja ?? 45);
+  const aro = geometriaBastone(pieza, efectivo.puntos, ctx.espesorHoja ?? 45, ctx.conVidrio);
   /* El aro es del ARMAZON, no del panel: por eso toma el acabado del
      travesano que lo rodea y no el del panel, que puede ser vidrio. */
   if (aro) {
     const marco = piezas.find((x) => ['traverso', 'tavola', 'montante', 'perfilado'].includes(x.papel));
     /* moldura: lleva su propia veta (a lo largo, ver geometriaBugna) y no se
        realza: su curva ya es fuerte y exagerarla la volvia un muro de un tono. */
-    partes.push({ geo: aro, acabado: marco?.acabado ?? 'robleClaro', espesor: 45, zAbsoluto: 0, moldura: true });
+    partes.push({ geo: aro, acabado: marco?.acabado ?? 'robleClaro', espesor: 45, zAbsoluto: 0, moldura: true, deFabrica: !!aro.userData.molduraDeFabrica });
   }
 
   for (const parte of partes) {
@@ -366,7 +387,14 @@ function tejerPieza(ctx, pieza, efectivo, piezas, cache) {
     }
 
     // El cristal no: su brillo es el de una luna plana.
-    if (!esVidrioParte(parte) && !parte.moldura) realzarRelieve(parte.geo, ctx.realce);
+    /* CADA CLASE CON LO SUYO: la bugna, la moldura de catalogo y la de
+       fabrica llevan su propio realce y su propio peso de sombra, para que
+       subir una no arrastre a las otras. */
+    if (!esVidrioParte(parte)) {
+      const clase = parte.moldura ? (parte.deFabrica ? 'molduraDeFabrica' : 'moldura') : 'pieza';
+      realzarRelieve(parte.geo, ctx.realce[clase]);
+      if (ctx.sombra) pesarRelieve(parte.geo, ctx.sombra[clase]);
+    }
 
     const malla = new THREE.Mesh(parte.geo, cache.get(claveMat));
     malla.position.z = parte.zAbsoluto ?? pieza.z ?? 0;

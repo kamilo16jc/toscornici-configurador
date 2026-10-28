@@ -145,8 +145,8 @@
     bugna_si: { it: 'Con bugna', en: 'Raised panel' },
     bugna_no: { it: 'Senza bugna', en: 'Flat panel' },
     tipo_n1: {
-      it: 'Modanatura TIPO 1 di fabbrica. Il campo si sceglie qui sotto.',
-      en: 'Factory TIPO 1 moulding. Choose the panel field below.',
+      it: 'Modanatura a gola, TIPO 1. Il campo si sceglie qui sotto.',
+      en: 'TIPO 1 ogee moulding. Choose the panel field below.',
     },
     tipo_n2: {
       it: 'Modanatura ad astragalo (tondino). Il campo si sceglie qui sotto.',
@@ -216,6 +216,16 @@
     amb_ingresso: { it: 'Ingresso', en: 'Entrance' },
     amb_soggiorno: { it: 'Soggiorno', en: 'Living room' },
     amb_studio: { it: 'Studio', en: 'Study' },
+    qual_titolo: { it: 'Qualit\u00e0 grafica', en: 'Graphics quality' },
+    qual_alta: { it: 'Alta', en: 'High' },
+    qual_media: { it: 'Media', en: 'Medium' },
+    qual_bassa: { it: 'Bassa', en: 'Low' },
+    qual_avviso_titolo: { it: 'Prestazioni del 3D', en: '3D performance' },
+    qual_avviso: {
+      it: 'Il visore 3D si apre in qualit\u00e0 <strong>Alta</strong>. Se la navigazione risulta poco fluida, puoi ridurre la qualit\u00e0 di resa qui sopra: <strong>Media</strong> e <strong>Bassa</strong> alleggeriscono il rendering senza cambiare la configurazione.',
+      en: 'The 3D viewer opens in <strong>High</strong> quality. If navigation feels less than smooth, you can lower the rendering quality above: <strong>Medium</strong> and <strong>Low</strong> lighten the rendering without changing your configuration.',
+    },
+    qual_capito: { it: 'Ho capito', en: 'Got it' },
     riep_porta: { it: 'Porta completa', en: 'Complete door' },
     riep_totale: { it: 'Totale', en: 'Total' },
     riep_iva: {

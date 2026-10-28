@@ -8,12 +8,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* Il motore delle porte. Copia meccanica di puertas3d: non si edita qui, si
    corregge la' e si rifa' `node tools/sync-motor.mjs`. Vedi js/motor/LEEME.txt */
 import { tejerHoja } from './motor/viewer/tejer.js';
+import { hornearSombraDeRelieve, engancharSombraDeRelieve } from './motor/viewer/sombraRelieve.js';
 import { deserializar, cajaDe, arcoDelCantoAlto } from './motor/modelo/proyecto.js';
 import { hojasDibujadas, repartirDibujadas } from './motor/modelo/redimensionar.js';
 import { montar, vanoDe } from './motor/geom/telaio.js';
 import { montarCoprifilo } from './motor/geom/coprifilo.js';
 import { construirAmbiente } from './motor/geom/ambiente.js';
 import { veta, pegarVeta } from './motor/geom/materiales.js';
+import { esVanoDeVidrio } from './motor/geom/perfiles.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -21,6 +23,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro, haCampoDiLegno, BUGNA_DI_PARTENZA, scegliBugna } from './tipi.js';
+import { allargaMontanti, ALLARGA_LATO, ALLARGA_TESTA } from './montanti.js';
 import { conSopraluce, traversoDe, vanoSopraluce, piezaVidrio,
          SOPRALUCE_DEFAULT, SOPRALUCE_MIN, SOPRALUCE_MAX } from './sopraluce.js';
 import { incideFiori } from './vetro-decoro.js';
@@ -595,22 +598,21 @@ const loaderFill = document.getElementById('loaderFill');
    ============================================================ */
 
 const PROFILI = {
-  alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, msaa: 4, ao: true  },
-  media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  msaa: 4, ao: true  },
-  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 0, ao: false },
+  /* rilievo: finezza (pixel per millimetro) dell'ombra di rilievo cotta
+     nello spazio dell'anta. Si cuoce una volta per porta, non a ogni
+     fotogramma, quindi c'e' anche in qualita' bassa. */
+  alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, msaa: 4, ao: true,  rilievo: 2   },
+  media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  msaa: 4, ao: true,  rilievo: 1.5 },
+  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 0, ao: false, rilievo: 1   },
 };
 
-/* Ordine: ?qualita= nell'indirizzo (per provare al volo), poi la scelta
-   salvata, poi 'media' — che su Retina e' quasi indistinguibile da 'alta'
-   e costa meno della meta'. */
+/* SI PARTE SEMPRE IN ALTA (Julian, 27 ott 2026): la porta si deve vedere
+   al meglio. Non si ricorda la scelta della volta prima —chi apre vede
+   sempre l'Alta— e all'apertura un avviso dice dove abbassarla se il 3D va
+   lento. Resta solo ?qualita= nell'indirizzo, per provare al volo. */
 function qualitaScelta() {
   const q = new URLSearchParams(location.search).get('qualita');
-  if (PROFILI[q]) return q;
-  try {
-    const salvata = localStorage.getItem('tc-qualita');
-    if (PROFILI[salvata]) return salvata;
-  } catch { /* localStorage negato in navigazione privata: pazienza */ }
-  return 'media';
+  return PROFILI[q] ? q : 'alta';
 }
 
 let QUALITA = qualitaScelta();
@@ -642,17 +644,49 @@ const camera = new THREE.PerspectiveCamera(30, viewerEl.clientWidth / viewerEl.c
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.enablePan = false;
+/* 0,1 e non 0,06: col trascinamento l'inerzia lunga faceva scivolare la vista
+   per due secondi dopo aver lasciato, e tutto quel tempo la porta restava in
+   versione leggera. */
+controls.dampingFactor = 0.1;
 controls.minPolarAngle = Math.PI * 0.22;
 controls.maxPolarAngle = Math.PI * 0.55;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.9;
-let userMoved = false;
-renderer.domElement.addEventListener('pointerdown', () => {
-  userMoved = true;
-  controls.autoRotate = false;
-}, { once: true });
+/* LA CAMERA NON GIRA (Julian, 27 ott 2026). Si avvicina e si allontana, si
+   sposta a destra, a sinistra, in su e in giu' —sempre di fronte, come far
+   scorrere una foto— e la porta si apre col clic; girarla no. Misurato sul
+   MacBook Air M4: in Alta ogni fotogramma costa 28 ms, e il giro —quello
+   automatico partiva da solo all'apertura— teneva la GPU al massimo senza
+   sosta, a scatti, scaldando una macchina senza ventola. Cosi' la GPU lavora
+   solo quando qualcosa si muove.
+   Lo zoom va VERSO IL PUNTO indicato, per arrivare dritti a una modanatura in
+   alto o alla bugna in basso. Il trascinamento sposta: tasto sinistro (o
+   destro) col mouse, un dito sul telefono; due dita avvicinano. */
+controls.enableRotate = false;
+controls.autoRotate = false;
+controls.enablePan = true;
+controls.screenSpacePanning = true;
+controls.zoomToCursor = true;
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+
+/* L'INQUADRATURA NON SCAPPA. Spostando e avvicinando verso il cursore il
+   bersaglio si muove; qui lo si tiene dentro la porta, cosi' non la si perde
+   mai di vista. Si sposta camera e bersaglio insieme: l'angolo di vista non
+   cambia, la porta resta sempre di fronte. */
+let inquadratura = null;     // { dist, lx, ly }: la distanza di casa e mezza porta
+const _sguardo = new THREE.Vector3();
+const _sposta = new THREE.Vector3();
+function tieniInquadratura() {
+  if (!inquadratura) return;
+  const t = controls.target;
+  const cam = camera.position;
+  // il bersaglio sul piano della porta, lungo lo sguardo: la vista non cambia
+  _sguardo.subVectors(t, cam).normalize();
+  if (Math.abs(_sguardo.z) > 1e-6) t.addScaledVector(_sguardo, -t.z / _sguardo.z);
+  const lx = inquadratura.lx;
+  const ly = inquadratura.ly;
+  _sposta.set(THREE.MathUtils.clamp(t.x, -lx, lx) - t.x, THREE.MathUtils.clamp(t.y, -ly, ly) - t.y, 0);
+  if (_sposta.lengthSq() > 1e-12) { t.add(_sposta); cam.add(_sposta); }
+}
 
 // luce chiave radente dall'alto-sinistra: fa emergere bugne e modanature
 // con ombre proprie; il riempimento resta basso per non appiattire.
@@ -703,6 +737,9 @@ const fillDietro = new THREE.DirectionalLight(0xffffff, 0.2);
 fillDietro.position.set(3, 2, -2.5);
 scene.add(fillDietro);
 
+// Le quattro luci, per chi le regola a caldo dalla console (window.__dbg.luci).
+const LUCI = { key, fill, keyDietro, fillDietro };
+
 /* ============================================================
    OCCLUSIONE AMBIENTALE
    ------------------------------------------------------------
@@ -728,11 +765,20 @@ scene.add(fillDietro);
    resta identica, perde solo l'ombra dentro l'incasso. */
 const OCCLUSIONE = true;
 
-/* Quanto si esagera l'inclinazione delle normali di bugne e modanature: la
-   geometria resta quella di fabbrica, cambia solo come la luce la legge. Vedi
-   realzarRelieve nel motore. 1 = com'e'; a 3 la bugna di cinque gradi si legge
-   come una di quindici. */
-const REALCE_RILIEVO = 3;
+/* IL RILIEVO SI LEGGE CON L'OMBRA, SENZA GONFIARE NIENTE (4 ott 2026).
+   Bugna e modanatura restano con le misure di fabbrica. Quello che le fa
+   leggere sono due cose di sola ombreggiatura, e ognuna si regola PER CLASSE
+   —pieza: bugne e pannelli; moldura: le modanature di catalogo;
+   molduraDeFabrica: la TIPO 1— cosi' alzarne una non trascina le altre:
+
+   PESO_OMBRA  quanto pesa l'ombra di rilievo, cotta una volta per porta nello
+               spazio dell'anta (motor/viewer/sombraRelieve.js): niente rumore,
+               niente puntini da lontano, uguale a ogni zoom.
+   REALCE      quanto si esagera l'inclinazione delle normali (1 = com'e'):
+               la bugna di fabbrica sale 3,7 mm in 42 e senza questo la luce
+               non la distingue da una tavola; alle modanature basta poco. */
+const PESO_OMBRA = { pieza: 1.6, moldura: 1.2, molduraDeFabrica: 1.4 };
+const REALCE_RILIEVO = { pieza: 3, moldura: 1, molduraDeFabrica: 1.3 };
 
 let composer = null;
 let gtaoPass = null;
@@ -758,20 +804,21 @@ function montaOcclusione() {
 
     const ao = new GTAOPass(scene, camera, w, h);
     ao.output = GTAOPass.OUTPUT.Default;      // AO composta sopra la scena
-    ao.blendIntensity = 1.0;
+    ao.blendIntensity = 0.85;
     /* Meno campioni sullo schermo piccolo. Il telefono ha meno GPU e la porta
        ci sta dentro alta due dita: l'occlusione si legge lo stesso, e quello
        che si guadagna e' che il visore continua a girare fluido. */
     const fine = Math.min(w, h) >= 520;
     const campioni = fine ? profilo().aoCampioni : Math.max(4, profilo().aoCampioni >> 1);
-    /* Piu' fine e piu' forte: i dettagli da segnare adesso sono la gola della
-       modanatura TIPO 1 (14 mm) e il gradino della bugna (2 mm), non solo
-       l'incasso del TIPO 3. 2 cm li coprono senza sporcare i campi larghi. */
+    /* L'occlusione di schermo resta quella leggera di sempre: il rilievo di
+       bugne e modanature lo segna l'ombra cotta nello spazio dell'anta
+       (sombraRelieve.js), che non ha rumore. Spinta piu' forte, questa
+       punteggiava le fessure viste da lontano. */
     ao.updateGtaoMaterial({
-      radius: 0.02,           // metri: gola 0,014, incasso TIPO 3 0,0138
+      radius: 0.05,           // metri: l'incasso da risolvere e' 0,0138
       distanceExponent: 1,
-      thickness: 1.2,
-      scale: 2.2,
+      thickness: 0.5,
+      scale: 1.1,
       samples: campioni,
       distanceFallOff: 1,
       screenSpaceRadius: false,
@@ -783,6 +830,13 @@ function montaOcclusione() {
        passaggio la curva ACES sparisce e i colori escono slavati. */
     c.addPass(new OutputPass());
 
+    /* A PIENA RISOLUZIONE GIA' DALL'AVVIO. Il bersaglio nasce della misura
+       dello schermo in pixel CSS, e il composer lo prende cosi' com'e': solo
+       setSize lo moltiplica per il pixelRatio. All'avvio nessuno lo chiamava
+       —resize() parte solo cambiando finestra o qualita'— e la porta usciva
+       a meta' risoluzione su ogni schermo Retina, stirata: "Alta" segnata nel
+       bottone e bassa a schermo, finche' non si ripremeva Alta. */
+    c.setSize(w, h);
     composer = c;
     gtaoPass = ao;
   } catch (e) {
@@ -817,6 +871,9 @@ const woodMat = new THREE.MeshPhysicalMaterial({
   clearcoat: 0.08,
   clearcoatRoughness: 0.35,
 });
+/* Il legno legge l'ombra di rilievo cotta per l'anta. Le maglie che non
+   portano il peso —telaio, coprifili, capitelli— leggono zero e non cambiano. */
+const ombraRilievo = engancharSombraDeRelieve(woodMat);
 
 const hexLum = (hex) =>
   (0.2126 * ((hex >> 16) & 255) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255)) / 255;
@@ -1160,6 +1217,39 @@ let modelloConArco = false;
  * che gli cadeva addosso. Un vetro vero nemmeno fa ombra: lascia passare la
  * luce.
  */
+/* L'ombra di rilievo della porta che si sta guardando. Si butta e si rifa'
+   a ogni porta, e se la GPU non ce la fa si rende senza: la porta resta
+   uguale, perde solo quell'ombra. */
+let ombraCotta = null;
+let anteCotte = null;
+function cuociOmbraDiRilievo(ante) {
+  ombraCotta?.liberar();
+  ombraCotta = null;
+  anteCotte = ante;
+  try {
+    const p = profilo();
+    /* Sullo schermo piccolo la porta sta in due dita: un pixel per millimetro
+       basta, come per i campioni dell'occlusione. */
+    const piccolo = Math.min(viewerEl.clientWidth, viewerEl.clientHeight) < 520;
+    ombraCotta = hornearSombraDeRelieve(renderer, ante, {
+      pxPorMm: piccolo ? Math.min(p.rilievo, 1) : p.rilievo,
+      direcciones: p.ao ? 16 : 8,
+      pasos: p.ao ? 24 : 12,
+    });
+  } catch (e) {
+    console.warn('Ombra di rilievo non disponibile, si rende senza.', e);
+  }
+  ombraRilievo.poner(ombraCotta);
+}
+
+/* SE IL BROWSER PERDE E RIFA' IL CONTESTO GRAFICO, le mappe cotte spariscono
+   (sono render target) e three ci mette al loro posto una texture vuota: il
+   legno dell'anta usciva NERO fino alla porta successiva. Si ricuoce. */
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  if (anteCotte && model) cuociOmbraDiRilievo(anteCotte);
+  chiediFotogramma(30);
+});
+
 function vestiConEssenza(obj) {
   obj.traverse((o) => {
     if (!o.isMesh) return;
@@ -1235,6 +1325,22 @@ function loadModel(key) {
       const tagli = hojasDibujadas(pezzi);
       const bande = tagli ? repartirDibujadas(pezzi, tagli) : null;
 
+      /* I MONTANTI DALLA PARTE DEL TELAIO e la traversa alta, allargati di
+         quanto la battuta li copre (montanti.js): da davanti si vede tutto il
+         legno tracciato. Anta per anta, perche' i montanti d'incontro di una
+         porta a due ante non hanno telaio davanti e restano come sono. Il
+         contorno dell'anta non cambia, quindi telaio, arco e prezzo nemmeno. */
+      const gruppi = (bande ? bande.map((b) => b.piezas) : [pezzi]).map((g, i, tutte) => {
+        const r = allargaMontanti(g, {
+          sx: i === 0 ? ALLARGA_LATO : 0,
+          dx: i === tutte.length - 1 ? ALLARGA_LATO : 0,
+          su: ALLARGA_TESTA,
+        });
+        if (r.nota.length) console.warn(`${key}: montanti non allargati — ${r.nota.join('; ')}`);
+        return r.pezzi;
+      });
+      if (bande) bande.forEach((b, i) => { b.piezas = gruppi[i]; });
+
       /* uv: true e veta: null.
          Le venature del motore qui non servono — il configuratore ha le sue
          essenze con le foto vere — ma le coordinate di texture SI, o woodMat
@@ -1244,8 +1350,11 @@ function loadModel(key) {
          e l'inquadratura vogliono tutta la porta, mentre il perno, la maniglia
          e il giro vogliono soltanto quella che apre. */
       const hoja = new THREE.Group();
-      const ante = (bande ? bande.map((b) => b.piezas) : [pezzi]).map((g) => {
-        const m = tejerHoja(g, { veta: null, uv: true, espesorHoja: spessore, realce: REALCE_RILIEVO });
+      /* La modanatura si decide sulla PORTA INTERA, non anta per anta: una
+         porta con vetri porta solo quella piccola, in tutti i vani. */
+      const conVetri = pezzi.some((p) => esVanoDeVidrio(p));
+      const ante = gruppi.map((g) => {
+        const m = tejerHoja(g, { veta: null, uv: true, espesorHoja: spessore, realce: REALCE_RILIEVO, sombra: PESO_OMBRA, conVidrio: conVetri });
         hoja.add(m);
         return m;
       });
@@ -1257,6 +1366,10 @@ function loadModel(key) {
          il motore lo fa con la trasmissione, che e' come si riconosce un
          cristallo, e il configuratore non ne ha uno suo. */
       vestiConEssenza(hoja);
+
+      /* L'ombra di rilievo si cuoce adesso, sulle ante appena tessute: dopo
+         avranno perni e posizioni, e a lei serve il disegno com'e'. */
+      cuociOmbraDiRilievo(ante);
 
       /* TUTTO IN UN SOLO INSIEME, e in millimetri.
          L'anta, il telaio, il muro e il coprifilo devono stare nello stesso
@@ -1479,11 +1592,15 @@ function loadModel(key) {
       conjunto.position.sub(center);
       scene.add(conjunto);
 
+      /* DI FRONTE (Julian, 27 ott 2026: il tre quarti non gli piaceva). Con la
+         camera ferma e' questa la vista che il cliente ha sempre davanti; un
+         filo piu' in alto del centro, all'altezza dell'occhio. */
       const dist = size.y * 2.0;
-      camera.position.set(dist * 0.65, size.y * 0.12, dist);
+      camera.position.set(0, size.y * 0.12, dist);
       controls.target.set(0, 0, 0);
-      controls.minDistance = dist * 0.5;
-      controls.maxDistance = dist * 2.2;
+      controls.minDistance = dist * 0.35;
+      controls.maxDistance = dist * 1.6;
+      inquadratura = { dist: camera.position.length(), lx: size.x * 0.5, ly: size.y * 0.5 };
       controls.update();
 
       /* Niente piano d'ombra: il motore porta il suo pavimento vero, e due
@@ -1527,7 +1644,7 @@ function loadModel(key) {
       if (!apre.some(Boolean)) apre[bande.reduce((m, b, i, a) => (b.ancho > a[m].ancho ? i : m), 0)] = true;
       const iApre = apre.indexOf(true);
       const anta = ante[iApre];
-      const pezziApre = bande ? bande[iApre].piezas : pezzi;
+      const pezziApre = gruppi[iApre];
       // La seconda che apre, se c'e': sono le quattro LUX e nessun'altra.
       const jAltra = apre.findIndex((v, i) => v && i !== iApre);
       const altraApre = jAltra >= 0 ? ante[jAltra] : null;
@@ -2039,7 +2156,10 @@ function loadModel(key) {
            si cambia qualita': una copia diretta resterebbe appesa al vecchio. */
         get gtaoPass() { return gtaoPass; },
         get composer() { return composer; },
-        luci: { key, fill, keyDietro, fillDietro },
+        /* LUCI e non { key, ... }: qui dentro `key` e' il nome del modello,
+           e l'aggancio restituiva una stringa al posto della luce. */
+        luci: LUCI,
+        get ombraRilievo() { return ombraRilievo; },
         chiediFotogramma,
         get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; },
         /* La corsa della scorrevole. Il bersaglio si posa SUBITO, il movimento
@@ -2890,7 +3010,6 @@ function setAmbiente(nome) {
   }
   for (const [k, grp] of Object.entries(ambienti)) grp.visible = (k === nome);
   const room = nome !== 'galleria';
-  controls.autoRotate = !room && !userMoved;
   controls.minAzimuthAngle = room ? -0.9 : -Infinity;
   controls.maxAzimuthAngle = room ? 0.9 : Infinity;
   controls.maxPolarAngle = Math.PI * (room ? 0.5 : 0.55);
@@ -2907,8 +3026,11 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  /* composer.setSize ridimensiona anche tutti i suoi pass, l'occlusione
+     compresa, e alla misura vera (per il pixelRatio). Qui dopo c'era un
+     gtaoPass.setSize(w, h) in pixel CSS che la riportava a meta' risoluzione:
+     l'occlusione si calcolava sempre a un quarto dei pixel, anche in Alta. */
   if (composer) composer.setSize(w, h);
-  if (gtaoPass) gtaoPass.setSize(w, h);
   chiediFotogramma(30);
 }
 window.addEventListener('resize', resize);
@@ -2934,16 +3056,74 @@ window.addEventListener('resize', resize);
    ============================================================ */
 
 let fotogrammiDaFare = 60;
-const chiediFotogramma = (n = 3) => { fotogrammiDaFare = Math.max(fotogrammiDaFare, n); };
 
-// L'orbita: copre trascinamento, inerzia dello smorzamento e giro automatico.
-controls.addEventListener('change', () => chiediFotogramma(3));
+/* L'ALTA A RIPOSO. Mentre qualcosa si muove —la camera che si avvicina, l'anta
+   che gira— si disegna la scena diretta, senza occlusione di schermo ne'
+   multisampling del composer: sul MacBook Air M4 sono 28 ms a fotogramma in
+   Alta, e 17 di quei 28 sono l'occlusione. Appena tutto e' fermo da QUIETE ms,
+   un fotogramma pieno, in Alta vera. L'ombra di rilievo cotta resta sempre, e
+   il rilievo si legge anche in movimento. */
+const QUIETE = 180;           // ms senza movimento prima del fotogramma pieno
+const PAUSA_PIENO = 100;      // a riposo, un fotogramma pieno ogni tanto, non a ogni giro
+let ultimoMoto = -Infinity;
+let ultimoLeggero = -Infinity;
+let ultimoPieno = -Infinity;
+let pienoDovuto = true;
+
+/* LE OMBRE SI CALCOLANO SOLO QUANDO SERVE. Due mappe da 4096 rifatte a ogni
+   fotogramma —e due volte, perche' anche l'occlusione ridisegna la scena—
+   per una porta e una parete ferme. Si rifanno quando cambia qualcosa che
+   puo' muovere un'ombra: un caricamento, un clic nel pannello, l'anta che
+   gira. Lo zoom no: la camera non sposta le ombre. */
+let ombreSporche = true;
+renderer.shadowMap.autoUpdate = false;
+
+const chiediFotogramma = (n = 3) => {
+  fotogrammiDaFare = Math.max(fotogrammiDaFare, n);
+  ombreSporche = true;
+};
+const segnaMoto = (ombre = false) => {
+  ultimoMoto = performance.now();
+  pienoDovuto = true;
+  fotogrammiDaFare = Math.max(fotogrammiDaFare, 3);
+  if (ombre) ombreSporche = true;
+};
+/* L'ANTA CHE SI POSA. Il giro rallenta all'infinito: gli ultimi due secondi
+   sono decimi di grado che non si vedono, e contarli come movimento teneva
+   la porta in versione leggera quasi quattro secondi dopo il clic. Sotto
+   questa soglia l'anta continua a posarsi, ma a fotogrammi pieni. */
+const ANTA_VISIBILE = 0.01;   // rad: mezzo grado, 8 mm al canto di un'anta da 80
+const CORSA_VISIBILE = 8;     // mm, per le scorrevoli e il rototraslante
+const muoveAnta = (resta, soglia) => {
+  if (Math.abs(resta) > soglia) segnaMoto(true);
+  else chiediFotogramma(2);
+};
+
+/* Lo zoom e lo spostamento, con l'inerzia dello smorzamento: e' movimento, ma
+   non sposta ombre. La coda dell'inerzia —e la vista che spinge contro il
+   bordo della porta— muove la camera di meno di mezzo pixel: quello non e'
+   movimento, e lasciarlo contare teneva la versione leggera per secondi dopo
+   aver lasciato il mouse. */
+const _camPrima = new THREE.Vector3();
+controls.addEventListener('change', () => {
+  tieniInquadratura();
+  const passo = camera.position.distanceTo(_camPrima);
+  _camPrima.copy(camera.position);
+  if (passo > camera.position.distanceTo(controls.target) * 2e-4) segnaMoto();
+  else fotogrammiDaFare = Math.max(fotogrammiDaFare, 2);
+});
 
 /* Qualunque interazione con la pagina. In cattura, cosi' arriva anche se chi
    ascolta piu' sotto ferma la propagazione. Un secondo e mezzo di fotogrammi
-   copre pure il lavoro asincrono che parte da quel clic. */
+   copre pure il lavoro asincrono che parte da quel clic.
+   Tranne quello che succede SUL VISORE: la rotella e il clic sulla porta se li
+   gestiscono lo zoom e l'apertura, e chiedere novanta fotogrammi pieni per
+   ognuno era ridisegnare in Alta, a vuoto, la stessa immagine. */
 for (const ev of ['pointerdown', 'pointerup', 'click', 'change', 'input', 'keydown', 'wheel']) {
-  document.addEventListener(ev, () => chiediFotogramma(90), true);
+  document.addEventListener(ev, (e) => {
+    if (e.target === renderer.domElement) return;
+    chiediFotogramma(90);
+  }, true);
 }
 
 /* Texture e modelli finiscono di caricare per conto loro, senza che nessuno
@@ -2960,7 +3140,7 @@ renderer.setAnimationLoop(() => {
     const resta = doorTargetAngle - doorPivot.rotation.y;
     if (Math.abs(resta) > 1e-4) {
       doorPivot.rotation.y += resta * MORBIDEZZA;
-      chiediFotogramma(2);
+      muoveAnta(resta, ANTA_VISIBILE);
     } else {
       doorPivot.rotation.y = doorTargetAngle;   // si posa esatto, non a un capello
     }
@@ -2974,7 +3154,7 @@ renderer.setAnimationLoop(() => {
       const resta2 = obiettivo2 - doorPivot2.rotation.y;
       if (Math.abs(resta2) > 1e-4) {
         doorPivot2.rotation.y += resta2 * MORBIDEZZA;
-        chiediFotogramma(2);
+        muoveAnta(resta2, ANTA_VISIBILE);
       } else {
         doorPivot2.rotation.y = obiettivo2;
       }
@@ -2990,7 +3170,7 @@ renderer.setAnimationLoop(() => {
     const restaX = doorTargetX - doorPivot.position.x;
     if (Math.abs(restaX) > 0.5) {
       doorPivot.position.x += restaX * MORBIDEZZA;
-      chiediFotogramma(2);
+      muoveAnta(restaX, CORSA_VISIBILE);
     } else {
       doorPivot.position.x = doorTargetX;
     }
@@ -3001,7 +3181,7 @@ renderer.setAnimationLoop(() => {
     const restaZ = doorTargetZ - doorPivot.position.z;
     if (Math.abs(restaZ) > 0.5) {
       doorPivot.position.z += restaZ * MORBIDEZZA;
-      chiediFotogramma(2);
+      muoveAnta(restaZ, CORSA_VISIBILE);
     } else {
       doorPivot.position.z = doorTargetZ;
     }
@@ -3029,8 +3209,42 @@ renderer.setAnimationLoop(() => {
   if (fotogrammiDaFare <= 0) return;
   fotogrammiDaFare--;
 
-  if (composer) composer.render();
-  else renderer.render(scene, camera);
+  const ora = performance.now();
+  const disegna = (pieno) => {
+    renderer.shadowMap.needsUpdate = ombreSporche;
+    ombreSporche = false;
+    if (pieno && composer) composer.render();
+    else renderer.render(scene, camera);
+  };
+
+  // In Bassa non c'e' composer: il fotogramma diretto e' gia' quello pieno.
+  if (!composer) { disegna(false); pienoDovuto = false; return; }
+
+  /* In movimento: leggero. Il pieno resta dovuto per quando si ferma. E
+     nell'attesa prima del pieno non si ridisegna niente se niente si e' mosso
+     dall'ultimo fotogramma: sarebbe la stessa immagine. */
+  if (ora - ultimoMoto < QUIETE) {
+    if (ultimoMoto >= ultimoLeggero || ombreSporche) {
+      disegna(false);
+      ultimoLeggero = ora;
+    }
+    pienoDovuto = true;
+    fotogrammiDaFare = Math.max(fotogrammiDaFare, 1);
+    return;
+  }
+
+  /* A riposo: pieno, ma non a ogni giro. Un clic nel pannello chiede novanta
+     fotogrammi per coprire quello che arriva dopo; ridisegnarli tutti in Alta
+     era tenere la GPU al massimo un secondo e mezzo per un'immagine ferma. Ne
+     basta uno ogni PAUSA_PIENO ms, e l'ultimo e' garantito. */
+  if (ora - ultimoPieno < PAUSA_PIENO) {
+    pienoDovuto = true;
+    fotogrammiDaFare = Math.max(fotogrammiDaFare, 1);
+    return;
+  }
+  disegna(true);
+  ultimoPieno = ora;
+  pienoDovuto = false;
 });
 
 /* Cambio di qualita' a caldo, senza ricaricare: chi sta configurando una
@@ -3038,7 +3252,6 @@ renderer.setAnimationLoop(() => {
 function applicaQualita(nome) {
   if (!PROFILI[nome]) return;
   QUALITA = nome;
-  try { localStorage.setItem('tc-qualita', nome); } catch { /* pazienza */ }
 
   const p = profilo();
 
@@ -3060,6 +3273,11 @@ function applicaQualita(nome) {
   gtaoPass = null;
   montaOcclusione();
 
+  // L'ombra di rilievo ha la sua finezza per qualita': si ricuoce.
+  // (senza guardare `model`: a meta' caricamento l'ombra e' gia' cotta e
+  // la porta non e' ancora in scena; saltarla la lasciava alla finezza vecchia)
+  if (anteCotte) cuociOmbraDiRilievo(anteCotte);
+
   resize();
   chiediFotogramma(60);
 
@@ -3067,9 +3285,26 @@ function applicaQualita(nome) {
     b.classList.toggle('is-active', b.dataset.qualita === nome));
 }
 
+/* L'AVVISO ALL'APERTURA, con i bottoni della qualita' illuminati finche'
+   resta aperto: cosi' il cliente vede dove si cambia. Si chiude con "Ho
+   capito" o scegliendo una qualita'. */
+const avvisoQualita = document.getElementById('avvisoQualita');
+const boxQualita = document.getElementById('qualitaBox');
+function chiudiAvvisoQualita() {
+  if (avvisoQualita) avvisoQualita.hidden = true;
+  boxQualita?.classList.remove('is-evidenziata');
+}
+if (avvisoQualita) {
+  avvisoQualita.hidden = false;
+  boxQualita?.classList.add('is-evidenziata');
+  document.getElementById('avvisoQualitaChiudi')?.addEventListener('click', chiudiAvvisoQualita);
+}
+
 document.getElementById('qualita')?.addEventListener('click', (e) => {
   const b = e.target.closest('[data-qualita]');
-  if (b) applicaQualita(b.dataset.qualita);
+  if (!b) return;
+  applicaQualita(b.dataset.qualita);
+  chiudiAvvisoQualita();
 });
 
 // All'avvio il profilo e' gia' montato: qui si segna solo il bottone giusto.
@@ -3452,7 +3687,12 @@ function renderExtras() {
          —con capitello va solo dietro— cosi' la scena non resta vecchia. */
       loadModel(currentModelKey);
     });
-  fillSelect('serraturaSelect', SERRATURE, state.serratura)
+  /* LA FERRAMENTA NON E' PIU' NEL PANNELLO (Julian, 27 ott 2026): la porta
+     esce con la serratura meccanica standard e le anube, comprese nel prezzo.
+     Il codice resta: per rimetterla basta ridare la sezione all'HTML, e
+     tutto quello che la tocca guarda prima se c'e'. */
+  const conFerramenta = !!document.getElementById('serraturaSelect');
+  if (conFerramenta) fillSelect('serraturaSelect', SERRATURE, state.serratura)
     .addEventListener('change', (e) => { state.serratura = e.target.value; refreshUI(); });
   renderManiglieGrid();
 
@@ -3469,25 +3709,27 @@ function renderExtras() {
     b.addEventListener('click', () => { state.cerniere = b.dataset.cerniere; refreshUI(); }));
 
   // — extra di ferramenta (voci 60, 65–67, 69–71, 26, 41/43/45)
-  fillSelect('cilindroSelect', CILINDRI, state.cilindro);
-  document.getElementById('cilindroSelect').addEventListener('change', (e) => {
-    state.cilindro = e.target.value; refreshUI();
-  });
-  document.getElementById('accPills').innerHTML = ACCESSORI.map((a) =>
-    `<button class="pill" data-acc="${a.id}">${a.label} <span class="en">+€${a.extra}</span></button>`).join('');
-  document.querySelectorAll('#accPills .pill').forEach((b) =>
-    b.addEventListener('click', () => {
-      state.acc[b.dataset.acc] = !state.acc[b.dataset.acc]; refreshUI();
-    }));
-  document.querySelector('[data-nottolino]').addEventListener('click', () => {
-    state.nottolino = !state.nottolino; refreshUI();
-  });
-  document.querySelector('[data-oroserr]').addEventListener('click', () => {
-    state.oroSerr = !state.oroSerr; refreshUI();
-  });
-  document.querySelector('[data-orocern]').addEventListener('click', () => {
-    state.oroCern = !state.oroCern; refreshUI();
-  });
+  if (conFerramenta) {
+    fillSelect('cilindroSelect', CILINDRI, state.cilindro);
+    document.getElementById('cilindroSelect').addEventListener('change', (e) => {
+      state.cilindro = e.target.value; refreshUI();
+    });
+    document.getElementById('accPills').innerHTML = ACCESSORI.map((a) =>
+      `<button class="pill" data-acc="${a.id}">${a.label} <span class="en">+€${a.extra}</span></button>`).join('');
+    document.querySelectorAll('#accPills .pill').forEach((b) =>
+      b.addEventListener('click', () => {
+        state.acc[b.dataset.acc] = !state.acc[b.dataset.acc]; refreshUI();
+      }));
+    document.querySelector('[data-nottolino]').addEventListener('click', () => {
+      state.nottolino = !state.nottolino; refreshUI();
+    });
+    document.querySelector('[data-oroserr]').addEventListener('click', () => {
+      state.oroSerr = !state.oroSerr; refreshUI();
+    });
+    document.querySelector('[data-orocern]').addEventListener('click', () => {
+      state.oroCern = !state.oroCern; refreshUI();
+    });
+  }
   document.querySelector('[data-telforma]').addEventListener('click', () => {
     state.telaioForma = !state.telaioForma; refreshUI();
   });
@@ -3717,22 +3959,25 @@ function refreshUI() {
   document.querySelectorAll('#cernierePills .pill[data-cerniere]').forEach((b) =>
     b.classList.toggle('is-active', b.dataset.cerniere === state.cerniere));
 
-  // il cilindro compare solo se la serratura è "cilindro escluso"
-  const vuoleCil = VUOLE_CILINDRO.has(state.serratura);
-  document.getElementById('cilindroBox').hidden = !vuoleCil;
-  document.getElementById('cilindroSelect').value = state.cilindro;
+  // Senza la sezione Ferramenta nel pannello non c'e' niente da segnare.
+  if (document.getElementById('cilindroBox')) {
+    // il cilindro compare solo se la serratura è "cilindro escluso"
+    const vuoleCil = VUOLE_CILINDRO.has(state.serratura);
+    document.getElementById('cilindroBox').hidden = !vuoleCil;
+    document.getElementById('cilindroSelect').value = state.cilindro;
 
-  // i sovrapprezzi oro valgono solo sui due pezzi che li prevedono
-  const oroS = document.querySelector('[data-oroserr]');
-  oroS.hidden = state.serratura !== 'magnetica';
-  oroS.classList.toggle('is-active', state.oroSerr);
-  const oroC = document.querySelector('[data-orocern]');
-  oroC.hidden = state.cerniere !== 'scomparsa';
-  oroC.classList.toggle('is-active', state.oroCern);
+    // i sovrapprezzi oro valgono solo sui due pezzi che li prevedono
+    const oroS = document.querySelector('[data-oroserr]');
+    oroS.hidden = state.serratura !== 'magnetica';
+    oroS.classList.toggle('is-active', state.oroSerr);
+    const oroC = document.querySelector('[data-orocern]');
+    oroC.hidden = state.cerniere !== 'scomparsa';
+    oroC.classList.toggle('is-active', state.oroCern);
 
-  document.querySelector('[data-nottolino]').classList.toggle('is-active', state.nottolino);
-  document.querySelectorAll('#accPills .pill').forEach((b) =>
-    b.classList.toggle('is-active', !!state.acc[b.dataset.acc]));
+    document.querySelector('[data-nottolino]').classList.toggle('is-active', state.nottolino);
+    document.querySelectorAll('#accPills .pill').forEach((b) =>
+      b.classList.toggle('is-active', !!state.acc[b.dataset.acc]));
+  }
 
   // il telaio di passaggio esiste solo per archi e curve
   const tf = TELAIO_FORMA[state.forma];

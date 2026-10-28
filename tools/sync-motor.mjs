@@ -71,6 +71,8 @@ const LOCALES = new Map([
 
 const PIEZAS = [
   'viewer/tejer.js',
+  // la sombra de relieve horneada: la escribe tejer.js y la lee el material
+  'viewer/sombraRelieve.js',
   'geom/extruir.js', 'geom/relieve.js', 'geom/perfiles.js', 'geom/offset.js',
   'geom/efectivo.js', 'geom/booleanas.js', 'geom/poligonos.js', 'geom/arcos.js',
   'geom/seguir.js', 'geom/materiales.js',

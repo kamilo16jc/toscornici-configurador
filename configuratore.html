@@ -49,13 +49,12 @@
       <p class="caption-model" id="captionModel">Liverpool <span>100-C</span></p>
     </div>
 
-    <!-- icona: trascina per ruotare -->
-    <div class="viewer-hint" title="Trascina per ruotare / Drag to rotate" aria-label="Trascina per ruotare">
+    <!-- icona: la vista si sposta e si avvicina, la porta non gira -->
+    <div class="viewer-hint" title="Trascina per spostare · rotella o due dita per avvicinare · clic sulla porta per aprirla / Drag to move · scroll or pinch to zoom · click the door to open it" aria-label="Trascina per spostare, rotella per avvicinare">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <ellipse cx="12" cy="12" rx="9.2" ry="4.4"/>
-        <path d="M5.6 9.1 3.2 11.5l2.6 2.2"/>
-        <path d="M18.4 14.9l2.4-2.4-2.6-2.2"/>
+        <path d="M12 3v18M3 12h18"/>
+        <path d="M9.5 5.5 12 3l2.5 2.5M9.5 18.5 12 21l2.5-2.5M5.5 9.5 3 12l2.5 2.5M18.5 9.5 21 12l-2.5 2.5"/>
       </svg>
     </div>
 
@@ -93,6 +92,23 @@
       <h1 id="panelTitle">Liverpool&nbsp;100-C</h1>
       <p class="panel-sub" id="panelSub">Porta interna classica con bugne — <span class="en">Classic interior panelled door</span></p>
     </header>
+
+    <!-- Qualita' del visore. Fuori dalla numerazione e prima di tutto: non e'
+         una scelta della porta, e' quanto costa disegnarla. Parte sempre in
+         Alta; l'avviso sotto dice dove abbassarla se il 3D va lento. -->
+    <div class="qualita" id="qualitaBox">
+      <span class="qualita-etichetta" id="qualitaEtichetta" data-t="qual_titolo">Qualità grafica</span>
+      <div class="qualita-scelte" id="qualita" role="group" aria-labelledby="qualitaEtichetta">
+        <button type="button" class="qualita-scelta" data-qualita="alta" data-t="qual_alta">Alta</button>
+        <button type="button" class="qualita-scelta" data-qualita="media" data-t="qual_media">Media</button>
+        <button type="button" class="qualita-scelta" data-qualita="bassa" data-t="qual_bassa">Bassa</button>
+      </div>
+    </div>
+    <div class="avviso-qualita" id="avvisoQualita" role="status" hidden>
+      <p class="avviso-qualita-titolo" data-t="qual_avviso_titolo">Prestazioni del 3D</p>
+      <p class="avviso-qualita-testo" data-t="qual_avviso">Il visore 3D si apre in qualità <strong>Alta</strong>. Se la navigazione risulta poco fluida, puoi ridurre la qualità di resa qui sopra: <strong>Media</strong> e <strong>Bassa</strong> alleggeriscono il rendering senza cambiare la configurazione.</p>
+      <button type="button" class="avviso-qualita-chiudi" id="avvisoQualitaChiudi" data-t="qual_capito">Ho capito</button>
+    </div>
 
     <!-- Modello -->
     <section class="section">
@@ -264,47 +280,14 @@
       <p class="pill-note" id="capitelloNote">Prezzi Toulipier, Laccato Bianco Tosco compreso, per lato, per luce 900×2100 (oltre +50%).</p>
     </section>
 
-    <!-- Ferramenta -->
-    <section class="section">
-      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_ferramenta">Ferramenta</span></h2>
-      <select class="model-select" id="serraturaSelect" aria-label="Serratura"></select>
-      <div class="pills" id="serrExtraPills">
-        <button class="pill" data-nottolino="1">Predisp. nottolino <span class="en">+€10</span></button>
-        <button class="pill" data-oroserr="1" hidden>Magnetica oro <span class="en">+€10</span></button>
-      </div>
-      <!-- il cilindro compare solo quando la serratura lo richiede -->
-      <div id="cilindroBox" hidden>
-        <p class="lacc-title">Cilindro — la serratura scelta è “cilindro escluso”</p>
-        <select class="model-select" id="cilindroSelect" aria-label="Cilindro"></select>
-      </div>
-      <div class="pills" id="cernierePills">
-        <button class="pill is-active" data-cerniere="anuba">Anuba <span class="en">incluse</span></button>
-        <button class="pill" data-cerniere="anuba14">Anuba 14 mm <span class="en">+€40</span></button>
-        <button class="pill" data-cerniere="scomparsa">A scomparsa 3D <span class="en">+€50</span></button>
-        <button class="pill" data-orocern="1" hidden>Scomparsa oro <span class="en">+€20</span></button>
-      </div>
-      <p class="lacc-title" data-t="acc_titolo">Accessori</p>
-      <div class="pills" id="accPills"><!-- generato da ACCESSORI --></div>
-    </section>
-
     <!-- Ambiente -->
     <section class="section">
-      <h2 class="section-title"><span class="num">13</span> <span data-t="sez_ambiente">Ambiente</span></h2>
+      <h2 class="section-title"><span class="num">12</span> <span data-t="sez_ambiente">Ambiente</span></h2>
       <div class="pills pills-grid" id="ambienti">
         <button class="pill is-active" data-ambiente="galleria" data-t="amb_galleria">Galleria</button>
         <button class="pill" data-ambiente="ingresso" data-t="amb_ingresso">Ingresso</button>
         <button class="pill" data-ambiente="soggiorno" data-t="amb_soggiorno">Soggiorno</button>
         <button class="pill" data-ambiente="studio" data-t="amb_studio">Studio</button>
-      </div>
-    </section>
-
-    <!-- Qualita del visore: non tocca la porta, solo quanto costa disegnarla -->
-    <section class="section">
-      <h2 class="section-title"><span class="num">14</span> <span>Qualità</span></h2>
-      <div class="pills pills-grid" id="qualita">
-        <button class="pill" data-qualita="alta">Alta</button>
-        <button class="pill" data-qualita="media">Media</button>
-        <button class="pill" data-qualita="bassa">Bassa</button>
       </div>
     </section>
 
