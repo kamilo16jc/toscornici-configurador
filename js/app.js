@@ -20,6 +20,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { MODELLI } from './catalogo.js';
 import { TIPO_DEFAULT, applicaTipo, haVetro, haCampoDiLegno, BUGNA_DI_PARTENZA, scegliBugna } from './tipi.js';
 import { allargaMontanti, ALLARGA_LATO, ALLARGA_TESTA } from './montanti.js';
@@ -604,18 +605,19 @@ const PROFILI = {
      avrebbe una mappa stesa sui 9 metri della scatola di una volta (4096 =
      2,2 mm per pixel). La mappa vera e' piu' piccola —copre solo dove c'e'
      qualcosa che fa ombra, vedi adattaOmbre— ma il pixel resta quello.
-     msaa: anche in Bassa. Il canvas non ha piu' antialias suo (costava
-     memoria in Alta e in Media, dove non serviva): il bordo liscio a riposo
-     lo dà il bersaglio della catena, in tutte e tre. */
-  alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, msaa: 4, ao: true,  rilievo: 2   },
-  media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  msaa: 4, ao: true,  rilievo: 1.5 },
-  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 4, ao: false, rilievo: 1   },
+     campioni: le passate spostate che si mediano nell'immagine ferma (vedi
+     L'IMMAGINE CHE SI ACCUMULA). Hanno preso il posto del MSAA x4: il canvas
+     non ha antialias suo e il bordo liscio lo da' la media, anche in Bassa. */
+  alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, campioni: 16, ao: true,  rilievo: 2   },
+  media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  campioni: 8,  ao: true,  rilievo: 1.5 },
+  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  campioni: 8,  ao: false, rilievo: 1   },
 };
 
 /* SI PARTE SEMPRE IN ALTA (Julian, 27 ott 2026): la porta si deve vedere
    al meglio. Non si ricorda la scelta della volta prima —chi apre vede
-   sempre l'Alta— e all'apertura un avviso dice dove abbassarla se il 3D va
-   lento. Resta solo ?qualita= nell'indirizzo, per provare al volo. */
+   sempre l'Alta—. L'avviso che diceva dove abbassarla non si apre piu': in
+   movimento il visore scende di risoluzione da solo (regolaScala). Resta
+   ?qualita= nell'indirizzo, per provare al volo. */
 function qualitaScelta() {
   const q = new URLSearchParams(location.search).get('qualita');
   return PROFILI[q] ? q : 'alta';
@@ -815,75 +817,250 @@ let gtaoPass = null;
    fermandosi cambia solo la finezza. */
 let composerLeggero = null;
 let gtaoLeggero = null;
+// L'occlusione del leggero si misura da sola (frazioneAO 0,5): qui basta la catena.
 const misuraLeggero = (w, h) => {
-  if (!composerLeggero) return;
-  composerLeggero.setSize(w, h);
-  const pr = renderer.getPixelRatio();
-  gtaoLeggero.setSize(Math.max(1, Math.round(w * pr / 2)), Math.max(1, Math.round(h * pr / 2)));
+  if (composerLeggero) composerLeggero.setSize(w, h);
 };
+
+/* ============================================================
+   LA RISOLUZIONE DEL MOVIMENTO
+   ------------------------------------------------------------
+   Come le console: quando la scena pesa, si abbassa la risoluzione
+   e nessuno se ne accorge, perche' in movimento l'occhio non legge i
+   dettagli. Si misura il tempo fra un fotogramma leggero e l'altro
+   mentre la camera o l'anta si muovono; se l'apparecchio non ce la fa
+   si disegna a una frazione dei pixel, e l'uscita la stira sullo
+   schermo. A riposo non c'entra: l'immagine ferma si accumula sempre
+   a piena risoluzione, uguale su ogni apparecchio.
+
+   Si scende svelti (0,6 s di prova) e si risale piano (2,5 s di
+   margine); se risalire fa ricadere subito, quel gradino non si
+   ritenta piu' in questa visita.
+   ============================================================ */
+const SCALE_MOTO = [1, 0.8, 0.65, 0.5];
+let livelloScala = 0;
+let tettoScala = 0;                  // il gradino piu' fine che si puo' ancora provare
+let ultimoGiro = 0, mediaGiro = 0, giroMinimo = Infinity;
+let ultimoCambioScala = 0, ultimaSalita = -Infinity;
+
+function regolaScala(ora) {
+  const dt = ora - ultimoGiro;
+  ultimoGiro = ora;
+  if (dt > 120) { mediaGiro = 0; return; }        // non erano fotogrammi di fila
+  giroMinimo = Math.min(giroMinimo, Math.max(dt, 6));
+  mediaGiro = mediaGiro ? mediaGiro * 0.8 + dt * 0.2 : dt;
+  if (ora - ultimoCambioScala < 600) return;
+  /* Il ritmo dello schermo (16,7 ms a 60 Hz, 8,3 a 120) e' il fotogramma
+     piu' corto visto; non si chiede piu' di 60 al secondo. */
+  const obiettivo = Math.max(giroMinimo, 1000 / 60);
+  let nuovo = livelloScala;
+  if (mediaGiro > obiettivo * 1.45 && livelloScala < SCALE_MOTO.length - 1) nuovo++;
+  else if (mediaGiro < obiettivo * 1.12 && livelloScala > tettoScala && ora - ultimoCambioScala > 2500) nuovo--;
+  if (nuovo === livelloScala) return;
+  if (nuovo > livelloScala && ora - ultimaSalita < 3000) tettoScala = nuovo;
+  if (nuovo < livelloScala) ultimaSalita = ora;
+  livelloScala = nuovo;
+  ultimoCambioScala = ora;
+  mediaGiro = 0;
+  composerLeggero?.setScala(SCALE_MOTO[nuovo]);
+}
+
+/* ============================================================
+   L'IMMAGINE CHE SI ACCUMULA
+   ------------------------------------------------------------
+   Con la porta ferma non serve un fotogramma pesante: ne servono
+   tanti leggeri, ognuno spostato di una frazione di pixel, e la loro
+   media. E' il trucco delle console (l'antialias temporale), ma qui
+   viene perfetto perche' la camera sta ferma e non c'e' niente da
+   inseguire: la media di sedici passate spostate liscia i bordi
+   meglio del MSAA x4 —che lavorava solo sui bordi— e liscia anche
+   dentro: la vena del legno e le normali delle modanature, che il
+   MSAA non toccava e che da lontano brulicavano.
+
+   E costa meno: ogni passata e' la scena senza multisampling, e
+   l'occlusione si calcola una volta sola per immagine (sulla prima,
+   che non e' spostata) e si applica alla media. Un telefono lento
+   arriva alla stessa immagine del portatile, solo un po' dopo: la si
+   vede affinarsi in un attimo invece di aspettare un fotogramma
+   grosso che blocca tutto.
+   ============================================================ */
+
+/* Il campione k della sequenza di Halton (2,3), centrato sul pixel. Il
+   primo e' (0,0): la prima passata e' esattamente quella di sempre. */
+function halton(i, base) {
+  let f = 1, r = 0;
+  while (i > 0) { f /= base; r += f * (i % base); i = Math.floor(i / base); }
+  return r;
+}
+const spostamento = (k) => (k === 0 ? [0, 0] : [halton(k, 2) - 0.5, halton(k, 3) - 0.5]);
+
+const VERT_SCHERMO = /* glsl */`
+  varying vec2 vUv;
+  void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 
 /* LA CATENA: scena, occlusione, uscita — montata a mano.
    Prima la faceva l'EffectComposer, che per andare avanti e indietro fra due
    bersagli CLONA quello che gli si passa: col MSAA x4 nel primo, anche il
-   secondo nasceva con quattro campioni e il suo depth —56 byte per pixel— per
-   ricevere soltanto la miscela dell'occlusione, un passo a schermo intero in
-   cui il multisampling non fa niente. Qui i bersagli sono quelli che servono:
-   la scena col suo MSAA e il suo depth, la miscela senza nessuno dei due.
-   L'ordine dei passi e' lo stesso del composer (la scena nel bersaglio, la
-   miscela nell'altro, l'uscita a schermo), quindi l'immagine e' la stessa.
-   Fuori si presenta come il composer —render, setSize, setPixelRatio,
-   dispose— e resize() e render-ia.js la usano senza accorgersene. Come il
-   composer, il pixelRatio lo prende dal renderer quando nasce. */
-function creaCatena({ msaa, occlusione = null }) {
+   secondo nasceva con quattro campioni e il suo depth per ricevere soltanto
+   la miscela dell'occlusione. Qui i bersagli sono quelli che servono.
+   Due modi:
+   - SEMPLICE (campioni 0), per il fotogramma leggero: scena, occlusione,
+     uscita, una volta. Con setScala si disegna a una frazione della
+     risoluzione e l'uscita la stira sullo schermo (la risoluzione dinamica).
+   - CHE ACCUMULA (campioni > 0), per l'immagine ferma: passo(k, w) disegna
+     la passata k spostata e la mescola nella somma col peso w; render()
+     fa tutte le passate di fila e consegna l'immagine finita (la foto per
+     l'IA e le prove la usano cosi', come usavano il composer).
+   Come il composer, il pixelRatio lo prende dal renderer quando nasce. */
+function creaCatena({ occlusione = null, campioni = 0, frazioneAO = 1 }) {
   let pr = renderer.getPixelRatio();
-  let largo = 1, alto = 1;
-  const bersaglio = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: msaa });
-  const miscela = occlusione
-    ? new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false })
-    : null;
+  let scala = 1;
+  let largo = 1, alto = 1, W = 1, H = 1;
+  const mezzoFloat = { type: THREE.HalfFloatType };
+  const senzaDepth = { type: THREE.HalfFloatType, depthBuffer: false };
+  const bersaglio = new THREE.WebGLRenderTarget(1, 1, mezzoFloat);     // la scena, col suo depth
+  const miscela = occlusione ? new THREE.WebGLRenderTarget(1, 1, senzaDepth) : null;
+  const somma = campioni ? new THREE.WebGLRenderTarget(1, 1, senzaDepth) : null;
   const passoScena = new RenderPass(scene, camera);
   const uscita = new OutputPass();
   uscita.renderToScreen = true;
   const passi = occlusione ? [passoScena, occlusione, uscita] : [passoScena, uscita];
+
+  /* La media che cammina: somma = somma*(1-w) + passata*w, colore e alfa
+     insieme (il canvas e' trasparente dove non c'e' niente, e il bordo
+     contro la pagina va mediato come il resto). Il peso entra come
+     costante di blending: niente secondo bersaglio per fare avanti e
+     indietro. */
+  const mescola = somma && new FullScreenQuad(new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: VERT_SCHERMO,
+    fragmentShader: /* glsl */`
+      uniform sampler2D tDiffuse; varying vec2 vUv;
+      void main() { gl_FragColor = texture2D(tDiffuse, vUv); }`,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.ConstantAlphaFactor,
+    blendDst: THREE.OneMinusConstantAlphaFactor,
+    blendSrcAlpha: THREE.ConstantAlphaFactor,
+    blendDstAlpha: THREE.OneMinusConstantAlphaFactor,
+    depthTest: false,
+    depthWrite: false,
+  }));
+  /* La media con l'occlusione sopra, nello stesso conto del blending di
+     GTAOPass: colore per mix(1, ao, intensita'), alfa per l'alfa dell'ao. */
+  const mostra = somma && occlusione && new FullScreenQuad(new THREE.ShaderMaterial({
+    uniforms: { tSomma: { value: null }, tAO: { value: null }, intensita: { value: 1 } },
+    vertexShader: VERT_SCHERMO,
+    fragmentShader: /* glsl */`
+      uniform sampler2D tSomma; uniform sampler2D tAO; uniform float intensita; varying vec2 vUv;
+      void main() {
+        vec4 c = texture2D(tSomma, vUv);
+        vec4 ao = texture2D(tAO, vUv);
+        gl_FragColor = vec4(c.rgb * mix(vec3(1.0), ao.rgb, intensita), c.a * ao.a);
+      }`,
+    depthTest: false,
+    depthWrite: false,
+  }));
+
+  const disegnaScena = (k) => {
+    const [dx, dy] = spostamento(k);
+    if (dx || dy) camera.setViewOffset(W, H, dx, dy, W, H);
+    passoScena.render(renderer, null, bersaglio);         // RenderPass disegna nel readBuffer
+    if (dx || dy) camera.clearViewOffset();
+  };
+  const mescolaNellaSomma = (w) => {
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false;                           // si somma, non si cancella
+    renderer.setRenderTarget(somma);
+    mescola.material.uniforms.tDiffuse.value = bersaglio.texture;
+    mescola.material.blendAlpha = w;
+    mescola.render(renderer);
+    renderer.autoClear = autoClear;
+  };
+  const consegna = () => {
+    if (!occlusione) { uscita.render(renderer, null, somma); return; }
+    const u = mostra.material.uniforms;
+    u.tSomma.value = somma.texture;
+    u.tAO.value = occlusione.gtaoMap;
+    u.intensita.value = occlusione.blendIntensity;
+    renderer.setRenderTarget(miscela);
+    mostra.render(renderer);
+    uscita.render(renderer, null, miscela);
+  };
+  const semplice = () => {
+    passoScena.render(renderer, null, bersaglio);
+    if (occlusione) {
+      occlusione.render(renderer, miscela, bersaglio);    // legge la scena, scrive la miscela
+      uscita.render(renderer, null, miscela);
+    } else {
+      uscita.render(renderer, null, bersaglio);
+    }
+  };
+
   const catena = {
     passi,
-    render() {
+    campioni,
+    /* Una passata. nuovaAO: si ricalcola l'occlusione (sempre sulla scena non
+       spostata: GTAO ridisegna le sue normali dopo che lo spostamento e' tolto). */
+    passo(k = 0, w = 1, nuovaAO = true) {
       const prima = renderer.getRenderTarget();
-      passoScena.render(renderer, null, bersaglio);         // RenderPass disegna nel readBuffer
-      if (occlusione) {
-        occlusione.render(renderer, miscela, bersaglio);    // legge la scena, scrive la miscela
-        uscita.render(renderer, null, miscela);
+      if (!somma) {
+        semplice();
       } else {
-        uscita.render(renderer, null, bersaglio);
+        disegnaScena(k);
+        if (occlusione && nuovaAO) occlusione.render(renderer, miscela, bersaglio);
+        mescolaNellaSomma(w);
+        consegna();
       }
+      renderer.setRenderTarget(prima);
+    },
+    /* L'immagine finita tutta d'un fiato. */
+    render() {
+      if (!somma) { catena.passo(); return; }
+      const prima = renderer.getRenderTarget();
+      for (let k = 0; k < campioni; k++) {
+        disegnaScena(k);
+        if (occlusione && k === 0) occlusione.render(renderer, miscela, bersaglio);
+        mescolaNellaSomma(1 / (k + 1));
+      }
+      consegna();
       renderer.setRenderTarget(prima);
     },
     setSize(w, h) {
       largo = w; alto = h;
-      const W = w * pr, H = h * pr;
+      W = w * pr * scala; H = h * pr * scala;
       bersaglio.setSize(W, H);
       miscela?.setSize(W, H);
+      somma?.setSize(W, H);
       for (const p of passi) p.setSize(W, H);
+      if (occlusione && frazioneAO !== 1) {
+        occlusione.setSize(Math.max(1, Math.round(W * frazioneAO)), Math.max(1, Math.round(H * frazioneAO)));
+      }
     },
     setPixelRatio(nuovo) { pr = nuovo; catena.setSize(largo, alto); },
+    setScala(s) { if (s !== scala) { scala = s; catena.setSize(largo, alto); } },
+    get scala() { return scala; },
     /* L'occlusione no: la butta chi l'ha fatta (applicaQualita), come prima. */
     dispose() {
       bersaglio.dispose();
       miscela?.dispose();
+      somma?.dispose();
       passoScena.dispose();
       uscita.dispose();
+      if (mescola) { mescola.material.dispose(); mescola.dispose(); }
+      if (mostra) { mostra.material.dispose(); mostra.dispose(); }
     },
   };
   return catena;
 }
 
 function montaOcclusione() {
-  /* In qualita' bassa niente occlusione e niente fotogramma leggero: solo la
-     scena nel bersaglio col MSAA e l'uscita. Il canvas non ha antialias suo,
-     e senza questo passaggio la Bassa a riposo avrebbe i bordi a scaletta. */
+  /* In qualita' bassa niente occlusione e niente fotogramma leggero: l'immagine
+     ferma si accumula lo stesso (e' lei che liscia i bordi, il canvas non ha
+     antialias suo); in movimento si disegna diretto. */
   if (!OCCLUSIONE || !profilo().ao) {
     try {
-      const c = creaCatena({ msaa: profilo().msaa });
+      const c = creaCatena({ campioni: profilo().campioni });
       c.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
       composer = c;
     } catch (e) {
@@ -916,13 +1093,10 @@ function montaOcclusione() {
       distanceFallOff: 1,
       screenSpaceRadius: false,
     });
-    /* MSAA nel bersaglio della scena. L'antialias del renderer lavora solo
-       quando si disegna sullo schermo: passando per un render target si
-       perde, e i bordi della porta tornerebbero a scaletta.
-       Il tone mapping lo applica l'uscita (OutputPass): il renderer lo applica
+    /* Il tone mapping lo applica l'uscita (OutputPass): il renderer lo applica
        solo disegnando sullo schermo, e qui si disegna su un target. Senza
        quel passo la curva ACES sparisce e i colori escono slavati. */
-    const c = creaCatena({ msaa: profilo().msaa, occlusione: ao });
+    const c = creaCatena({ occlusione: ao, campioni: profilo().campioni });
 
     /* A PIENA RISOLUZIONE GIA' DALL'AVVIO. I bersagli nascono di 1x1: solo
        setSize li porta alla misura dello schermo per il pixelRatio. Quando
@@ -934,9 +1108,9 @@ function montaOcclusione() {
     composer = c;
     gtaoPass = ao;
 
-    /* Il leggero: stessa occlusione e stessa forza, ma senza multisampling nel
-       bersaglio (e' lui che costa: con MSAA x4 il leggero saliva a 14 ms) e
-       con l'occlusione calcolata a meta' risoluzione. */
+    /* Il leggero: stessa occlusione e stessa forza, calcolata a meta'
+       risoluzione, e la scena alla risoluzione che regge l'apparecchio
+       (regolaScala). */
     const aol = new GTAOPass(scene, camera, w, h);
     aol.output = GTAOPass.OUTPUT.Default;
     aol.blendIntensity = ao.blendIntensity;
@@ -944,9 +1118,10 @@ function montaOcclusione() {
       radius: 0.05, distanceExponent: 1, thickness: 0.5, scale: 1.1,
       samples: Math.min(8, campioni), distanceFallOff: 1, screenSpaceRadius: false,
     });
-    const cl = creaCatena({ msaa: 0, occlusione: aol });
+    const cl = creaCatena({ occlusione: aol, frazioneAO: 0.5 });
     composerLeggero = cl;
     gtaoLeggero = aol;
+    cl.setScala(SCALE_MOTO[livelloScala]);
     misuraLeggero(w, h);
   } catch (e) {
     /* Se l'occlusione non si puo' montare —WebGL vecchio, addon cambiato—
@@ -2295,6 +2470,10 @@ function loadModel(key) {
            una foto di prova (adattaOmbre di solito gira dal ciclo). */
         adattaOmbre,
         get improntaOmbra() { return improntaOmbra; },
+        // L'immagine ferma e la risoluzione del movimento, per misurarle.
+        get accumulo() { return { fatti: campioniFermi, totale: composer?.campioni ?? 0 }; },
+        get scalaMoto() { return SCALE_MOTO[livelloScala]; },
+        regolaScala,                     // per provarla con tempi finti
         get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; },
         /* La corsa della scorrevole. Il bersaglio si posa SUBITO, il movimento
            no: serve per misurare la legge senza dipendere dai fotogrammi. */
@@ -3202,19 +3381,18 @@ let fotogrammiDaFare = 60;
 
 /* L'ALTA A RIPOSO. Mentre qualcosa si muove —la camera che si avvicina, l'anta
    che gira— si disegna il fotogramma leggero (composerLeggero: occlusione a
-   meta' risoluzione, senza multisampling): sul MacBook Air M4 il pieno costa
-   20 ms e il leggero 6. Appena tutto e' fermo da QUIETE ms, un fotogramma
-   pieno, in Alta vera. L'ombra di rilievo cotta resta sempre. */
+   meta' risoluzione, scena alla risoluzione che l'apparecchio regge). Appena
+   tutto e' fermo da QUIETE ms comincia l'immagine che si accumula: una
+   passata per giro, ognuna spostata sotto il pixel, finche' la media e'
+   completa (profilo().campioni); poi il visore si ferma. L'ombra di rilievo
+   cotta resta sempre. */
 /* 300 e non 180: la rotella va a tacche, e girandola piano fra una tacca e
-   l'altra passavano piu' di 180 ms — si disegnava un pieno a ogni tacca. */
-const QUIETE = 300;           // ms senza movimento prima del fotogramma pieno
-const PAUSA_PIENO = 100;      // a riposo, un fotogramma pieno ogni tanto, non a ogni giro
+   l'altra passavano piu' di 180 ms — si ricominciava l'immagine a ogni tacca. */
+const QUIETE = 300;           // ms senza movimento prima dell'immagine ferma
 let ultimoMoto = -Infinity;
 let ultimoLeggero = -Infinity;
-let ultimoPieno = -Infinity;
-let pienoDovuto = true;
 
-/* LE OMBRE SI CALCOLANO SOLO QUANDO SERVE. Due mappe da 4096 rifatte a ogni
+/* LE OMBRE SI CALCOLANO SOLO QUANDO SERVE. Due mappe rifatte a ogni
    fotogramma —e due volte, perche' anche l'occlusione ridisegna la scena—
    per una porta e una parete ferme. Si rifanno quando cambia qualcosa che
    puo' muovere un'ombra: un caricamento, un clic nel pannello, l'anta che
@@ -3222,39 +3400,86 @@ let pienoDovuto = true;
 let ombreSporche = true;
 renderer.shadowMap.autoUpdate = false;
 
+/* LA SOMMA DELL'IMMAGINE FERMA.
+   campioniFermi: quante passate ha gia' la media. Si ricomincia da zero
+   quando qualcosa cambia davvero (un clic, un caricamento, un movimento) e
+   anche quando cambia la scena senza che nessuno lo dica: firmaScena() la
+   riassume in un numero, e se il numero cambia la media non vale piu'.
+   RITOCCO: cambi sotto il pixel —l'anta che si posa, la coda dello
+   smorzamento della camera—. Ricominciare a ogni giro lascerebbe la porta a
+   scaletta per un secondo e mezzo; li' si continua a mediare, ma la storia
+   pesa poco (STORIA_RITOCCO passate), cosi' la media segue il movimento
+   senza strisciare, e quando si ferma del tutto finisce di affinarsi. */
+let campioniFermi = 0;
+let ritocco = false;
+let firmaFerma = NaN;
+const STORIA_RITOCCO = 3;
+
 const chiediFotogramma = (n = 3) => {
   fotogrammiDaFare = Math.max(fotogrammiDaFare, n);
   ombreSporche = true;
+  campioniFermi = 0;
 };
 const segnaMoto = (ombre = false) => {
   ultimoMoto = performance.now();
-  pienoDovuto = true;
+  campioniFermi = 0;
   fotogrammiDaFare = Math.max(fotogrammiDaFare, 3);
   if (ombre) ombreSporche = true;
 };
+const ritocca = (ombre = false) => {
+  ritocco = true;
+  fotogrammiDaFare = Math.max(fotogrammiDaFare, 2);
+  if (ombre) ombreSporche = true;
+};
+
+/* Un numero che cambia se cambia quello che si vede: camera, oggetti
+   visibili e dove stanno, materiali (versione, colore, opacita', texture e
+   la sua versione, che sale quando l'immagine arriva). Costa un giro sulle
+   maglie —un centinaio— ed evita una porta che resta indietro. */
+function firmaScena() {
+  camera.updateMatrixWorld();
+  scene.updateMatrixWorld();
+  let h = 0;
+  const c = camera.matrixWorld.elements, p = camera.projectionMatrix.elements;
+  for (let i = 0; i < 16; i++) h += c[i] * (i + 1) * 1.37 + p[i] * (i + 3) * 0.71;
+  scene.traverseVisible((o) => {
+    if (!o.isMesh) return;
+    const e = o.matrixWorld.elements;
+    h += o.id * 0.618 + e[0] * 1.3 + e[2] * 2.1 + e[5] * 2.9 + e[8] * 3.7
+      + e[12] * 13.1 + e[13] * 17.3 + e[14] * 19.7;
+    const m = o.material;
+    if (m && !Array.isArray(m)) {
+      h += m.id * 1.7 + m.version * 2.9 + m.opacity * 5.3;
+      if (m.color) h += m.color.r * 7.1 + m.color.g * 11.3 + m.color.b * 23.9;
+      if (m.map) h += m.map.id * 0.31 + m.map.version * 0.77;
+    }
+  });
+  return h;
+}
+
 /* L'ANTA CHE SI POSA. Il giro rallenta all'infinito: gli ultimi due secondi
    sono decimi di grado che non si vedono, e contarli come movimento teneva
    la porta in versione leggera quasi quattro secondi dopo il clic. Sotto
-   questa soglia l'anta continua a posarsi, ma a fotogrammi pieni. */
+   questa soglia l'anta continua a posarsi, come ritocco dell'immagine ferma. */
 const ANTA_VISIBILE = 0.01;   // rad: mezzo grado, 8 mm al canto di un'anta da 80
 const CORSA_VISIBILE = 8;     // mm, per le scorrevoli e il rototraslante
 const muoveAnta = (resta, soglia) => {
   if (Math.abs(resta) > soglia) segnaMoto(true);
-  else chiediFotogramma(2);
+  else ritocca(true);
 };
 
 /* Lo zoom e lo spostamento, con l'inerzia dello smorzamento: e' movimento, ma
    non sposta ombre. La coda dell'inerzia —e la vista che spinge contro il
    bordo della porta— muove la camera di meno di mezzo pixel: quello non e'
    movimento, e lasciarlo contare teneva la versione leggera per secondi dopo
-   aver lasciato il mouse. */
+   aver lasciato il mouse. E' un ritocco. */
 const _camPrima = new THREE.Vector3();
 controls.addEventListener('change', () => {
   tieniInquadratura();
   const passo = camera.position.distanceTo(_camPrima);
   _camPrima.copy(camera.position);
   if (passo > camera.position.distanceTo(controls.target) * 2e-4) segnaMoto();
-  else fotogrammiDaFare = Math.max(fotogrammiDaFare, 2);
+  else ritocca();
 });
 
 /* Qualunque interazione con la pagina. In cattura, cosi' arriva anche se chi
@@ -3489,45 +3714,58 @@ renderer.setAnimationLoop(() => {
   fotogrammiDaFare--;
 
   const ora = performance.now();
-  const disegna = (pieno) => {
+  const ombre = () => {
     if (ombreSporche) adattaOmbre();     // di solito non cambia niente ed esce
     renderer.shadowMap.needsUpdate = ombreSporche;
     ombreSporche = false;
-    if (pieno && composer) composer.render();
-    else if (!pieno && composerLeggero) composerLeggero.render();
+  };
+  const disegnaLeggero = () => {
+    ombre();
+    if (composerLeggero) composerLeggero.passo();
     else renderer.render(scene, camera);
   };
 
   /* Senza catena (solo se non si e' potuta montare) il fotogramma diretto e'
-     gia' quello pieno. La Bassa ora ha la sua catena, senza occlusione: in
-     movimento va diretta, a riposo passa dal bersaglio col MSAA. */
-  if (!composer) { disegna(false); pienoDovuto = false; return; }
+     gia' tutto quello che c'e'. La Bassa ha la sua catena senza occlusione e
+     senza leggero: in movimento va diretta, a riposo si accumula. */
+  if (!composer) { disegnaLeggero(); return; }
 
-  /* In movimento: leggero. Il pieno resta dovuto per quando si ferma. E
-     nell'attesa prima del pieno non si ridisegna niente se niente si e' mosso
-     dall'ultimo fotogramma: sarebbe la stessa immagine. */
+  /* In movimento: leggero, alla risoluzione che l'apparecchio regge. E
+     nell'attesa prima dell'immagine ferma non si ridisegna niente se niente si
+     e' mosso dall'ultimo fotogramma: sarebbe la stessa immagine. */
   if (ora - ultimoMoto < QUIETE) {
+    campioniFermi = 0;
     if (ultimoMoto >= ultimoLeggero || ombreSporche) {
-      disegna(false);
+      if (composerLeggero) regolaScala(ora);
+      disegnaLeggero();
       ultimoLeggero = ora;
     }
-    pienoDovuto = true;
     fotogrammiDaFare = Math.max(fotogrammiDaFare, 1);
     return;
   }
 
-  /* A riposo: pieno, ma non a ogni giro. Un clic nel pannello chiede novanta
-     fotogrammi per coprire quello che arriva dopo; ridisegnarli tutti in Alta
-     era tenere la GPU al massimo un secondo e mezzo per un'immagine ferma. Ne
-     basta uno ogni PAUSA_PIENO ms, e l'ultimo e' garantito. */
-  if (ora - ultimoPieno < PAUSA_PIENO) {
-    pienoDovuto = true;
-    fotogrammiDaFare = Math.max(fotogrammiDaFare, 1);
-    return;
+  /* A riposo: l'immagine si accumula, una passata per giro, finche' la media
+     e' completa. Poi niente: anche se un clic ha chiesto novanta fotogrammi,
+     una media completa di una scena che non e' cambiata (stessa firma) non si
+     ridisegna. Se cambia —una texture che arriva dopo, un materiale— la firma
+     se ne accorge e si ricomincia. */
+  const N = composer.campioni || 1;
+  const firma = firmaScena();
+  let nuovaAO = false;
+  if (ritocco) {
+    ritocco = false;
+    campioniFermi = Math.min(campioniFermi, STORIA_RITOCCO);
+    nuovaAO = true;                      // qualcosa si e' spostato: l'occlusione va rifatta
+  } else if (firma !== firmaFerma) {
+    campioniFermi = 0;
   }
-  disegna(true);
-  ultimoPieno = ora;
-  pienoDovuto = false;
+  firmaFerma = firma;
+  if (campioniFermi < N || nuovaAO) {
+    ombre();
+    composer.passo(campioniFermi % N, 1 / (campioniFermi + 1), nuovaAO || campioniFermi === 0);
+    campioniFermi++;
+  }
+  if (campioniFermi < N) fotogrammiDaFare = Math.max(fotogrammiDaFare, 1);
 });
 
 /* Cambio di qualita' a caldo, senza ricaricare: chi sta configurando una
@@ -3583,9 +3821,12 @@ function chiudiAvvisoQualita() {
   if (avvisoQualita) avvisoQualita.hidden = true;
   boxQualita?.classList.remove('is-evidenziata');
 }
+/* NON SI APRE PIU' (20 nov 2026). Diceva di abbassare la qualita' se il 3D
+   andava lento; ora lo fa il visore da solo —in movimento scende di
+   risoluzione (regolaScala), da fermo l'immagine si accumula ed e' la stessa
+   Alta su ogni apparecchio— e il cliente non deve sapere cos'e' la qualita'
+   grafica. I bottoni restano nel pannello per chi vuole sceglierla. */
 if (avvisoQualita) {
-  avvisoQualita.hidden = false;
-  boxQualita?.classList.add('is-evidenziata');
   document.getElementById('avvisoQualitaChiudi')?.addEventListener('click', chiudiAvvisoQualita);
 }
 
