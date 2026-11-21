@@ -10,10 +10,13 @@
 <!-- ?v= si aggiorna a ogni deploy: senza, il browser puo tenere il
      vecchio app.js insieme al nuovo configuratore.html e la pagina si rompe -->
 <link rel="stylesheet" href="css/style.css?v=38">
+<!-- three .min: e' lo stesso codice, ma il telefono ne legge 0,72 MB invece
+     di 1,96 (three.module + three.core). Gli addon passano da "three" e
+     prendono questo, quindi la libreria si carica una volta sola. -->
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.min.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
     "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
     "polybooljs": "https://cdn.jsdelivr.net/npm/polybooljs@1.2.2/+esm"
@@ -399,6 +402,6 @@
 
 <script src="js/lingua.js?v=8"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script type="module" src="js/app.js?v=134"></script>
+<script type="module" src="js/app.js?v=135"></script>
 </body>
 </html>

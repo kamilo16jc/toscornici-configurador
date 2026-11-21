@@ -17,7 +17,6 @@ import { construirAmbiente } from './motor/geom/ambiente.js';
 import { veta, pegarVeta } from './motor/geom/materiales.js';
 import { esVanoDeVidrio } from './motor/geom/perfiles.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -600,10 +599,17 @@ const loaderFill = document.getElementById('loaderFill');
 const PROFILI = {
   /* rilievo: finezza (pixel per millimetro) dell'ombra di rilievo cotta
      nello spazio dell'anta. Si cuoce una volta per porta, non a ogni
-     fotogramma, quindi c'e' anche in qualita' bassa. */
+     fotogramma, quindi c'e' anche in qualita' bassa.
+     ombra: la FINEZZA dell'ombra proiettata, detta come prima: i pixel che
+     avrebbe una mappa stesa sui 9 metri della scatola di una volta (4096 =
+     2,2 mm per pixel). La mappa vera e' piu' piccola —copre solo dove c'e'
+     qualcosa che fa ombra, vedi adattaOmbre— ma il pixel resta quello.
+     msaa: anche in Bassa. Il canvas non ha piu' antialias suo (costava
+     memoria in Alta e in Media, dove non serviva): il bordo liscio a riposo
+     lo dà il bersaglio della catena, in tutte e tre. */
   alta:  { pixelRatio: 2,   ombra: 4096, aoCampioni: 16, msaa: 4, ao: true,  rilievo: 2   },
   media: { pixelRatio: 1.5, ombra: 2048, aoCampioni: 8,  msaa: 4, ao: true,  rilievo: 1.5 },
-  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 0, ao: false, rilievo: 1   },
+  bassa: { pixelRatio: 1,   ombra: 1024, aoCampioni: 0,  msaa: 4, ao: false, rilievo: 1   },
 };
 
 /* SI PARTE SEMPRE IN ALTA (Julian, 27 ott 2026): la porta si deve vedere
@@ -618,7 +624,12 @@ function qualitaScelta() {
 let QUALITA = qualitaScelta();
 const profilo = () => PROFILI[QUALITA];
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+/* SENZA antialias nel canvas. Lo si pagava in memoria a ogni fotogramma —un
+   buffer quattro volte per pixel, ~24 MB nel visore di un telefono e oltre
+   100 su un portatile Retina— e in Alta e Media non lo usava nessuno: si
+   disegna nel bersaglio della catena, che ha il suo MSAA, e al canvas arriva
+   solo la copia finale. Ora anche la Bassa passa dalla catena. */
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, profilo().pixelRatio));
 renderer.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
 /* LO MISMO QUE EL ESCAPARATE, y no es un capricho de estilo.
@@ -811,24 +822,78 @@ const misuraLeggero = (w, h) => {
   gtaoLeggero.setSize(Math.max(1, Math.round(w * pr / 2)), Math.max(1, Math.round(h * pr / 2)));
 };
 
+/* LA CATENA: scena, occlusione, uscita — montata a mano.
+   Prima la faceva l'EffectComposer, che per andare avanti e indietro fra due
+   bersagli CLONA quello che gli si passa: col MSAA x4 nel primo, anche il
+   secondo nasceva con quattro campioni e il suo depth —56 byte per pixel— per
+   ricevere soltanto la miscela dell'occlusione, un passo a schermo intero in
+   cui il multisampling non fa niente. Qui i bersagli sono quelli che servono:
+   la scena col suo MSAA e il suo depth, la miscela senza nessuno dei due.
+   L'ordine dei passi e' lo stesso del composer (la scena nel bersaglio, la
+   miscela nell'altro, l'uscita a schermo), quindi l'immagine e' la stessa.
+   Fuori si presenta come il composer —render, setSize, setPixelRatio,
+   dispose— e resize() e render-ia.js la usano senza accorgersene. Come il
+   composer, il pixelRatio lo prende dal renderer quando nasce. */
+function creaCatena({ msaa, occlusione = null }) {
+  let pr = renderer.getPixelRatio();
+  let largo = 1, alto = 1;
+  const bersaglio = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: msaa });
+  const miscela = occlusione
+    ? new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false })
+    : null;
+  const passoScena = new RenderPass(scene, camera);
+  const uscita = new OutputPass();
+  uscita.renderToScreen = true;
+  const passi = occlusione ? [passoScena, occlusione, uscita] : [passoScena, uscita];
+  const catena = {
+    passi,
+    render() {
+      const prima = renderer.getRenderTarget();
+      passoScena.render(renderer, null, bersaglio);         // RenderPass disegna nel readBuffer
+      if (occlusione) {
+        occlusione.render(renderer, miscela, bersaglio);    // legge la scena, scrive la miscela
+        uscita.render(renderer, null, miscela);
+      } else {
+        uscita.render(renderer, null, bersaglio);
+      }
+      renderer.setRenderTarget(prima);
+    },
+    setSize(w, h) {
+      largo = w; alto = h;
+      const W = w * pr, H = h * pr;
+      bersaglio.setSize(W, H);
+      miscela?.setSize(W, H);
+      for (const p of passi) p.setSize(W, H);
+    },
+    setPixelRatio(nuovo) { pr = nuovo; catena.setSize(largo, alto); },
+    /* L'occlusione no: la butta chi l'ha fatta (applicaQualita), come prima. */
+    dispose() {
+      bersaglio.dispose();
+      miscela?.dispose();
+      passoScena.dispose();
+      uscita.dispose();
+    },
+  };
+  return catena;
+}
+
 function montaOcclusione() {
-  /* In qualita' bassa si esce di qui e si torna al render diretto: niente
-     composer, niente target, niente pass. E' il taglio piu' grosso che si
-     puo' fare, ed e' proprio quello che serve sulle macchine lente. */
-  if (!OCCLUSIONE || !profilo().ao) return;
+  /* In qualita' bassa niente occlusione e niente fotogramma leggero: solo la
+     scena nel bersaglio col MSAA e l'uscita. Il canvas non ha antialias suo,
+     e senza questo passaggio la Bassa a riposo avrebbe i bordi a scaletta. */
+  if (!OCCLUSIONE || !profilo().ao) {
+    try {
+      const c = creaCatena({ msaa: profilo().msaa });
+      c.setSize(viewerEl.clientWidth, viewerEl.clientHeight);
+      composer = c;
+    } catch (e) {
+      console.warn('Catena non disponibile, si rende diretto.', e);
+      composer = null;
+    }
+    return;
+  }
   try {
     const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
-
-    /* MSAA nel bersaglio del composer. L'antialias del renderer lavora solo
-       quando si disegna sullo schermo: passando per un render target si
-       perde, e i bordi della porta tornerebbero a scaletta. */
-    const bersaglio = new THREE.WebGLRenderTarget(w, h, {
-      type: THREE.HalfFloatType,
-      samples: profilo().msaa,
-    });
-
-    const c = new EffectComposer(renderer, bersaglio);
-    c.addPass(new RenderPass(scene, camera));
 
     const ao = new GTAOPass(scene, camera, w, h);
     ao.output = GTAOPass.OUTPUT.Default;      // AO composta sopra la scena
@@ -851,19 +916,20 @@ function montaOcclusione() {
       distanceFallOff: 1,
       screenSpaceRadius: false,
     });
-    c.addPass(ao);
+    /* MSAA nel bersaglio della scena. L'antialias del renderer lavora solo
+       quando si disegna sullo schermo: passando per un render target si
+       perde, e i bordi della porta tornerebbero a scaletta.
+       Il tone mapping lo applica l'uscita (OutputPass): il renderer lo applica
+       solo disegnando sullo schermo, e qui si disegna su un target. Senza
+       quel passo la curva ACES sparisce e i colori escono slavati. */
+    const c = creaCatena({ msaa: profilo().msaa, occlusione: ao });
 
-    /* Il tone mapping lo applica l'OutputPass: il renderer lo applica solo
-       disegnando sullo schermo, e qui si disegna su un target. Senza questo
-       passaggio la curva ACES sparisce e i colori escono slavati. */
-    c.addPass(new OutputPass());
-
-    /* A PIENA RISOLUZIONE GIA' DALL'AVVIO. Il bersaglio nasce della misura
-       dello schermo in pixel CSS, e il composer lo prende cosi' com'e': solo
-       setSize lo moltiplica per il pixelRatio. All'avvio nessuno lo chiamava
-       —resize() parte solo cambiando finestra o qualita'— e la porta usciva
-       a meta' risoluzione su ogni schermo Retina, stirata: "Alta" segnata nel
-       bottone e bassa a schermo, finche' non si ripremeva Alta. */
+    /* A PIENA RISOLUZIONE GIA' DALL'AVVIO. I bersagli nascono di 1x1: solo
+       setSize li porta alla misura dello schermo per il pixelRatio. Quando
+       c'era il composer nessuno lo chiamava all'avvio —resize() parte solo
+       cambiando finestra o qualita'— e la porta usciva a meta' risoluzione su
+       ogni schermo Retina, stirata: "Alta" segnata nel bottone e bassa a
+       schermo, finche' non si ripremeva Alta. */
     c.setSize(w, h);
     composer = c;
     gtaoPass = ao;
@@ -871,8 +937,6 @@ function montaOcclusione() {
     /* Il leggero: stessa occlusione e stessa forza, ma senza multisampling nel
        bersaglio (e' lui che costa: con MSAA x4 il leggero saliva a 14 ms) e
        con l'occlusione calcolata a meta' risoluzione. */
-    const cl = new EffectComposer(renderer, new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType }));
-    cl.addPass(new RenderPass(scene, camera));
     const aol = new GTAOPass(scene, camera, w, h);
     aol.output = GTAOPass.OUTPUT.Default;
     aol.blendIntensity = ao.blendIntensity;
@@ -880,8 +944,7 @@ function montaOcclusione() {
       radius: 0.05, distanceExponent: 1, thickness: 0.5, scale: 1.1,
       samples: Math.min(8, campioni), distanceFallOff: 1, screenSpaceRadius: false,
     });
-    cl.addPass(aol);
-    cl.addPass(new OutputPass());
+    const cl = creaCatena({ msaa: 0, occlusione: aol });
     composerLeggero = cl;
     gtaoLeggero = aol;
     misuraLeggero(w, h);
@@ -1661,6 +1724,7 @@ function loadModel(key) {
          stesso giorno). Allontanarsi resta come prima, fino a 3,2 volte
          l'altezza. */
       inquadratura = { lx: size.x * 0.5, ly: size.y * 0.5, alto: size.y, largo: size.x };
+      rifaiCassaOmbra();                 // porta nuova: la scatola dell'ombra si rimisura
       const dist = distanzaIntera();
       camera.position.set(0, size.y * 0.12, dist);
       controls.target.set(0, 0, 0);
@@ -2227,6 +2291,10 @@ function loadModel(key) {
         luci: LUCI,
         get ombraRilievo() { return ombraRilievo; },
         chiediFotogramma,
+        /* La scatola dell'ombra, per misurarla e per rifarla a mano prima di
+           una foto di prova (adattaOmbre di solito gira dal ciclo). */
+        adattaOmbre,
+        get improntaOmbra() { return improntaOmbra; },
         get apertura() { return { obiettivo: doorTargetAngle, aperta: doorOpenAngle }; },
         /* La corsa della scorrevole. Il bersaglio si posa SUBITO, il movimento
            no: serve per misurare la legge senza dipendere dai fotogrammi. */
@@ -3075,6 +3143,7 @@ function setAmbiente(nome) {
     scene.add(ambienti[nome]);
   }
   for (const [k, grp] of Object.entries(ambienti)) grp.visible = (k === nome);
+  rifaiCassaOmbra();                     // i mobili dell'ambiente fanno ombra anche loro
   const room = nome !== 'galleria';
   controls.minAzimuthAngle = room ? -0.9 : -Infinity;
   controls.maxAzimuthAngle = room ? 0.9 : Infinity;
@@ -3208,6 +3277,141 @@ THREE.DefaultLoadingManager.onStart = () => chiediFotogramma(120);
 THREE.DefaultLoadingManager.onProgress = () => chiediFotogramma(120);
 THREE.DefaultLoadingManager.onLoad = () => chiediFotogramma(120);
 
+/* ============================================================
+   L'IMPRONTA DELL'OMBRA
+   ------------------------------------------------------------
+   Le due chiavi facevano ombra su una scatola fissa di 9 x 9 metri,
+   e per avere 2,2 mm per pixel ci voleva una mappa di 4096: 67 MB
+   ciascuna, 134 le due — piu' di tutto il resto del visore in un
+   telefono. Ma la mappa serve solo dove c'e' qualcosa che fa ombra:
+   un punto che verso la luce non ha niente davanti e' illuminato, e
+   three lo tratta gia' cosi' quando cade fuori dalla scatola. Allora
+   la scatola si stringe attorno all'IMPRONTA di quello che fa ombra
+   —porta, muro, battiscopa, i mobili dell'ambiente— vista dalla luce,
+   e il pixel resta quello di prima: STESSA ombra, mappa piu' piccola.
+
+   L'impronta si misura pezzo per pezzo nella vista di ogni luce, non
+   come una sola scatola nel mondo: il muro e' largo sei metri e sottile,
+   l'anta gira per un metro in profondita', e una scatola unica che li
+   contenesse tutti e due sarebbe profonda un metro per sei di largo.
+
+   Tre cose da non rompere:
+   - la griglia. I bordi nuovi cadono sulla griglia della scatola
+     vecchia, pixel su pixel, cosi' l'ombra campiona negli stessi punti;
+   - l'anta che si muove. I pezzi appesi ai cardini (doorPivot e
+     doorPivot2) si allargano della larghezza della porta di lato e in
+     profondita': fin li' arriva l'anta girando o scorrendo. L'impronta
+     si rifa' solo quando cambia la scena (porta, ambiente, qualita'); in
+     mezzo puo' solo crescere, se compare qualcosa fuori, mai stringersi
+     a ogni fotogramma — l'ombra tremolerebbe;
+   - near e far. Restano quelli di prima: il bias si conta in
+     profondita', e cambiandoli si sposterebbe l'attacco dell'ombra.
+   ============================================================ */
+const MEZZO_LATO = 4.5;                 // m: la scatola fissa di prima, ±4,5
+const LUCI_OMBRA = [key, keyDietro];
+let improntaOmbra = null;               // per luce: [x0, x1, y0, y1] nella sua vista; null = da rimisurare
+const _pezzo = new THREE.Box3();
+const _punto = new THREE.Vector3();
+
+function rifaiCassaOmbra() {
+  improntaOmbra = null;
+  chiediFotogramma(30);
+}
+
+/* La stessa vista che prende l'ombra quando si disegna
+   (LightShadow.updateMatrices): dalla luce verso il suo bersaglio. */
+function vistaDellaLuce(luce) {
+  const cam = luce.shadow.camera;
+  luce.updateMatrixWorld();
+  luce.target.updateMatrixWorld();
+  cam.position.setFromMatrixPosition(luce.matrixWorld);
+  cam.lookAt(_punto.setFromMatrixPosition(luce.target.matrixWorld));
+  cam.updateMatrixWorld();
+  return cam.matrixWorldInverse;
+}
+
+function misuraImpronta(conCorsa) {
+  scene.updateMatrixWorld();
+  const viste = LUCI_OMBRA.map(vistaDellaLuce);
+  const imp = LUCI_OMBRA.map(() => [Infinity, -Infinity, Infinity, -Infinity]);
+  const corsa = conCorsa ? (inquadratura ? inquadratura.largo : 1) : 0;
+  let pezzi = 0;
+  const visita = (o, anta) => {
+    if (!o.visible) return;
+    anta = anta || o === doorPivot || o === doorPivot2;
+    if (o.isMesh && o.castShadow) {
+      const g = o.geometry;
+      if (!g.boundingBox) g.computeBoundingBox();
+      _pezzo.copy(g.boundingBox).applyMatrix4(o.matrixWorld);
+      if (anta && corsa) {
+        _pezzo.min.x -= corsa; _pezzo.max.x += corsa;
+        _pezzo.min.z -= corsa; _pezzo.max.z += corsa;
+      }
+      for (let i = 0; i < 8; i++) {
+        const x = i & 1 ? _pezzo.max.x : _pezzo.min.x;
+        const y = i & 2 ? _pezzo.max.y : _pezzo.min.y;
+        const z = i & 4 ? _pezzo.max.z : _pezzo.min.z;
+        for (let l = 0; l < viste.length; l++) {
+          _punto.set(x, y, z).applyMatrix4(viste[l]);
+          const b = imp[l];
+          if (_punto.x < b[0]) b[0] = _punto.x;
+          if (_punto.x > b[1]) b[1] = _punto.x;
+          if (_punto.y < b[2]) b[2] = _punto.y;
+          if (_punto.y > b[3]) b[3] = _punto.y;
+        }
+      }
+      pezzi++;
+    }
+    for (const c of o.children) visita(c, anta);
+  };
+  visita(scene, false);
+  return pezzi ? imp : null;              // ancora niente in scena
+}
+
+function adattaOmbre() {
+  if (!improntaOmbra) {
+    improntaOmbra = misuraImpronta(true);
+    if (!improntaOmbra) return;
+  } else {
+    const ora = misuraImpronta(false);
+    if (!ora) return;
+    let cresce = false;
+    for (let l = 0; l < ora.length; l++) {
+      const a = improntaOmbra[l], b = ora[l];
+      if (b[0] < a[0] || b[1] > a[1] || b[2] < a[2] || b[3] > a[3]) {
+        a[0] = Math.min(a[0], b[0]); a[1] = Math.max(a[1], b[1]);
+        a[2] = Math.min(a[2], b[2]); a[3] = Math.max(a[3], b[3]);
+        cresce = true;
+      }
+    }
+    if (!cresce) return;                  // niente di nuovo: le mappe restano quelle
+  }
+  const pixel = (2 * MEZZO_LATO) / profilo().ombra;
+  LUCI_OMBRA.forEach((luce, l) => adattaLuce(luce, improntaOmbra[l], pixel));
+}
+
+function adattaLuce(luce, [x0, x1, y0, y1], pixel) {
+  const cam = luce.shadow.camera;
+  /* Un margine per il filtro morbido e per il normalBias (8 mm), poi i bordi
+     sulla griglia di prima. Mai oltre la scatola vecchia: quello che prima
+     stava fuori non faceva ombra, e non deve cominciare adesso. */
+  const m = Math.max(4 * pixel, 0.02);
+  const griglia = (v, arrotonda) => -MEZZO_LATO + arrotonda((v + MEZZO_LATO) / pixel) * pixel;
+  const left = Math.max(-MEZZO_LATO, griglia(x0 - m, Math.floor));
+  const right = Math.min(MEZZO_LATO, griglia(x1 + m, Math.ceil));
+  const bottom = Math.max(-MEZZO_LATO, griglia(y0 - m, Math.floor));
+  const top = Math.min(MEZZO_LATO, griglia(y1 + m, Math.ceil));
+  cam.left = left; cam.right = right; cam.bottom = bottom; cam.top = top;
+  cam.updateProjectionMatrix();
+  const W = Math.max(1, Math.round((right - left) / pixel));
+  const H = Math.max(1, Math.round((top - bottom) / pixel));
+  if (luce.shadow.mapSize.x !== W || luce.shadow.mapSize.y !== H) {
+    luce.shadow.mapSize.set(W, H);
+    // si rifa' da sola al prossimo giro della mappa: basta buttare la vecchia
+    if (luce.shadow.map) { luce.shadow.map.dispose(); luce.shadow.map = null; }
+  }
+}
+
 renderer.setAnimationLoop(() => {
   controls.update();
 
@@ -3286,6 +3490,7 @@ renderer.setAnimationLoop(() => {
 
   const ora = performance.now();
   const disegna = (pieno) => {
+    if (ombreSporche) adattaOmbre();     // di solito non cambia niente ed esce
     renderer.shadowMap.needsUpdate = ombreSporche;
     ombreSporche = false;
     if (pieno && composer) composer.render();
@@ -3293,7 +3498,9 @@ renderer.setAnimationLoop(() => {
     else renderer.render(scene, camera);
   };
 
-  // In Bassa non c'e' composer: il fotogramma diretto e' gia' quello pieno.
+  /* Senza catena (solo se non si e' potuta montare) il fotogramma diretto e'
+     gia' quello pieno. La Bassa ora ha la sua catena, senza occlusione: in
+     movimento va diretta, a riposo passa dal bersaglio col MSAA. */
   if (!composer) { disegna(false); pienoDovuto = false; return; }
 
   /* In movimento: leggero. Il pieno resta dovuto per quando si ferma. E
@@ -3340,6 +3547,8 @@ function applicaQualita(nome) {
      la lascerebbe con la mappa della qualita' precedente. */
   keyDietro.shadow.mapSize.set(p.ombra, p.ombra);
   if (keyDietro.shadow.map) { keyDietro.shadow.map.dispose(); keyDietro.shadow.map = null; }
+  // e la scatola si rimisura col pixel nuovo (adattaOmbre, al prossimo giro)
+  rifaiCassaOmbra();
 
   /* Il composer si rimonta da zero. Il multisampling sta nel render target e
      il target non si cambia a caldo: si getta e se ne fa un altro. */
